@@ -5,6 +5,7 @@ ETHGlobal permits AI tools to assist development but not to create the entire pr
 ## Tools used
 
 | Tool | Used for |
+|---|---|
 | Claude (Anthropic) | Rules research, sponsor track analysis, prize strategy, architecture discussion, documentation drafting, code assistance |
 
 ## How it was used
@@ -23,7 +24,7 @@ The spec-driven part of this project is documented in:
 
 - `docs/decisions.md` — dated decision log kept during the build
 - `docs/architecture.md` — data model and flow
-- Strategy dossier and repository/landing-page plans, produced before the kickoff
+- Strategy dossier and repository/landing-page plans, produced before the kickoff — 
 
 ## Statement
 
