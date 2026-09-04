@@ -16,7 +16,7 @@ You place a secret: a seed phrase, a private key, a credential, a document. Then
 
 **Who may open it** is answered by ENSv2. Sharing a secret with someone means granting a read permission on your own permissioned resolver, addressed by their ENS name instead of a hex address. You share with `anna.eth`, not with `0x7f3a…`, and the permission lives in a registry you control rather than in our database.
 
-**Under what conditions** is answered by a release agent that can propose but never act alone. A time lock, prolonged inactivity or a guardian quorum triggers a proposal — and nothing moves until a human confirms it on a hardware device.
+**Under what conditions** is answered inside a trusted execution environment. A release agent can propose but never act alone; the condition itself — a guardian quorum, a time lock, prolonged inactivity — is evaluated inside a Chainlink CRE Confidential Workflow, so the secret never passes a node anyone can inspect.
 
 And when someone has lost everything — device gone, backup gone — recovery does not depend on a file they were supposed to keep. Their guardians confirm, and World's Selfie Check proves that a unique, living person is the one asking.
 
@@ -28,7 +28,7 @@ And when someone has lost everything — device gone, backup gone — recovery d
 2. **Share it with a name.** `anna.eth`, not `0x7f3a…`. NextKey grants her a read permission on that one record — nothing else on your account.
 3. **Anna hears about it.** Through whatever channel she declared in her own ENS records. She never signed up for NextKey.
 4. **If she loses everything, she gets back in.** Her guardians confirm, and Selfie Check proves a unique, living person is asking.
-5. **Some releases happen without you.** The agent proposes; a human confirms on a Ledger device.
+5. **Some releases happen without you.** The agent proposes; an enclave decides, against rules you wrote yourself.
 
 ---
 
@@ -110,13 +110,21 @@ The hardest question for a product like this one is how somebody gets back in af
 
 ---
 
-## Ledger in NextKey
+## Chainlink CRE in NextKey
 
 Automation is useful right up to the moment it can act alone. NextKey draws that line twice.
 
-The release agent has its own ENS namespace carrying exactly one role: propose a release. It cannot read a secret and cannot release one — that boundary is enforced cryptographically by Enhanced Access Control. The second boundary is physical: a proposed release only takes effect once a person confirms it on a Ledger device via DMK.
+The release agent has its own ENS namespace carrying exactly one role: *propose* a release. It cannot read a secret and it cannot release one — that boundary is enforced cryptographically by Enhanced Access Control, not by our code being polite about it.
 
-<!-- TODO: document the wallet-cli ring setup and the device confirmation step -->
+The second boundary is the enclave. A proposal is evaluated inside a **Chainlink CRE Confidential Workflow**: the key material and the set of guardian approvals go in via `cre.handlerInTee(...)`, the release condition is evaluated there, and only a `RELEASE` or `DENY` verdict crosses back to the DON through `runtime.usingTheDons()`. The value nobody may see is precisely the one that never comes out.
+
+This is deliberately load-bearing rather than decorative: remove the workflow and the release condition degrades from something enforced to something promised.
+
+**A note on what confidentiality means here.** CRE protects data *during execution*, not source code — the workflow's code stays public, as it should for an open-source project. The claim NextKey makes is narrow and true: a secret never passes a node an operator can inspect. It does not claim its release logic is hidden.
+
+**Secrets in this build** are resolved from the local environment rather than from the Vault DON, which keeps the demo reproducible for anyone with the CRE CLI and no beta grant. Chainlink Labs confirmed during the hackathon that `cre workflow simulate` runs confidential workflows without beta access; the grant is only needed to deploy to the confidential workflow DON and to store secrets on the Vault DON.
+
+<!-- TODO: link to the workflow source and reference evidence/cre-simulation.log -->
 
 ---
 
@@ -143,7 +151,25 @@ Required environment variables: <!-- TODO -->
 
 ## Evidence
 
-Sponsor qualification evidence (logs, transaction hashes, screenshots) is collected in [`evidence/`](./evidence).
+Sponsor qualification evidence is collected in [`evidence/`](./evidence) as it is produced, not assembled at the end:
+
+- `cre-simulation.log` — terminal output of a successful Confidential Workflow simulation
+- ENSv2 transaction hashes for registry deployment, subname registration and role grants
+- Selfie Check flow captured from the World ID Sandbox App
+
+<!-- TODO: fill in as each piece is produced -->
+
+---
+
+## Prize tracks
+
+This project is submitted to three partner prizes:
+
+| Sponsor | Track |
+|---|---|
+| ENS | Best Use of ENSv2 |
+| World | Selfie Check |
+| Chainlink | Best Confidential Workflow |
 
 ---
 
@@ -153,7 +179,6 @@ Sponsor qualification evidence (logs, transaction hashes, screenshots) is collec
 - [`docs/decisions.md`](./docs/decisions.md) — dated decision log
 - [`AI_USAGE.md`](./AI_USAGE.md) — AI tool usage disclosure
 - [`FEEDBACK-WORLD.md`](./FEEDBACK-WORLD.md) — developer experience feedback for World
-- [`FEEDBACK-LEDGER.md`](./FEEDBACK-LEDGER.md) — developer experience feedback for Ledger
 
 ---
 
