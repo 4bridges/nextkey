@@ -1,0 +1,26 @@
+{
+  "name": "nextkey",
+  "version": "1.0.0",
+  "description": "Hand over secrets by ENS name, released by rules, recovered by proof of humanness.",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/4bridges/nextkey.git"
+  },
+  "keywords": [],
+  "author": "4bridges",
+  "license": "MIT",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/4bridges/nextkey/issues"
+  },
+  "homepage": "https://github.com/4bridges/nextkey#readme",
+  "dependencies": {
+    "viem": "^2.56.3"
+  }
+}
