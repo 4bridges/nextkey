@@ -175,10 +175,16 @@ This project is submitted to three partner prizes:
 
 ## Documentation
 
-- [`docs/architecture.md`](./docs/architecture.md) — data model and flow
-- [`docs/decisions.md`](./docs/decisions.md) — dated decision log
+## Documentation
+
+- [`docs/planning/`](./docs/planning) — planning artifacts written before the kickoff, dated
+- [`ai/PROMPT_LOG.md`](./ai/PROMPT_LOG.md) — prompts that shaped documents, decisions and code
+- [`docs/decisions.md`](./docs/decisions.md) — dated decision log kept during the build
 - [`AI_USAGE.md`](./AI_USAGE.md) — AI tool usage disclosure
 - [`FEEDBACK-WORLD.md`](./FEEDBACK-WORLD.md) — developer experience feedback for World
+- [`evidence/`](./evidence) — sponsor qualification evidence
+
+`docs/architecture.md` follows once the data model is settled.
 
 ---
 
