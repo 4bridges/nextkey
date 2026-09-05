@@ -4,8 +4,9 @@ Two static pages, no framework, no build step for the HTML. Upload the contents 
 this folder to the web root at Cyon and the site works.
 
 ```
-index.html      the landing page
+index.html      the landing page, in ten languages
 demo.html       the live view
+i18n.js         the nine translations — English is not in here, see below
 app.js          bundled reader for demo.html — built, do not edit
 src/app.js      the source app.js is built from
 ```
@@ -13,8 +14,8 @@ src/app.js      the source app.js is built from
 ## Deploy
 
 Everything is a plain file with relative paths, so it also works from a
-subdirectory. Upload `index.html`, `demo.html` and `app.js`. `src/` is not needed
-on the server.
+subdirectory. Upload `index.html`, `demo.html`, `i18n.js` and `app.js`. `src/`
+and this README are not needed on the server.
 
 **No `.htaccess` is required.** An earlier plan called for SPA routing, which on
 Apache needs a rewrite to `index.html` or a direct hit on `/demo` returns 404.
@@ -33,6 +34,35 @@ npx esbuild web/src/app.js --bundle --format=esm --minify --target=es2022 \
 
 `viem` is bundled in rather than loaded from a CDN, so the page has no external
 dependency at runtime and keeps working if a CDN is blocked or slow.
+
+## Ten languages, and where English lives
+
+The selector top right switches between EN, DE, FR, IT, ES, PT, CN, UA, RU and FA.
+
+**English is in `index.html` itself, not in `i18n.js`.** The page is therefore
+complete and readable before a single line of script runs — which the planning
+notes required — and a JavaScript failure degrades to English rather than to a
+blank document. The English baseline is snapshotted from the DOM at load; keeping
+a second copy in `i18n.js` would only give the two a chance to drift, and the one
+that drifts is always the one nobody is looking at.
+
+A missing key falls back to English **for that one string**, so a partial
+translation costs a sentence rather than a page.
+
+**Persian is right-to-left.** `dir="rtl"` is set for it and a handful of rules
+mirror the step numbers, the FAQ markers and the footer. The handover diagram
+deliberately stays left-to-right: it depicts a sequence of events, and mirroring
+it would reverse the story rather than translate it.
+
+**Each language has a shareable address** — `?lang=de` and so on — and the
+`hreflang` links in the head point at them. Be honest about the limit: this is a
+client-side switcher, so the translated text is not in the served HTML. Search
+engines that execute JavaScript will see it; for real per-language indexing you
+would want ten pre-rendered files, which is a build step this project does not
+have. The selector serves readers well; it is not an SEO strategy.
+
+Choices persist in `localStorage` under `nextkey.lang`, wrapped in try/catch —
+a browser that refuses storage still switches, it just forgets.
 
 ## What demo.html shows
 

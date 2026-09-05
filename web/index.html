@@ -3,9 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22%239a5218%22%2F%3E%3Ccircle%20cx%3D%2213%22%20cy%3D%2213%22%20r%3D%225.2%22%20fill%3D%22none%22%20stroke%3D%22%23faf9f7%22%20stroke-width%3D%222.6%22%2F%3E%3Cpath%20d%3D%22M16.5%2016.5%20L24%2024%20M21%2021%20l2.5-2.5%20M24%2024%20l2-2%22%20fill%3D%22none%22%20stroke%3D%22%23faf9f7%22%20stroke-width%3D%222.6%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E">
 <title>NextKey — hand over secrets by ENS name</title>
 <meta name="description" content="Share a seed phrase or credential with someone by their ENS name. Access ends when you say. Recovery proves a living human, not a backup file.">
 <link rel="canonical" href="https://nextkey.li/">
+<link rel="alternate" hreflang="en" href="https://nextkey.li/">
+<link rel="alternate" hreflang="de" href="https://nextkey.li/?lang=de">
+<link rel="alternate" hreflang="fr" href="https://nextkey.li/?lang=fr">
+<link rel="alternate" hreflang="it" href="https://nextkey.li/?lang=it">
+<link rel="alternate" hreflang="es" href="https://nextkey.li/?lang=es">
+<link rel="alternate" hreflang="pt" href="https://nextkey.li/?lang=pt">
+<link rel="alternate" hreflang="zh-Hans" href="https://nextkey.li/?lang=cn">
+<link rel="alternate" hreflang="uk" href="https://nextkey.li/?lang=ua">
+<link rel="alternate" hreflang="ru" href="https://nextkey.li/?lang=ru">
+<link rel="alternate" hreflang="fa" href="https://nextkey.li/?lang=fa">
+<link rel="alternate" hreflang="x-default" href="https://nextkey.li/">
 <meta property="og:type" content="website">
 <meta property="og:title" content="NextKey — hand over secrets by ENS name">
 <meta property="og:description" content="Share a seed phrase or credential with someone by their ENS name. Access ends when you say. Recovery proves a living human, not a backup file.">
@@ -37,13 +49,23 @@
   section{padding:4.5rem 0;border-top:1px solid var(--line)}
   section:first-of-type{border-top:0}
   h1,h2,h3{line-height:1.25;letter-spacing:-.015em;margin:0 0 .8rem}
-  h1{font-size:clamp(2rem,5.2vw,3.1rem);font-weight:640;max-width:18ch}
+  /* The headline is meant to land on two lines at every width, so the size
+     scales with the viewport rather than sitting at a fixed minimum: 6.4vw
+     keeps roughly 26 characters per line even on a 320px phone. `balance`
+     then splits those two lines evenly instead of leaving one word stranded.
+     The term itself is joined with a non-breaking space in every language
+     where it is two short words, so it can never be torn apart. */
+  h1{
+    font-size:clamp(1.15rem,6vw,3.1rem);font-weight:640;
+    max-width:32ch;text-wrap:balance
+  }
+  h2,h3,.lead{text-wrap:pretty}
   h2{font-size:1.45rem;font-weight:620;margin-bottom:1.6rem}
-  h3{font-size:1.02rem;font-weight:640;margin-bottom:.3rem}
+  h3{font-size:1.08rem;font-weight:640;margin-bottom:.3rem}
   p{margin:0 0 1rem;max-width:var(--measure)}
   .lead{font-size:1.12rem;color:var(--muted);max-width:40rem}
   .eyebrow{
-    font-size:.76rem;letter-spacing:.14em;text-transform:uppercase;
+    font-size:.9rem;letter-spacing:.13em;text-transform:uppercase;
     color:var(--accent);font-weight:640;margin:0 0 1.1rem
   }
   /* Hero */
@@ -51,29 +73,88 @@
   .actions{display:flex;flex-wrap:wrap;gap:.7rem;margin:2rem 0 1.1rem}
   .btn{
     display:inline-block;padding:.72rem 1.35rem;border-radius:7px;
-    text-decoration:none;font-weight:600;font-size:.97rem;border:1px solid transparent
+    text-decoration:none;font-weight:600;font-size:1.02rem;border:1px solid transparent
   }
   .btn-primary{background:var(--accent);color:var(--accent-ink)}
   .btn-primary:hover{filter:brightness(1.08)}
   .btn-quiet{border-color:var(--line);color:var(--muted)}
   .btn-quiet:hover{color:var(--ink);border-color:var(--muted)}
-  .provenance{font-size:.84rem;color:var(--muted);margin:0}
+  .provenance{font-size:.92rem;color:var(--muted);margin:0}
+  /* Language bar. Sticky, because someone reading the FAQ should not have to
+     scroll back to the top to switch. */
+  .topbar{
+    position:sticky;top:0;z-index:10;background:var(--bg);
+    display:flex;justify-content:flex-end;align-items:center;gap:.5rem;
+    padding:.65rem 0 .55rem;border-bottom:1px solid transparent
+  }
+  .topbar label{font-size:.88rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .topbar select{
+    font:inherit;font-size:.9rem;font-weight:640;letter-spacing:.03em;
+    color:var(--ink);background:var(--surface);
+    border:1px solid var(--line);border-radius:6px;
+    padding:.32rem 1.7rem .32rem .6rem;cursor:pointer;
+    appearance:none;
+    background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),
+                     linear-gradient(135deg,currentColor 50%,transparent 50%);
+    background-position:calc(100% - 15px) 55%, calc(100% - 10px) 55%;
+    background-size:5px 5px,5px 5px;background-repeat:no-repeat
+  }
+  .topbar select:hover{border-color:var(--muted)}
+  .topbar select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  /* Right-to-left. Persian is the reason; everything mirrored is layout, not
+     content, so only direction and a few text alignments change. */
+  [dir="rtl"] .topbar{justify-content:flex-start}
+  [dir="rtl"] ol.steps li{padding:0 3.1rem 1.6rem 0}
+  [dir="rtl"] ol.steps li::before{left:auto;right:0}
+  [dir="rtl"] .faq summary::after{float:left}
+  [dir="rtl"] footer a{margin-right:0;margin-left:1.2rem}
+  /* The diagram is a left-to-right sequence of events, not text. Mirroring it
+     would reverse the story, so it stays as drawn. */
+  [dir="rtl"] .handover svg{direction:ltr}
   /* The one picture the page gets: the handover itself. */
   .handover{margin:3rem 0 0;max-width:56rem}
   .handover svg{width:100%;height:auto;display:block;color:var(--muted)}
-  .handover figcaption{font-size:.85rem;color:var(--muted);margin-top:.9rem;max-width:40rem}
+  /* Text inside an SVG shrinks with the drawing, and below about 700px these
+     labels stopped being legible. Rather than let the figure scroll off the
+     side of a phone — which reads as broken rather than as scrollable — the
+     same sequence is rebuilt vertically, from the same translated strings. */
+  .handover-stack{display:none}
+  @media (max-width:700px){
+    .handover svg{display:none}
+    .handover-stack{display:block;margin:0}
+    .hs-node,.hs-seal,.hs-cond{
+      border:1px solid var(--line);border-radius:9px;
+      padding:.85rem 1rem;background:var(--surface)
+    }
+    .hs-node.accent{border-color:var(--accent)}
+    .hs-seal{background:var(--code);border-color:transparent}
+    .hs-cond{border-style:dashed;border-color:var(--accent);background:transparent}
+    .hs-nm{display:block;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      font-size:1.02rem;font-weight:640}
+    .hs-t{display:block;font-size:.98rem}
+    .hs-cond .hs-t{color:var(--accent);font-weight:640}
+    .hs-s{display:block;font-size:.92rem;color:var(--muted);margin-top:.1rem}
+    .hs-arrow{
+      width:1px;height:1.5rem;margin:0 auto;background:var(--line);position:relative
+    }
+    .hs-arrow::after{
+      content:"";position:absolute;left:50%;bottom:0;translate:-50% 0;
+      border:5px solid transparent;border-top-color:var(--line)
+    }
+  }
+  .handover figcaption{font-size:.93rem;color:var(--muted);margin-top:.9rem;max-width:40rem}
   .handover .node{fill:var(--surface);stroke:var(--line);stroke-width:1}
   .handover .node.accent{stroke:var(--accent)}
   .handover .seal{fill:var(--code);stroke:none}
   .handover .wire{stroke:var(--line);stroke-width:1.5}
   .handover .gate{stroke:var(--accent);stroke-width:2;stroke-dasharray:4 4}
-  .handover text{fill:var(--ink);font-size:14px;text-anchor:middle;
+  .handover text{fill:var(--ink);font-size:17px;text-anchor:middle;
     font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
-  .handover .nm{font-size:15px;font-weight:640;
+  .handover .nm{font-size:18px;font-weight:640;
     font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-  .handover .sub,.handover .seal-s,.handover .cond-s{fill:var(--muted);font-size:12px}
-  .handover .seal-t{font-size:12.5px}
-  .handover .cond{fill:var(--accent);font-size:12.5px;font-weight:640}
+  .handover .sub,.handover .seal-s,.handover .cond-s{fill:var(--muted);font-size:15px}
+  .handover .seal-t{font-size:15.5px}
+  .handover .cond{fill:var(--accent);font-size:15.5px;font-weight:640}
   /* Steps */
   ol.steps{list-style:none;counter-reset:s;padding:0;margin:0;max-width:44rem}
   ol.steps li{
@@ -86,11 +167,11 @@
     display:grid;place-items:center;
     font-size:.85rem;font-weight:640;color:var(--muted)
   }
-  ol.steps p{margin:.15rem 0 0;color:var(--muted)}
+  ol.steps p{margin:.2rem 0 0;color:var(--muted);font-size:1rem}
   /* Cards */
   .cards{display:grid;gap:1.6rem;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));max-width:58rem}
-  .card p{color:var(--muted);margin:.2rem 0 0}
-  .card .mono{font-size:.86rem}
+  .card p{color:var(--muted);margin:.2rem 0 0;font-size:1rem}
+  .card .mono{font-size:.94rem}
   /* FAQ */
   .faq{max-width:44rem}
   .faq details{border-top:1px solid var(--line);padding:1rem 0}
@@ -108,28 +189,39 @@
   }
   .status strong{display:block;margin-bottom:.3rem}
   .status p{margin:0;color:var(--muted)}
-  footer{border-top:1px solid var(--line);padding:2.2rem 0 3.5rem;color:var(--muted);font-size:.9rem}
+  footer{border-top:1px solid var(--line);padding:2.2rem 0 3.5rem;color:var(--muted);font-size:.95rem}
   footer a{margin-right:1.2rem;display:inline-block}
-  kbd,.k{background:var(--code);border-radius:4px;padding:.1em .38em;font-size:.9em}
+  kbd,.k{background:var(--code);border-radius:4px;padding:.12em .4em;font-size:.94em}
 </style>
 </head>
 <body>
 
 <main class="wrap">
 
+  <div class="topbar">
+    <label for="lang" data-i18n="ui.lang">Language</label>
+    <select id="lang" aria-label="Language / Sprache">
+      <option value="en">EN</option><option value="de">DE</option>
+      <option value="fr">FR</option><option value="it">IT</option>
+      <option value="es">ES</option><option value="pt">PT</option>
+      <option value="cn">CN</option><option value="ua">UA</option>
+      <option value="ru">RU</option><option value="fa">FA</option>
+    </select>
+  </div>
+
   <!-- 1 — Hero -->
   <section class="hero">
     <p class="eyebrow">NextKey</p>
-    <h1>Hand over a seed phrase without handing over control</h1>
-    <p class="lead">
+    <h1 data-i18n="hero.h1">Hand over a seed phrase without handing over control</h1>
+    <p class="lead" data-i18n="hero.lead">
       NextKey shares secrets by ENS name, releases them by rules, and restores access
       with proof of humanness. A human is involved. No human is in control.
     </p>
     <div class="actions">
-      <a class="btn btn-primary" href="./demo.html">Open the demo</a>
-      <a class="btn btn-quiet" href="https://github.com/4bridges/nextkey">View on GitHub</a>
+      <a class="btn btn-primary" href="./demo.html" data-i18n="hero.cta">Open the demo</a>
+      <a class="btn btn-quiet" href="https://github.com/4bridges/nextkey" data-i18n="hero.gh">View on GitHub</a>
     </div>
-    <p class="provenance">Prototype · ENSv2 on Sepolia testnet · Built at ETHGlobal ETHOnline 2026</p>
+    <p class="provenance" data-i18n="hero.prov">Prototype · ENSv2 on Sepolia testnet · Built at ETHGlobal ETHOnline 2026</p>
 
     <figure class="handover">
       <svg viewBox="0 0 880 176" role="img" aria-labelledby="hv-t hv-d">
@@ -147,26 +239,49 @@
         <!-- sender -->
         <rect class="node" x="1" y="46" width="176" height="84" rx="9"/>
         <text class="nm" x="89" y="80">alice.eth</text>
-        <text class="sub" x="89" y="102">holds the secret</text>
+        <text class="sub" x="89" y="102" data-i18n="dia.a">holds the secret</text>
 
         <!-- sealed payload travelling -->
         <line class="wire" x1="177" y1="88" x2="330" y2="88"/>
         <rect class="seal" x="330" y="66" width="220" height="44" rx="8"/>
-        <text class="seal-t" x="440" y="86">ciphertext + wrapped key</text>
-        <text class="seal-s" x="440" y="102">public, and useless alone</text>
+        <text class="seal-t" x="440" y="86" data-i18n="dia.seal">ciphertext + wrapped key</text>
+        <text class="seal-s" x="440" y="102" data-i18n="dia.seals">public, and useless alone</text>
         <line class="wire" x1="550" y1="88" x2="700" y2="88" marker-end="url(#ar)"/>
 
         <!-- the condition, sitting on the path -->
         <line class="gate" x1="640" y1="34" x2="640" y2="142"/>
-        <text class="cond" x="640" y="24">quorum · waiting period</text>
-        <text class="cond-s" x="640" y="160">checked in an enclave</text>
+        <text class="cond" x="640" y="24" data-i18n="dia.cond">quorum · waiting period</text>
+        <text class="cond-s" x="640" y="160" data-i18n="dia.conds">checked in an enclave</text>
 
         <!-- recipient -->
         <rect class="node accent" x="703" y="46" width="176" height="84" rx="9"/>
         <text class="nm" x="791" y="80">anna.eth</text>
-        <text class="sub" x="791" y="102">opens it with her key</text>
+        <text class="sub" x="791" y="102" data-i18n="dia.b">opens it with her key</text>
       </svg>
-      <figcaption>
+      <div class="handover-stack" role="img"
+           aria-label="A sealed secret passes from alice.eth, through a condition checked in an enclave, to anna.eth.">
+        <div class="hs-node">
+          <span class="hs-nm">alice.eth</span>
+          <span class="hs-s" data-i18n="dia.a">holds the secret</span>
+        </div>
+        <div class="hs-arrow"></div>
+        <div class="hs-seal">
+          <span class="hs-t" data-i18n="dia.seal">ciphertext + wrapped key</span>
+          <span class="hs-s" data-i18n="dia.seals">public, and useless alone</span>
+        </div>
+        <div class="hs-arrow"></div>
+        <div class="hs-cond">
+          <span class="hs-t" data-i18n="dia.cond">quorum · waiting period</span>
+          <span class="hs-s" data-i18n="dia.conds">checked in an enclave</span>
+        </div>
+        <div class="hs-arrow"></div>
+        <div class="hs-node accent">
+          <span class="hs-nm">anna.eth</span>
+          <span class="hs-s" data-i18n="dia.b">opens it with her key</span>
+        </div>
+      </div>
+
+      <figcaption data-i18n="dia.cap">
         The key is wrapped to the public key Anna publishes on her own name. The condition
         between them is protocol state, not a promise.
       </figcaption>
@@ -175,45 +290,45 @@
 
   <!-- 2 — The problem -->
   <section>
-    <h2>The problem</h2>
-    <p>
+    <h2 data-i18n="prob.h">The problem</h2>
+    <p data-i18n="prob.p1">
       Today a seed phrase lives on paper in a drawer, in a password manager somebody else
       operates, or in a message you regret sending. All three fail the same way: the moment
       someone else needs it, either nobody can get to it, or the wrong person already has.
     </p>
-    <p>
+    <p data-i18n="prob.p2">
       The missing piece was never storage. It was deciding who may open something, and when.
     </p>
   </section>
 
   <!-- 3 — How it works -->
   <section>
-    <h2>How it works</h2>
+    <h2 data-i18n="how.h">How it works</h2>
     <ol class="steps">
       <li>
-        <h3>Place a secret</h3>
-        <p>A seed phrase, a private key, a credential. It is encrypted before it goes
+        <h3 data-i18n="how.1h">Place a secret</h3>
+        <p data-i18n="how.1p">A seed phrase, a private key, a credential. It is encrypted before it goes
            anywhere, with a key that never leaves your machine.</p>
       </li>
       <li>
-        <h3>Share it with a name</h3>
-        <p><span class="k mono">anna.eth</span>, not <span class="k mono">0x7f3a…</span>.
+        <h3 data-i18n="how.2h">Share it with a name</h3>
+        <p data-i18n-html="how.2p"><span class="k mono">anna.eth</span>, not <span class="k mono">0x7f3a…</span>.
            NextKey reads the public key Anna publishes in her own ENS records and wraps
            this one secret's key to it. She never registered with us.</p>
       </li>
       <li>
-        <h3>Anna hears about it</h3>
-        <p>Through whatever channel she declared in her own ENS records — another text
+        <h3 data-i18n="how.3h">Anna hears about it</h3>
+        <p data-i18n="how.3p">Through whatever channel she declared in her own ENS records — another text
            record, read the same way.</p>
       </li>
       <li>
-        <h3>If she loses everything, she gets back in</h3>
-        <p>Her guardians confirm, and a liveness check proves a unique, living person is
+        <h3 data-i18n="how.4h">If she loses everything, she gets back in</h3>
+        <p data-i18n="how.4p">Her guardians confirm, and a liveness check proves a unique, living person is
            asking. No backup file required.</p>
       </li>
       <li>
-        <h3>Some releases happen without you</h3>
-        <p>An agent proposes a release when a time lock elapses or you go quiet. It cannot
+        <h3 data-i18n="how.5h">Some releases happen without you</h3>
+        <p data-i18n="how.5p">An agent proposes a release when a time lock elapses or you go quiet. It cannot
            decide one. The condition is evaluated inside a confidential enclave, against
            rules you wrote yourself.</p>
       </li>
@@ -222,22 +337,22 @@
 
   <!-- 4 — What is different -->
   <section>
-    <h2>What is different</h2>
+    <h2 data-i18n="diff.h">What is different</h2>
     <div class="cards">
       <div class="card">
-        <h3>Access is a protocol, not our database</h3>
-        <p>Permissions live in an ENSv2 registry you own. Revoke them and they are gone
+        <h3 data-i18n="diff.1h">Access is a protocol, not our database</h3>
+        <p data-i18n="diff.1p">Permissions live in an ENSv2 registry you own. Revoke them and they are gone
            whether or not NextKey still exists. Set an expiry and access ends by itself.</p>
       </div>
       <div class="card">
-        <h3>We cannot read your secrets, and that is a property of the code</h3>
-        <p>The owner is a recipient like any other — no master key, no owner-only path.
+        <h3 data-i18n="diff.2h">We cannot read your secrets, and that is a property of the code</h3>
+        <p data-i18n="diff.2p">The owner is a recipient like any other — no master key, no owner-only path.
            The honest cost is stated rather than hidden: lose your key file and the secret
            is gone, because there is nobody who could recover it for you.</p>
       </div>
       <div class="card">
-        <h3>The agent proposes. It cannot decide</h3>
-        <p>Its ENS role permits one record on one name and nothing else — a boundary
+        <h3 data-i18n="diff.3h">The agent proposes. It cannot decide</h3>
+        <p data-i18n="diff.3p">Its ENS role permits one record on one name and nothing else — a boundary
            enforced by the registry, not by our code being careful. Humans confirm; the
            process, not a person, decides when that is enough.</p>
       </div>
@@ -246,24 +361,24 @@
 
   <!-- 5 — Under the hood -->
   <section>
-    <h2>Under the hood</h2>
+    <h2 data-i18n="hood.h">Under the hood</h2>
     <div class="cards">
       <div class="card">
         <h3>ENSv2</h3>
-        <p>Our own subname registry under <span class="mono">nextkey.eth</span>; each secret
+        <p data-i18n-html="hood.1p">Our own subname registry under <span class="mono">nextkey.eth</span>; each secret
            a subname with a Permissioned Resolver. Confidentiality comes from cryptography —
            the record holds ciphertext. Control comes from protocol roles: who may write,
            revoke or delegate, scoped per record.</p>
       </div>
       <div class="card">
         <h3>Chainlink CRE</h3>
-        <p>The release condition — a guardian quorum and a waiting period — is evaluated
+        <p data-i18n="hood.2p">The release condition — a guardian quorum and a waiting period — is evaluated
            inside a Confidential Workflow. Only a verdict crosses back out, carrying the
            hash of the public request so anyone can check which request it judged.</p>
       </div>
       <div class="card">
         <h3>World ID</h3>
-        <p>Selfie Check as a risk signal during recovery, not as a login. It answers
+        <p data-i18n="hood.3p">Selfie Check as a risk signal during recovery, not as a login. It answers
            whether a unique, living person is asking. The image never leaves the device.</p>
       </div>
     </div>
@@ -271,33 +386,33 @@
 
   <!-- 6 — FAQ -->
   <section>
-    <h2>Questions people actually ask</h2>
+    <h2 data-i18n="faq.h">Questions people actually ask</h2>
     <div class="faq">
 
       <details>
-        <summary>How do I safely pass on my seed phrase to someone?</summary>
-        <p>Encrypt it to a key only that person holds, and put the ciphertext somewhere you
+        <summary data-i18n="faq.1q">How do I safely pass on my seed phrase to someone?</summary>
+        <p data-i18n-html="faq.1a1">Encrypt it to a key only that person holds, and put the ciphertext somewhere you
            both can reach.</p>
-        <p>NextKey does this by name: you name a recipient, it reads the public key they
+        <p data-i18n-html="faq.1a2">NextKey does this by name: you name a recipient, it reads the public key they
            publish in their own ENS records, and wraps the secret's key to it. Nothing
            readable ever passes through a message, a document, or our servers — and the
            recipient does not have to sign up anywhere first.</p>
       </details>
 
       <details>
-        <summary>What happens to my crypto if I die or lose access?</summary>
-        <p>Nothing, unless you arranged for it in advance — which is the failure this
+        <summary data-i18n="faq.2q">What happens to my crypto if I die or lose access?</summary>
+        <p data-i18n-html="faq.2a1">Nothing, unless you arranged for it in advance — which is the failure this
            product exists to address.</p>
-        <p>You can name guardians and a waiting period. If you stop responding, an agent
+        <p data-i18n-html="faq.2a2">You can name guardians and a waiting period. If you stop responding, an agent
            proposes a release; the guardians confirm; the condition is checked in a
            confidential enclave. You can cancel at any point before it completes, and the
            waiting period exists so that you can.</p>
       </details>
 
       <details>
-        <summary>Is social recovery actually safe?</summary>
-        <p>On its own, no — it moves the attack from your device to the people around you.</p>
-        <p>An attacker who can pressure, impersonate or simply out-wait your guardians is
+        <summary data-i18n="faq.3q">Is social recovery actually safe?</summary>
+        <p data-i18n-html="faq.3a1">On its own, no — it moves the attack from your device to the people around you.</p>
+        <p data-i18n-html="faq.3a2">An attacker who can pressure, impersonate or simply out-wait your guardians is
            through. NextKey therefore requires both a guardian quorum and a proof that a
            unique, living human is asking, and starts the waiting period when the quorum is
            reached rather than when the request was filed — otherwise an attacker files
@@ -306,17 +421,17 @@
       </details>
 
       <details>
-        <summary>Can I share a password without both of us using the same password manager?</summary>
-        <p>Yes. The recipient needs an ENS name and a published key, not an account with us.</p>
-        <p>That is the point of addressing people by name rather than by an identifier
+        <summary data-i18n="faq.4q">Can I share a password without both of us using the same password manager?</summary>
+        <p data-i18n-html="faq.4a1">Yes. The recipient needs an ENS name and a published key, not an account with us.</p>
+        <p data-i18n-html="faq.4a2">That is the point of addressing people by name rather than by an identifier
            inside one company's product.</p>
       </details>
 
       <details>
-        <summary>Does NextKey ever see my secrets?</summary>
-        <p>No. Secrets are encrypted before they leave your machine, and we hold no key that
+        <summary data-i18n="faq.5q">Does NextKey ever see my secrets?</summary>
+        <p data-i18n-html="faq.5a1">No. Secrets are encrypted before they leave your machine, and we hold no key that
            could open them.</p>
-        <p>This is worth stating precisely, because the phrase is often used loosely. The
+        <p data-i18n-html="faq.5a2">This is worth stating precisely, because the phrase is often used loosely. The
            record on chain is public and anyone can read the ciphertext — that is fine,
            because it is useless without a key. The owner reaches their own secret through
            exactly the same grant mechanism as any other recipient. There is no
@@ -325,18 +440,18 @@
       </details>
 
       <details>
-        <summary>What is an ENS name and do I need one?</summary>
-        <p>An ENS name is a readable name that points at things on Ethereum — like
+        <summary data-i18n="faq.6q">What is an ENS name and do I need one?</summary>
+        <p data-i18n-html="faq.6a1">An ENS name is a readable name that points at things on Ethereum — like
            <span class="mono">anna.eth</span> instead of a long hex address.</p>
-        <p>To receive a secret you need one, plus a published key. To store and share
+        <p data-i18n-html="faq.6a2">To receive a secret you need one, plus a published key. To store and share
            secrets you need one too. NextKey uses ENS for more than readability: the
            permissions themselves live there, so they outlive us.</p>
       </details>
 
       <details>
-        <summary>Is this ready to use with real funds?</summary>
-        <p>No. Do not put a seed phrase you actually rely on into it.</p>
-        <p>NextKey is a prototype built during a hackathon. It runs against an ENSv2 beta
+        <summary data-i18n="faq.7q">Is this ready to use with real funds?</summary>
+        <p data-i18n-html="faq.7a1">No. Do not put a seed phrase you actually rely on into it.</p>
+        <p data-i18n-html="faq.7a2">NextKey is a prototype built during a hackathon. It runs against an ENSv2 beta
            deployment on a test network, it has not been audited, and parts of it — the
            guardian layer in particular — are demonstrated rather than finished.</p>
       </details>
@@ -347,8 +462,8 @@
   <!-- 7 — Status -->
   <section>
     <div class="status">
-      <strong>Status: prototype.</strong>
-      <p>NextKey was built during ETHGlobal ETHOnline 2026 and runs on the ENSv2 beta on
+      <strong data-i18n="stat.h">Status: prototype.</strong>
+      <p data-i18n="stat.p">NextKey was built during ETHGlobal ETHOnline 2026 and runs on the ENSv2 beta on
          Sepolia testnet. It has not been audited. Do not put a seed phrase you actually
          rely on into it.</p>
     </div>
@@ -358,9 +473,9 @@
 
 <footer class="wrap">
   <a href="https://github.com/4bridges/nextkey">GitHub</a>
-  <a href="./demo.html">Live demo</a>
-  <a href="https://github.com/4bridges/nextkey/blob/main/LICENSE">MIT License</a>
-  <a href="mailto:hello@4bridges.ch">Contact</a>
+  <a href="./demo.html" data-i18n="foot.demo">Live demo</a>
+  <a href="https://github.com/4bridges/nextkey/blob/main/LICENSE" data-i18n="foot.lic">MIT License</a>
+  <a href="mailto:hello@4bridges.ch" data-i18n="foot.contact">Contact</a>
 </footer>
 
 <script type="application/ld+json">
@@ -392,5 +507,101 @@
 }
 </script>
 
+
+<script src="./i18n.js"></script>
+<script>
+/**
+ * Translation is applied over the page, not baked into it.
+ *
+ * English lives in the HTML itself, so the page is complete and readable
+ * before a single line of script runs — which is the promise made in the
+ * planning notes and the reason a JS failure degrades to "English" rather
+ * than to "blank". The other nine languages are an overlay.
+ *
+ * The English baseline is snapshotted from the DOM on load rather than
+ * repeated in i18n.js. Two copies of the same sentence drift apart, and the
+ * one that drifts is always the one nobody is looking at.
+ */
+(function () {
+  var CODES = ['en','de','fr','it','es','pt','cn','ua','ru','fa']
+  var TAGS  = { en:'en', de:'de', fr:'fr', it:'it', es:'es', pt:'pt',
+                cn:'zh-Hans', ua:'uk', ru:'ru', fa:'fa' }
+  var RTL   = { fa: true }
+
+  var nodes = document.querySelectorAll('[data-i18n], [data-i18n-html]')
+  var base = {}
+  nodes.forEach(function (el) {
+    var html = el.hasAttribute('data-i18n-html')
+    var key = el.getAttribute(html ? 'data-i18n-html' : 'data-i18n')
+    // Collapse the whitespace the source is indented with, so a translated
+    // string and an original one are laid out the same way.
+    base[key] = (html ? el.innerHTML : el.textContent).replace(/\s+/g, ' ').trim()
+  })
+
+  var META = document.querySelector('meta[name="description"]')
+  base['meta.title'] = document.title
+  base['meta.desc'] = META ? META.getAttribute('content') : ''
+
+  function store(k, v) { try { localStorage.setItem(k, v) } catch (e) {} }
+  function recall(k) { try { return localStorage.getItem(k) } catch (e) { return null } }
+
+  function apply(code) {
+    var dict = code === 'en' ? {} : (window.I18N && window.I18N[code]) || {}
+    var pick = function (key) {
+      // Fall back to English per string, not per page: a missing translation
+      // should cost one sentence, not the whole document.
+      return Object.prototype.hasOwnProperty.call(dict, key) ? dict[key] : base[key]
+    }
+
+    nodes.forEach(function (el) {
+      var html = el.hasAttribute('data-i18n-html')
+      var key = el.getAttribute(html ? 'data-i18n-html' : 'data-i18n')
+      var v = pick(key)
+      if (v == null) return
+      if (html) el.innerHTML = v; else el.textContent = v
+    })
+
+    document.title = pick('meta.title')
+    if (META) META.setAttribute('content', pick('meta.desc'))
+
+    var root = document.documentElement
+    root.setAttribute('lang', TAGS[code] || 'en')
+    if (RTL[code]) root.setAttribute('dir', 'rtl'); else root.removeAttribute('dir')
+  }
+
+  function normalise(v) {
+    if (!v) return null
+    v = String(v).toLowerCase()
+    if (CODES.indexOf(v) !== -1) return v
+    var m = { zh: 'cn', 'zh-cn': 'cn', 'zh-hans': 'cn', uk: 'ua', fa: 'fa',
+              'pt-br': 'pt', 'pt-pt': 'pt' }
+    if (m[v]) return m[v]
+    var short = v.split('-')[0]
+    return CODES.indexOf(short) !== -1 ? short : (m[short] || null)
+  }
+
+  var url = new URLSearchParams(location.search)
+  var chosen = normalise(url.get('lang'))
+           || normalise(recall('nextkey.lang'))
+           || normalise(navigator.language)
+           || 'en'
+
+  var select = document.getElementById('lang')
+  select.value = chosen
+  apply(chosen)
+
+  select.addEventListener('change', function () {
+    var code = select.value
+    apply(code)
+    store('nextkey.lang', code)
+    // Give every language a shareable address. The page is one file, so this
+    // is a rewritten query string rather than a navigation.
+    var q = new URLSearchParams(location.search)
+    if (code === 'en') q.delete('lang'); else q.set('lang', code)
+    var s = q.toString()
+    history.replaceState(null, '', location.pathname + (s ? '?' + s : ''))
+  })
+})()
+</script>
 </body>
 </html>
