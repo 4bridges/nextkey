@@ -51,6 +51,29 @@ The Node template's `.gitignore` contains `*.log`, which silently swallowed `evi
 
 ---
 
+## 2026-09-05 (later) — `nextkey.eth` registered, registry deployed
+
+**Registered directly against the `ETHRegistrar`, not through the manager app.**
+The app's chain-abstraction layer refused to quote for two days. Working at the contract level took forty minutes: `getRegisterPrice` → `approve` MockUSDC → `commit` → wait 60s → `register`. It worked first try, and the price oracle answered normally — which confirms the failure was confined to the HCA layer and never involved our wallet.
+
+This was not a detour. Subnames, role grants and expiries all have to happen at the contract level anyway; the manager app could never have done them for us. We only brought the work forward.
+
+`nextkey.eth` is owned by `0x9780aFE8…dd0b`, registered for one year.
+
+**Own UserRegistry deployed** at `0x612034AB34Ec262d5417EA3163718E7455157908` via the VerifiableFactory. Salt is deterministic — `keccak256(keccak256("UserRegistry"), namehash("nextkey.eth"), 0)` — so redeploying requires bumping the version or the CREATE2 address collides.
+
+**Two documentation defects cost most of the time, and both are in `FEEDBACK-ENS.md`.**
+
+`USER_REGISTRY_IMPL` is named in the tutorial but absent from the deployments table. Recovered by reading `ProxyDeployed` events off the factory and taking the one implementation being proxied that was not the resolver: `0x47B442d0…72546`.
+
+The documented initializer `initialize(address, uint256)` is out of date; the implementation expects `initialize((address,uint256)[])` — an array of account/roleBitmap pairs. This fails in the worst possible way: a proxy delegatecalling a non-existent function reverts with *empty* data, so Etherscan shows `Execution reverted 0x` and nothing more. Found by decoding a deployment that had worked and comparing selectors.
+
+Worth keeping: the real signature is better than the documented one. Assigning several accounts different roles at deployment time is exactly NextKey's model.
+
+**A tooling note.** The RPC endpoint viem picks for Sepolia by default refuses `getLogs` ranges of 9,000 blocks, and our first event scanner reported "no events found" when in fact all 45 requests had been rejected — a scanner that cannot distinguish absence from failure is worse than no scanner. Rewritten to halve its range on refusal and to report how many were refused. `ethereum-sepolia-rpc.publicnode.com` is the better endpoint.
+
+---
+
 ## Template for further entries
 
 ```

@@ -70,7 +70,20 @@ This project builds against the dedicated ENSv2 hackathon deployment on Sepolia,
 | DNSSECGatewayProvider | `0xfedb5c2fea17cef8547d534c3125f7601d3e30bd` |
 | DefaultReverseRegistrarAdapter | `0x0a8d7ed4061548fb3cb192d0cbe9e1a57b3b1ae9` |
 
-<!-- TODO: add our own UserRegistry + Permissioned Resolver addresses once deployed -->
+### NextKey's own contracts on this deployment
+
+| What | Address / value |
+|---|---|
+| `nextkey.eth` owner | `0x9780aFE81EF5b58333c83e05d5C07797BD81dd0B` |
+| NextKey UserRegistry | [`0x612034AB34Ec262d5417EA3163718E7455157908`](https://sepolia.etherscan.io/address/0x612034AB34Ec262d5417EA3163718E7455157908) |
+| Registry deployment tx | [`0xb6b94e4f…924749`](https://sepolia.etherscan.io/tx/0xb6b94e4f5675cb8273960482e3926ee6523d3f4baa1e03b266d6f6a699924749) |
+| Registry implementation | `0x47B442d0CF617c41CAbAFf5f02f44DD1e5f72546` |
+
+The registry proxy address is deterministic: its salt is `keccak256(keccak256("UserRegistry"), namehash("nextkey.eth"), version)` with version `0`. Redeploying requires bumping the version, or the CREATE2 address collides.
+
+`nextkey.eth` was registered directly against the `ETHRegistrar` rather than through the manager app — see [`FEEDBACK-ENS.md`](./FEEDBACK-ENS.md) for why, and `scripts/register-name.mjs` for how.
+
+<!-- TODO: add the Permissioned Resolver proxy address once deployed -->
 
 **Important:** viem and ethers ship with a built-in Universal Resolver address. It must be overridden once, or resolution silently hits the wrong deployment:
 
@@ -180,6 +193,7 @@ This project is submitted to three partner prizes:
 - [`docs/decisions.md`](./docs/decisions.md) — dated decision log kept during the build
 - [`AI_USAGE.md`](./AI_USAGE.md) — AI tool usage disclosure
 - [`FEEDBACK-WORLD.md`](./FEEDBACK-WORLD.md) — developer experience feedback for World
+- [`FEEDBACK-ENS.md`](./FEEDBACK-ENS.md) — developer experience feedback for ENS
 - [`evidence/`](./evidence) — sponsor qualification evidence
 
 `docs/architecture.md` follows once the data model is settled.
