@@ -11,8 +11,9 @@
  *
  *   Access is a grant. Sharing with anna.eth wraps the content key to Anna's
  *   X25519 public key — read from *her* `nextkey.pubkey` record, so she never
- *   registers with us — and writes it to `nextkey.grant.anna`. Only Anna can
- *   unwrap it.
+ *   registers with us — and writes it to `nextkey.grant.<fingerprint of that
+ *   key>`. Addressed by the key rather than the name, because names move and
+ *   the key that opens a grant does not. Only Anna can unwrap it.
  *
  *   Revocation is a delete, and ENS enforces who may perform it. Clearing that
  *   grant record requires the setter role on the name. Not our server's opinion:
@@ -25,6 +26,7 @@
  *   share   visa alice anna.eth          wrap the content key for anna.eth
  *   open    visa anna                    decrypt, as anna
  *   revoke  visa anna.eth                clear that one grant
+ *   clear   visa nextkey.grant.abc123    empty one record outright
  */
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs'
@@ -170,6 +172,7 @@ const usage = () => {
   nextkey.mjs share   <label> <identity> <recipient.eth>
   nextkey.mjs open    <label> <identity>
   nextkey.mjs revoke  <label> <recipient.eth>
+  nextkey.mjs clear   <label> <record key>
 `)
 }
 
@@ -264,6 +267,52 @@ else if (cmd === 'revoke') {
   console.log(`\n  Note what this does and does not do. Anyone who already decrypted
   the secret still knows it — no system can retract knowledge. What ends is
   future access, and who may end it is enforced by the setter role on the name.\n`)
+}
+
+else if (cmd === 'clear') {
+  /**
+   * Clear one record outright.
+   *
+   * `revoke` is the product operation: it takes a recipient, resolves their
+   * name to the key they publish, and clears the grant addressed to it. This is
+   * the janitorial one — it takes a raw record key and empties it, which is what
+   * you need for records no recipient corresponds to any more. Ours came from
+   * changing how grants are addressed: `nextkey.grant.alice` and
+   * `nextkey.grant.anna.nextkey` are leftovers from the name-based scheme, and
+   * they wrap a content key that a later `store` replaced. They open nothing,
+   * but they are confusing to anyone reading the name in an explorer, and a
+   * confusing record on a page that exists to be inspected is a real cost.
+   *
+   *   nextkey.mjs clear <label> <record key>
+   */
+  const [label, key] = rest
+  if (!label || !key) { usage(); process.exit(1) }
+
+  // The ciphertext is not litter. Clearing it destroys the secret for every
+  // recipient at once, and there is no undo — so it is not something a cleanup
+  // command should do because an argument was mistyped.
+  if (key === RECORD_SECRET && !rest.includes('--yes-destroy-the-secret')) {
+    console.error(`
+  Refusing to clear ${RECORD_SECRET} on ${label}.${PARENT}.
+
+  That record holds the ciphertext. Emptying it does not revoke access — it
+  destroys the secret for everyone, including you, and no grant will open
+  anything afterwards. If that is genuinely what you want, repeat the command
+  with --yes-destroy-the-secret.
+`)
+    process.exit(1)
+  }
+
+  const current = await readRecord(`${label}.${PARENT}`, key)
+  console.log(`\n  ${label}.${PARENT} · ${key}`)
+  if (!current) {
+    console.log(`  already empty — nothing to do\n`)
+    process.exit(0)
+  }
+  console.log(`  currently   ${current.length} characters`)
+  console.log(`  clearing`)
+  await setRecord(label, key, '')
+  console.log()
 }
 
 else usage()
