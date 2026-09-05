@@ -87,20 +87,42 @@
     display:flex;justify-content:flex-end;align-items:center;gap:.5rem;
     padding:.65rem 0 .55rem;border-bottom:1px solid transparent
   }
-  .topbar label{font-size:.88rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-  .topbar select{
+  .topbar span.lbl{font-size:.88rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  /* A native <select> hands the phone's own full-width picker to the user.
+     Ten two-letter codes do not need a sheet covering the screen, so this is
+     a small menu anchored to its button — two columns, five rows, no taller
+     than it has to be. */
+  .langpick{position:relative}
+  .langbtn{
     font:inherit;font-size:.9rem;font-weight:640;letter-spacing:.03em;
     color:var(--ink);background:var(--surface);
     border:1px solid var(--line);border-radius:6px;
-    padding:.32rem 1.7rem .32rem .6rem;cursor:pointer;
-    appearance:none;
-    background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),
-                     linear-gradient(135deg,currentColor 50%,transparent 50%);
-    background-position:calc(100% - 15px) 55%, calc(100% - 10px) 55%;
-    background-size:5px 5px,5px 5px;background-repeat:no-repeat
+    padding:.34rem .6rem;cursor:pointer;
+    display:inline-flex;align-items:center;gap:.4rem
   }
-  .topbar select:hover{border-color:var(--muted)}
-  .topbar select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .langbtn:hover{border-color:var(--muted)}
+  .langbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .langbtn .caret{
+    width:0;height:0;border:4px solid transparent;border-top-color:currentColor;
+    translate:0 2px;opacity:.65
+  }
+  .langbtn[aria-expanded="true"] .caret{rotate:180deg;translate:0 -2px}
+  .langmenu{
+    position:absolute;top:calc(100% + .35rem);inset-inline-end:0;z-index:20;
+    background:var(--surface);border:1px solid var(--line);border-radius:8px;
+    padding:.3rem;width:max-content;
+    display:grid;grid-template-columns:repeat(2,1fr);gap:.15rem;
+    box-shadow:0 6px 24px rgba(0,0,0,.13)
+  }
+  .langmenu[hidden]{display:none}
+  .langmenu button{
+    font:inherit;font-size:.92rem;font-weight:640;letter-spacing:.03em;
+    color:var(--ink);background:none;border:0;border-radius:5px;
+    padding:.42rem .75rem;cursor:pointer;text-align:center
+  }
+  .langmenu button:hover{background:var(--code)}
+  .langmenu button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+  .langmenu button[aria-current="true"]{background:var(--accent);color:var(--accent-ink)}
   /* Right-to-left. Persian is the reason; everything mirrored is layout, not
      content, so only direction and a few text alignments change. */
   [dir="rtl"] .topbar{justify-content:flex-start}
@@ -199,14 +221,24 @@
 <main class="wrap">
 
   <div class="topbar">
-    <label for="lang" data-i18n="ui.lang">Language</label>
-    <select id="lang" aria-label="Language / Sprache">
-      <option value="en">EN</option><option value="de">DE</option>
-      <option value="fr">FR</option><option value="it">IT</option>
-      <option value="es">ES</option><option value="pt">PT</option>
-      <option value="cn">CN</option><option value="ua">UA</option>
-      <option value="ru">RU</option><option value="fa">FA</option>
-    </select>
+    <span class="lbl" id="lang-label" data-i18n="ui.lang">Language</span>
+    <div class="langpick">
+      <button class="langbtn" id="langbtn" type="button"
+              aria-haspopup="listbox" aria-expanded="false"
+              aria-labelledby="lang-label langbtn">EN<span class="caret"></span></button>
+      <div class="langmenu" id="langmenu" role="listbox" aria-labelledby="lang-label" hidden>
+        <button type="button" role="option" data-code="en">EN</button>
+        <button type="button" role="option" data-code="de">DE</button>
+        <button type="button" role="option" data-code="fr">FR</button>
+        <button type="button" role="option" data-code="it">IT</button>
+        <button type="button" role="option" data-code="es">ES</button>
+        <button type="button" role="option" data-code="pt">PT</button>
+        <button type="button" role="option" data-code="cn">CN</button>
+        <button type="button" role="option" data-code="ua">UA</button>
+        <button type="button" role="option" data-code="ru">RU</button>
+        <button type="button" role="option" data-code="fa">FA</button>
+      </div>
+    </div>
   </div>
 
   <!-- 1 — Hero -->
@@ -586,21 +618,85 @@
            || normalise(navigator.language)
            || 'en'
 
-  var select = document.getElementById('lang')
-  select.value = chosen
-  apply(chosen)
+  // ── The picker ──────────────────────────────────────────────────────────
+  // A custom menu rather than a <select>, because a phone answers a <select>
+  // with its own full-width sheet, and ten two-letter codes do not warrant
+  // covering the screen. The cost is that keyboard behaviour has to be
+  // written out by hand; it is below, and it is the reason this is not
+  // simply a div with a click handler.
+  var btn = document.getElementById('langbtn')
+  var menu = document.getElementById('langmenu')
+  var opts = Array.prototype.slice.call(menu.querySelectorAll('[data-code]'))
 
-  select.addEventListener('change', function () {
-    var code = select.value
+  function mark(code) {
+    btn.firstChild.nodeValue = code.toUpperCase()
+    opts.forEach(function (o) {
+      var on = o.dataset.code === code
+      o.setAttribute('aria-current', on ? 'true' : 'false')
+      o.setAttribute('aria-selected', on ? 'true' : 'false')
+    })
+  }
+
+  function open() {
+    menu.hidden = false
+    btn.setAttribute('aria-expanded', 'true')
+    var cur = opts.filter(function (o) { return o.getAttribute('aria-current') === 'true' })[0]
+    ;(cur || opts[0]).focus()
+  }
+  function close(refocus) {
+    menu.hidden = true
+    btn.setAttribute('aria-expanded', 'false')
+    if (refocus) btn.focus()
+  }
+
+  function choose(code) {
     apply(code)
+    mark(code)
     store('nextkey.lang', code)
     // Give every language a shareable address. The page is one file, so this
     // is a rewritten query string rather than a navigation.
     var q = new URLSearchParams(location.search)
     if (code === 'en') q.delete('lang'); else q.set('lang', code)
-    var s = q.toString()
-    history.replaceState(null, '', location.pathname + (s ? '?' + s : ''))
+    var qs = q.toString()
+    history.replaceState(null, '', location.pathname + (qs ? '?' + qs : ''))
+    close(true)
+  }
+
+  btn.addEventListener('click', function () { menu.hidden ? open() : close(false) })
+
+  opts.forEach(function (o, i) {
+    o.addEventListener('click', function () { choose(o.dataset.code) })
+    o.addEventListener('keydown', function (e) {
+      // Two columns, so left and right step by one and up and down by two.
+      var step = { ArrowDown: 2, ArrowUp: -2, ArrowRight: 1, ArrowLeft: -1 }[e.key]
+      if (step) {
+        e.preventDefault()
+        var n = (i + step + opts.length) % opts.length
+        opts[n].focus()
+      } else if (e.key === 'Escape') {
+        e.preventDefault(); close(true)
+      } else if (e.key === 'Home') {
+        e.preventDefault(); opts[0].focus()
+      } else if (e.key === 'End') {
+        e.preventDefault(); opts[opts.length - 1].focus()
+      }
+    })
   })
+
+  btn.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); open() }
+    else if (e.key === 'Escape') close(false)
+  })
+
+  document.addEventListener('click', function (e) {
+    if (!menu.hidden && !menu.contains(e.target) && e.target !== btn) close(false)
+  })
+  document.addEventListener('focusin', function (e) {
+    if (!menu.hidden && !menu.contains(e.target) && e.target !== btn) close(false)
+  })
+
+  apply(chosen)
+  mark(chosen)
 })()
 </script>
 </body>
