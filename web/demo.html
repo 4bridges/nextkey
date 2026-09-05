@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NextKey — read live from Sepolia</title>
+<meta name="description" content="A secret, its grants and an agent's release proposal, read live from the ENSv2 hackathon deployment on Sepolia.">
+<meta name="robots" content="noindex">
+<style>
+  :root{
+    color-scheme: light dark;
+    --bg:#faf9f7; --surface:#fff; --ink:#1a1a19; --muted:#6b6862;
+    --line:#e5e2dc; --accent:#9a5218; --accent-ink:#fff; --code:#f3f1ec;
+    --ok:#1f6f43; --bad:#9c2b2b;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#131311; --surface:#1b1b18; --ink:#eceae6; --muted:#9a968d;
+      --line:#2c2c27; --accent:#e2954a; --accent-ink:#131311; --code:#201f1c;
+      --ok:#6fbf8e; --bad:#e08585;
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.6 ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  .mono,pre,code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace}
+  a{color:var(--accent)}
+  .wrap{max-width:62rem;margin:0 auto;padding:0 1.5rem}
+  header{padding:3rem 0 2rem;border-bottom:1px solid var(--line)}
+  .eyebrow{font-size:.76rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:640;margin:0 0 .9rem}
+  h1{font-size:clamp(1.7rem,4vw,2.4rem);font-weight:640;letter-spacing:-.015em;margin:0 0 .7rem;max-width:20ch}
+  .lead{color:var(--muted);max-width:42rem;margin:0 0 1rem}
+  .meta{font-size:.84rem;color:var(--muted);margin:0}
+  .back{display:inline-block;margin-bottom:1.6rem;font-size:.9rem;text-decoration:none}
+  .grid{display:grid;gap:1.4rem;grid-template-columns:repeat(auto-fit,minmax(21rem,1fr));padding:2.4rem 0}
+  .panel{
+    border:1px solid var(--line);border-radius:10px;background:var(--surface);
+    padding:1.4rem 1.5rem;min-width:0
+  }
+  .panel h2{font-size:1.05rem;font-weight:640;margin:0 0 .25rem;letter-spacing:-.01em}
+  .panel .what{font-size:.88rem;color:var(--muted);margin:0 0 1rem}
+  .body[data-state="loading"]::before{content:"reading the chain…";color:var(--muted);font-size:.9rem}
+  dl{display:grid;grid-template-columns:auto 1fr;gap:.3rem .9rem;margin:0 0 .9rem;font-size:.87rem}
+  dt{color:var(--muted);white-space:nowrap}
+  dd{margin:0;min-width:0;overflow-wrap:anywhere}
+  .break{overflow-wrap:anywhere}
+  pre{
+    background:var(--code);border-radius:7px;padding:.8rem .9rem;margin:0 0 .9rem;
+    font-size:.8rem;line-height:1.5;overflow-x:auto;white-space:pre-wrap;overflow-wrap:anywhere
+  }
+  .note{font-size:.85rem;color:var(--muted);margin:.6rem 0 0}
+  .found{color:var(--ok);font-size:.9rem;font-weight:600;margin:0 0 .6rem}
+  .err{color:var(--bad);font-size:.9rem;margin:0 0 .3rem}
+  .err-detail{font-size:.78rem;color:var(--muted);margin:0}
+  .fallback{
+    border:1px solid var(--accent);border-radius:9px;padding:1.2rem 1.4rem;
+    max-width:44rem;margin:2rem 0;background:var(--surface)
+  }
+  footer{border-top:1px solid var(--line);padding:2rem 0 3rem;color:var(--muted);font-size:.87rem}
+  footer p{max-width:44rem}
+  footer a{margin-right:1.1rem}
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <a class="back" href="./index.html">← NextKey</a>
+  <p class="eyebrow">Live from the chain</p>
+  <h1>A secret, its grants, and an agent asking to release it</h1>
+  <p class="lead">
+    Every value below is read from the ENSv2 hackathon deployment on Sepolia when this
+    page loads. Nothing is cached or replayed. Read-only — no wallet, no signing.
+  </p>
+  <p class="meta">Read at <span id="read-at">—</span> · Universal Resolver
+    <span class="mono">0xd26f2040…faf142</span></p>
+</header>
+
+<main class="wrap">
+
+  <noscript>
+    <div class="fallback">
+      <p><strong>This page reads the chain with JavaScript, which is switched off.</strong></p>
+      <p>The same values are readable without it. Open
+        <a href="https://hackathon-deployment-portal-app.ens-cf.workers.dev/">the ENS explorer</a>
+        and look up <span class="mono">visa.nextkey.eth</span>,
+        <span class="mono">anna.nextkey.eth</span> and
+        <span class="mono">agent.nextkey.eth</span> — or read
+        <a href="https://github.com/4bridges/nextkey#readme">the README</a>, which explains
+        what each record is for.</p>
+    </div>
+  </noscript>
+
+  <div class="grid">
+
+    <section class="panel">
+      <h2>The secret</h2>
+      <p class="what"><span class="mono">visa.nextkey.eth</span> · <span class="mono">nextkey.secret</span></p>
+      <div class="body" id="p-secret" data-state="loading"></div>
+    </section>
+
+    <section class="panel">
+      <h2>The recipient</h2>
+      <p class="what"><span class="mono">anna.nextkey.eth</span> · her key, and the grant it addresses</p>
+      <div class="body" id="p-recipient" data-state="loading"></div>
+    </section>
+
+    <section class="panel">
+      <h2>The owner</h2>
+      <p class="what"><span class="mono">visa.nextkey.eth</span> · the owner's own grant</p>
+      <div class="body" id="p-owner" data-state="loading"></div>
+    </section>
+
+    <section class="panel">
+      <h2>The agent's proposal</h2>
+      <p class="what"><span class="mono">agent.nextkey.eth</span> · <span class="mono">nextkey.request</span>, hashed here</p>
+      <div class="body" id="p-agent" data-state="loading"></div>
+    </section>
+
+  </div>
+
+  <div class="fallback">
+    <p><strong>What you cannot see here, and why that is the point.</strong></p>
+    <p>The plaintext. Opening the secret needs a private key that lives on a recipient's
+       own machine and is never published, so no web page can do it for you — including
+       this one. What is on display is the whole public surface of a shared secret: the
+       ciphertext, who has been granted access, and the request an agent filed to release
+       it. That surface reveals that something was shared. It does not reveal what.</p>
+    <p>The guardian approvals behind the agent's request are also absent, and deliberately:
+       they are evaluated inside a confidential enclave. A public guardian list is a target
+       list.</p>
+  </div>
+</main>
+
+<footer class="wrap">
+  <p>Prototype · ENSv2 beta on Sepolia testnet · not audited. The seed phrase behind this
+     ciphertext was generated for the demonstration and guards nothing.</p>
+  <p>
+    <a href="./index.html">About NextKey</a>
+    <a href="https://github.com/4bridges/nextkey">Source</a>
+    <a href="https://hackathon-deployment-portal-app.ens-cf.workers.dev/">ENS explorer</a>
+  </p>
+</footer>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>

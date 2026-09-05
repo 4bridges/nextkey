@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NextKey — hand over secrets by ENS name</title>
+<meta name="description" content="Share a seed phrase or credential with someone by their ENS name. Access ends when you say. Recovery proves a living human, not a backup file.">
+<link rel="canonical" href="https://nextkey.li/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="NextKey — hand over secrets by ENS name">
+<meta property="og:description" content="Share a seed phrase or credential with someone by their ENS name. Access ends when you say. Recovery proves a living human, not a backup file.">
+<meta property="og:url" content="https://nextkey.li/">
+<meta name="twitter:card" content="summary">
+<style>
+  :root{
+    color-scheme: light dark;
+    --bg:#faf9f7; --surface:#fff; --ink:#1a1a19; --muted:#6b6862;
+    --line:#e5e2dc; --accent:#9a5218; --accent-ink:#fff; --code:#f3f1ec;
+    --measure:34rem;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#131311; --surface:#1b1b18; --ink:#eceae6; --muted:#9a968d;
+      --line:#2c2c27; --accent:#e2954a; --accent-ink:#131311; --code:#201f1c;
+    }
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font:16px/1.65 ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-feature-settings:"kern","liga";
+  }
+  code,pre,.mono{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace}
+  a{color:inherit}
+  .wrap{max-width:62rem;margin:0 auto;padding:0 1.5rem}
+  section{padding:4.5rem 0;border-top:1px solid var(--line)}
+  section:first-of-type{border-top:0}
+  h1,h2,h3{line-height:1.25;letter-spacing:-.015em;margin:0 0 .8rem}
+  h1{font-size:clamp(2rem,5.2vw,3.1rem);font-weight:640;max-width:18ch}
+  h2{font-size:1.45rem;font-weight:620;margin-bottom:1.6rem}
+  h3{font-size:1.02rem;font-weight:640;margin-bottom:.3rem}
+  p{margin:0 0 1rem;max-width:var(--measure)}
+  .lead{font-size:1.12rem;color:var(--muted);max-width:40rem}
+  .eyebrow{
+    font-size:.76rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent);font-weight:640;margin:0 0 1.1rem
+  }
+  /* Hero */
+  .hero{padding:4.5rem 0 3.5rem}
+  .actions{display:flex;flex-wrap:wrap;gap:.7rem;margin:2rem 0 1.1rem}
+  .btn{
+    display:inline-block;padding:.72rem 1.35rem;border-radius:7px;
+    text-decoration:none;font-weight:600;font-size:.97rem;border:1px solid transparent
+  }
+  .btn-primary{background:var(--accent);color:var(--accent-ink)}
+  .btn-primary:hover{filter:brightness(1.08)}
+  .btn-quiet{border-color:var(--line);color:var(--muted)}
+  .btn-quiet:hover{color:var(--ink);border-color:var(--muted)}
+  .provenance{font-size:.84rem;color:var(--muted);margin:0}
+  /* The one picture the page gets: the handover itself. */
+  .handover{margin:3rem 0 0;max-width:56rem}
+  .handover svg{width:100%;height:auto;display:block;color:var(--muted)}
+  .handover figcaption{font-size:.85rem;color:var(--muted);margin-top:.9rem;max-width:40rem}
+  .handover .node{fill:var(--surface);stroke:var(--line);stroke-width:1}
+  .handover .node.accent{stroke:var(--accent)}
+  .handover .seal{fill:var(--code);stroke:none}
+  .handover .wire{stroke:var(--line);stroke-width:1.5}
+  .handover .gate{stroke:var(--accent);stroke-width:2;stroke-dasharray:4 4}
+  .handover text{fill:var(--ink);font-size:14px;text-anchor:middle;
+    font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .handover .nm{font-size:15px;font-weight:640;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .handover .sub,.handover .seal-s,.handover .cond-s{fill:var(--muted);font-size:12px}
+  .handover .seal-t{font-size:12.5px}
+  .handover .cond{fill:var(--accent);font-size:12.5px;font-weight:640}
+  /* Steps */
+  ol.steps{list-style:none;counter-reset:s;padding:0;margin:0;max-width:44rem}
+  ol.steps li{
+    counter-increment:s;position:relative;padding:0 0 1.6rem 3.1rem;
+  }
+  ol.steps li::before{
+    content:counter(s);position:absolute;left:0;top:-.1rem;
+    width:2rem;height:2rem;border-radius:50%;
+    border:1px solid var(--line);background:var(--surface);
+    display:grid;place-items:center;
+    font-size:.85rem;font-weight:640;color:var(--muted)
+  }
+  ol.steps p{margin:.15rem 0 0;color:var(--muted)}
+  /* Cards */
+  .cards{display:grid;gap:1.6rem;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));max-width:58rem}
+  .card p{color:var(--muted);margin:.2rem 0 0}
+  .card .mono{font-size:.86rem}
+  /* FAQ */
+  .faq{max-width:44rem}
+  .faq details{border-top:1px solid var(--line);padding:1rem 0}
+  .faq details:last-child{border-bottom:1px solid var(--line)}
+  .faq summary{cursor:pointer;font-weight:620;list-style:none}
+  .faq summary::-webkit-details-marker{display:none}
+  .faq summary::after{content:"+";float:right;color:var(--muted);font-weight:400}
+  .faq details[open] summary::after{content:"–"}
+  .faq p{margin:.7rem 0 0;color:var(--muted)}
+  .faq p:first-of-type{color:var(--ink)}
+  /* Status */
+  .status{
+    border:1px solid var(--accent);border-radius:9px;
+    padding:1.4rem 1.5rem;max-width:44rem;background:var(--surface)
+  }
+  .status strong{display:block;margin-bottom:.3rem}
+  .status p{margin:0;color:var(--muted)}
+  footer{border-top:1px solid var(--line);padding:2.2rem 0 3.5rem;color:var(--muted);font-size:.9rem}
+  footer a{margin-right:1.2rem;display:inline-block}
+  kbd,.k{background:var(--code);border-radius:4px;padding:.1em .38em;font-size:.9em}
+</style>
+</head>
+<body>
+
+<main class="wrap">
+
+  <!-- 1 — Hero -->
+  <section class="hero">
+    <p class="eyebrow">NextKey</p>
+    <h1>Hand over a seed phrase without handing over control</h1>
+    <p class="lead">
+      NextKey shares secrets by ENS name, releases them by rules, and restores access
+      with proof of humanness. A human is involved. No human is in control.
+    </p>
+    <div class="actions">
+      <a class="btn btn-primary" href="./demo.html">Open the demo</a>
+      <a class="btn btn-quiet" href="https://github.com/4bridges/nextkey">View on GitHub</a>
+    </div>
+    <p class="provenance">Prototype · ENSv2 on Sepolia testnet · Built at ETHGlobal ETHOnline 2026</p>
+
+    <figure class="handover">
+      <svg viewBox="0 0 880 176" role="img" aria-labelledby="hv-t hv-d">
+        <title id="hv-t">How a secret passes from one name to another</title>
+        <desc id="hv-d">A sealed secret held under alice.eth passes through a condition —
+          a guardian quorum and a waiting period — to anna.eth, who opens it with a key
+          only she holds.</desc>
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5"
+                  markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0 0 L10 5 L0 10 z" fill="currentColor"/>
+          </marker>
+        </defs>
+
+        <!-- sender -->
+        <rect class="node" x="1" y="46" width="176" height="84" rx="9"/>
+        <text class="nm" x="89" y="80">alice.eth</text>
+        <text class="sub" x="89" y="102">holds the secret</text>
+
+        <!-- sealed payload travelling -->
+        <line class="wire" x1="177" y1="88" x2="330" y2="88"/>
+        <rect class="seal" x="330" y="66" width="220" height="44" rx="8"/>
+        <text class="seal-t" x="440" y="86">ciphertext + wrapped key</text>
+        <text class="seal-s" x="440" y="102">public, and useless alone</text>
+        <line class="wire" x1="550" y1="88" x2="700" y2="88" marker-end="url(#ar)"/>
+
+        <!-- the condition, sitting on the path -->
+        <line class="gate" x1="640" y1="34" x2="640" y2="142"/>
+        <text class="cond" x="640" y="24">quorum · waiting period</text>
+        <text class="cond-s" x="640" y="160">checked in an enclave</text>
+
+        <!-- recipient -->
+        <rect class="node accent" x="703" y="46" width="176" height="84" rx="9"/>
+        <text class="nm" x="791" y="80">anna.eth</text>
+        <text class="sub" x="791" y="102">opens it with her key</text>
+      </svg>
+      <figcaption>
+        The key is wrapped to the public key Anna publishes on her own name. The condition
+        between them is protocol state, not a promise.
+      </figcaption>
+    </figure>
+  </section>
+
+  <!-- 2 — The problem -->
+  <section>
+    <h2>The problem</h2>
+    <p>
+      Today a seed phrase lives on paper in a drawer, in a password manager somebody else
+      operates, or in a message you regret sending. All three fail the same way: the moment
+      someone else needs it, either nobody can get to it, or the wrong person already has.
+    </p>
+    <p>
+      The missing piece was never storage. It was deciding who may open something, and when.
+    </p>
+  </section>
+
+  <!-- 3 — How it works -->
+  <section>
+    <h2>How it works</h2>
+    <ol class="steps">
+      <li>
+        <h3>Place a secret</h3>
+        <p>A seed phrase, a private key, a credential. It is encrypted before it goes
+           anywhere, with a key that never leaves your machine.</p>
+      </li>
+      <li>
+        <h3>Share it with a name</h3>
+        <p><span class="k mono">anna.eth</span>, not <span class="k mono">0x7f3a…</span>.
+           NextKey reads the public key Anna publishes in her own ENS records and wraps
+           this one secret's key to it. She never registered with us.</p>
+      </li>
+      <li>
+        <h3>Anna hears about it</h3>
+        <p>Through whatever channel she declared in her own ENS records — another text
+           record, read the same way.</p>
+      </li>
+      <li>
+        <h3>If she loses everything, she gets back in</h3>
+        <p>Her guardians confirm, and a liveness check proves a unique, living person is
+           asking. No backup file required.</p>
+      </li>
+      <li>
+        <h3>Some releases happen without you</h3>
+        <p>An agent proposes a release when a time lock elapses or you go quiet. It cannot
+           decide one. The condition is evaluated inside a confidential enclave, against
+           rules you wrote yourself.</p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- 4 — What is different -->
+  <section>
+    <h2>What is different</h2>
+    <div class="cards">
+      <div class="card">
+        <h3>Access is a protocol, not our database</h3>
+        <p>Permissions live in an ENSv2 registry you own. Revoke them and they are gone
+           whether or not NextKey still exists. Set an expiry and access ends by itself.</p>
+      </div>
+      <div class="card">
+        <h3>We cannot read your secrets, and that is a property of the code</h3>
+        <p>The owner is a recipient like any other — no master key, no owner-only path.
+           The honest cost is stated rather than hidden: lose your key file and the secret
+           is gone, because there is nobody who could recover it for you.</p>
+      </div>
+      <div class="card">
+        <h3>The agent proposes. It cannot decide</h3>
+        <p>Its ENS role permits one record on one name and nothing else — a boundary
+           enforced by the registry, not by our code being careful. Humans confirm; the
+           process, not a person, decides when that is enough.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 — Under the hood -->
+  <section>
+    <h2>Under the hood</h2>
+    <div class="cards">
+      <div class="card">
+        <h3>ENSv2</h3>
+        <p>Our own subname registry under <span class="mono">nextkey.eth</span>; each secret
+           a subname with a Permissioned Resolver. Confidentiality comes from cryptography —
+           the record holds ciphertext. Control comes from protocol roles: who may write,
+           revoke or delegate, scoped per record.</p>
+      </div>
+      <div class="card">
+        <h3>Chainlink CRE</h3>
+        <p>The release condition — a guardian quorum and a waiting period — is evaluated
+           inside a Confidential Workflow. Only a verdict crosses back out, carrying the
+           hash of the public request so anyone can check which request it judged.</p>
+      </div>
+      <div class="card">
+        <h3>World ID</h3>
+        <p>Selfie Check as a risk signal during recovery, not as a login. It answers
+           whether a unique, living person is asking. The image never leaves the device.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 — FAQ -->
+  <section>
+    <h2>Questions people actually ask</h2>
+    <div class="faq">
+
+      <details>
+        <summary>How do I safely pass on my seed phrase to someone?</summary>
+        <p>Encrypt it to a key only that person holds, and put the ciphertext somewhere you
+           both can reach.</p>
+        <p>NextKey does this by name: you name a recipient, it reads the public key they
+           publish in their own ENS records, and wraps the secret's key to it. Nothing
+           readable ever passes through a message, a document, or our servers — and the
+           recipient does not have to sign up anywhere first.</p>
+      </details>
+
+      <details>
+        <summary>What happens to my crypto if I die or lose access?</summary>
+        <p>Nothing, unless you arranged for it in advance — which is the failure this
+           product exists to address.</p>
+        <p>You can name guardians and a waiting period. If you stop responding, an agent
+           proposes a release; the guardians confirm; the condition is checked in a
+           confidential enclave. You can cancel at any point before it completes, and the
+           waiting period exists so that you can.</p>
+      </details>
+
+      <details>
+        <summary>Is social recovery actually safe?</summary>
+        <p>On its own, no — it moves the attack from your device to the people around you.</p>
+        <p>An attacker who can pressure, impersonate or simply out-wait your guardians is
+           through. NextKey therefore requires both a guardian quorum and a proof that a
+           unique, living human is asking, and starts the waiting period when the quorum is
+           reached rather than when the request was filed — otherwise an attacker files
+           early, lets the window run out quietly, and collects approvals for an instant
+           release.</p>
+      </details>
+
+      <details>
+        <summary>Can I share a password without both of us using the same password manager?</summary>
+        <p>Yes. The recipient needs an ENS name and a published key, not an account with us.</p>
+        <p>That is the point of addressing people by name rather than by an identifier
+           inside one company's product.</p>
+      </details>
+
+      <details>
+        <summary>Does NextKey ever see my secrets?</summary>
+        <p>No. Secrets are encrypted before they leave your machine, and we hold no key that
+           could open them.</p>
+        <p>This is worth stating precisely, because the phrase is often used loosely. The
+           record on chain is public and anyone can read the ciphertext — that is fine,
+           because it is useless without a key. The owner reaches their own secret through
+           exactly the same grant mechanism as any other recipient. There is no
+           administrative path, which also means there is no support ticket that can
+           recover a lost key file.</p>
+      </details>
+
+      <details>
+        <summary>What is an ENS name and do I need one?</summary>
+        <p>An ENS name is a readable name that points at things on Ethereum — like
+           <span class="mono">anna.eth</span> instead of a long hex address.</p>
+        <p>To receive a secret you need one, plus a published key. To store and share
+           secrets you need one too. NextKey uses ENS for more than readability: the
+           permissions themselves live there, so they outlive us.</p>
+      </details>
+
+      <details>
+        <summary>Is this ready to use with real funds?</summary>
+        <p>No. Do not put a seed phrase you actually rely on into it.</p>
+        <p>NextKey is a prototype built during a hackathon. It runs against an ENSv2 beta
+           deployment on a test network, it has not been audited, and parts of it — the
+           guardian layer in particular — are demonstrated rather than finished.</p>
+      </details>
+
+    </div>
+  </section>
+
+  <!-- 7 — Status -->
+  <section>
+    <div class="status">
+      <strong>Status: prototype.</strong>
+      <p>NextKey was built during ETHGlobal ETHOnline 2026 and runs on the ENSv2 beta on
+         Sepolia testnet. It has not been audited. Do not put a seed phrase you actually
+         rely on into it.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="wrap">
+  <a href="https://github.com/4bridges/nextkey">GitHub</a>
+  <a href="./demo.html">Live demo</a>
+  <a href="https://github.com/4bridges/nextkey/blob/main/LICENSE">MIT License</a>
+  <a href="mailto:hello@4bridges.ch">Contact</a>
+</footer>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {"@type":"Question","name":"How do I safely pass on my seed phrase to someone?","acceptedAnswer":{"@type":"Answer","text":"Encrypt it to a key only that person holds, and put the ciphertext somewhere you both can reach. NextKey does this by name: it reads the public key the recipient publishes in their own ENS records and wraps the secret's key to it, so nothing readable passes through a message or a server, and the recipient does not have to sign up first."}},
+    {"@type":"Question","name":"What happens to my crypto if I die or lose access?","acceptedAnswer":{"@type":"Answer","text":"Nothing, unless you arranged for it in advance. With NextKey you name guardians and a waiting period; if you stop responding, an agent proposes a release, the guardians confirm, and the condition is checked inside a confidential enclave. You can cancel before it completes."}},
+    {"@type":"Question","name":"Is social recovery actually safe?","acceptedAnswer":{"@type":"Answer","text":"On its own, no — it moves the attack from your device to the people around you. NextKey requires both a guardian quorum and a proof that a unique, living human is asking, and starts the waiting period when the quorum is reached rather than when the request was filed."}},
+    {"@type":"Question","name":"Can I share a password without both of us using the same password manager?","acceptedAnswer":{"@type":"Answer","text":"Yes. The recipient needs an ENS name and a published key, not an account with NextKey."}},
+    {"@type":"Question","name":"Does NextKey ever see my secrets?","acceptedAnswer":{"@type":"Answer","text":"No. Secrets are encrypted before they leave your machine and NextKey holds no key that could open them. The ciphertext on chain is public and useless without a key; the owner reaches their own secret through the same grant mechanism as any other recipient, so there is no administrative path and no way to recover a lost key file."}},
+    {"@type":"Question","name":"What is an ENS name and do I need one?","acceptedAnswer":{"@type":"Answer","text":"An ENS name is a readable name that points at things on Ethereum, like anna.eth instead of a long hex address. To receive a secret you need one plus a published key. NextKey stores the permissions themselves in ENS, so they outlive the product."}},
+    {"@type":"Question","name":"Is NextKey ready to use with real funds?","acceptedAnswer":{"@type":"Answer","text":"No. NextKey is a prototype built during a hackathon, running against an ENSv2 beta deployment on a test network. It has not been audited."}}
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "NextKey",
+  "applicationCategory": "SecurityApplication",
+  "operatingSystem": "Web",
+  "description": "Share a seed phrase or credential with someone by their ENS name. Access ends when you say. Recovery proves a living human, not a backup file.",
+  "license": "https://opensource.org/licenses/MIT",
+  "codeRepository": "https://github.com/4bridges/nextkey",
+  "url": "https://nextkey.li/"
+}
+</script>
+
+</body>
+</html>
