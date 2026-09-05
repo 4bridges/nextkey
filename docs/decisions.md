@@ -97,6 +97,32 @@ This is the more honest claim, and the stronger one. Asserting that a public cha
 
 ---
 
+## 2026-09-05 (night) — the encryption path closes
+
+**The product loop runs end to end on the hackathon deployment.**
+`scripts/nextkey.mjs` now does the whole thing: `keygen` → `publish` → `store` → `share` → `open`. A seed phrase was encrypted into `visa.nextkey.eth`, shared with `anna.nextkey.eth`, and opened by Anna and by the owner — each with their own key, through the same code path.
+
+| Step | Transaction |
+|---|---|
+| Anna publishes `nextkey.pubkey` | `0xd0deb560…20e932` |
+| Ciphertext into `nextkey.secret` | `0x88b82fd9…132987` |
+| Owner's grant | `0xba8e6925…508ff0` |
+| Anna's grant | `0x6a051d14…d91290` |
+
+**The owner is a recipient like any other.** There is no master key and no owner-only path in the code, because keeping one would make "we cannot read your secrets" a lie. The cost is real and stated in the README: lose `.keys/`, lose access. We prefer an honest limitation to a dishonest convenience.
+
+**Grants are addressed by key fingerprint, not by name.** This was a bug before it was a decision. `share … anna.nextkey.eth` wrote to `nextkey.grant.anna.nextkey` while `open … anna` read `nextkey.grant.anna` — two spellings of one person, two records, and a failure that surfaced only at decryption.
+
+The name-based fix would have been three lines. It would also have been wrong: a name is mutable — it can move, expire, or be one of several a person holds — while the key that can open a grant is the one stable thing about the recipient. So the record key is now the first 16 hex characters of `sha256(publicKey)`, and the name travels inside the value as `for`, where the explorer still shows it and nothing depends on it.
+
+Worth recording as a pattern: the bug was in the *addressing*, not in the cryptography, and it was invisible until the last step. Both write paths succeeded. Both transactions reported `success`. Only the read failed. Any design where writing and reading derive a shared address independently will fail this way, and the fix is to derive it from something neither side can spell differently.
+
+**Known limitation, not papered over.** `revoke` resolves the recipient's name to the key they currently publish. If they rotate `nextkey.pubkey` between the grant and the revocation, the revoke clears the grant for the new key and leaves the old one standing. The correct fix is an index record listing outstanding grants, so revocation can enumerate rather than guess. Noted in the code and scheduled; a hidden gap would cost more with a judge than an acknowledged one.
+
+**Stale records from the fingerprint change** — `nextkey.grant.alice` and `nextkey.grant.anna.nextkey` — still sit on `visa.nextkey.eth`. They wrap a content key that the re-run of `store` replaced, so they open nothing, but they are confusing in the explorer and get cleared before the demo recording.
+
+---
+
 ## Template for further entries
 
 ```

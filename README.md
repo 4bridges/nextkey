@@ -14,7 +14,7 @@ NextKey hands secrets over to the people who should get them — under rules nob
 
 You place a secret: a seed phrase, a private key, a credential, a document. Then you decide two things — who may open it, and under what conditions. Both are enforced by the protocol, not by our servers and not by anyone's goodwill.
 
-**Who may open it** is answered by ENSv2. Sharing a secret with someone means granting a read permission on your own permissioned resolver, addressed by their ENS name instead of a hex address. You share with `anna.eth`, not with `0x7f3a…`, and the permission lives in a registry you control rather than in our database.
+**Who may open it** is answered by cryptography, addressed through ENSv2. Sharing a secret with `anna.eth` wraps its key to the X25519 public key Anna publishes in her own ENS records — you share with a name, not with `0x7f3a…`, and Anna never registers with us. ENSv2 enforces the other half: who may write that grant, revoke it, or delegate the right to. That is state in a registry you own, not a row in our database.
 
 **Under what conditions** is answered inside a trusted execution environment. A release agent can propose but never act alone; the condition itself — a guardian quorum, a time lock, prolonged inactivity — is evaluated inside a Chainlink CRE Confidential Workflow, so the secret never passes a node anyone can inspect.
 
@@ -25,7 +25,7 @@ And when someone has lost everything — device gone, backup gone — recovery d
 ## How it works
 
 1. **Place a secret.** Encrypted in your browser before it goes anywhere.
-2. **Share it with a name.** `anna.eth`, not `0x7f3a…`. NextKey grants her a read permission on that one record — nothing else on your account.
+2. **Share it with a name.** `anna.eth`, not `0x7f3a…`. NextKey reads the public key from her ENS records and wraps this one secret's key to it — that record and nothing else on your account.
 3. **Anna hears about it.** Through whatever channel she declared in her own ENS records. She never signed up for NextKey.
 4. **If she loses everything, she gets back in.** Her guardians confirm, and Selfie Check proves a unique, living person is asking.
 5. **Some releases happen without you.** The agent proposes; an enclave decides, against rules you wrote yourself.
@@ -53,7 +53,20 @@ So NextKey splits the two concerns rather than conflating them. **Confidentialit
 
 Each user's **notification channel** is a text record too, which is why step 3 above works for people who have never heard of NextKey.
 
-**Verified end to end** on the hackathon deployment: `nextkey.eth` → our UserRegistry → `visa.nextkey.eth` → its Permissioned Resolver → a text record read back through the **Universal Resolver**, the same path any client would take. See `scripts/resolver.mjs`.
+A grant is stored under the recipient's **key fingerprint**, not their name — `nextkey.grant.<first 16 hex of sha256(publicKey)>` — with the name carried inside the value for readability. Names move; the key that opens a grant does not. See [`docs/decisions.md`](./docs/decisions.md) for the bug that taught us this.
+
+**Verified end to end** on the hackathon deployment, twice over. The resolution path — `nextkey.eth` → our UserRegistry → `visa.nextkey.eth` → its Permissioned Resolver → a text record read back through the **Universal Resolver**, the path any client takes (`scripts/resolver.mjs`). And the product path on top of it (`scripts/nextkey.mjs`): a seed phrase encrypted into `nextkey.secret`, shared with `anna.nextkey.eth`, and opened by Anna with her own key.
+
+| Step | Transaction |
+|---|---|
+| Anna publishes `nextkey.pubkey` | [`0xd0deb560…20e932`](https://sepolia.etherscan.io/tx/0xd0deb560cbf55ae7df767c8a536ff76864c8bfe61b61436475836d781020e932) |
+| Ciphertext into `nextkey.secret` | [`0x88b82fd9…132987`](https://sepolia.etherscan.io/tx/0x88b82fd9c83631a98613d968fb727fe6c860e8fc60c52edb10b7a73c99132987) |
+| Grant to the owner | [`0xba8e6925…508ff0`](https://sepolia.etherscan.io/tx/0xba8e69252eb92c650cddaa7ee166ac96f2f92ff108fa7ce30d3d755a3b508ff0) |
+| Grant to Anna | [`0x6a051d14…d91290`](https://sepolia.etherscan.io/tx/0x6a051d14f8425b87398a4d093c6068b8bccf9cdff7fbbc5329f38eff06d91290) |
+
+Terminal output in [`evidence/encryption-loop.log`](./evidence/encryption-loop.log).
+
+**The owner is a recipient like any other.** There is no master key and no owner-only branch in the code — keeping one would make "we cannot read your secrets" a lie. The honest cost: lose your local key file and the secret is gone. We would rather state that than hold a key we promise not to use.
 
 <!-- TODO: add file/line pointers into the code for each row above before submission -->
 
@@ -82,6 +95,7 @@ This project builds against the dedicated ENSv2 hackathon deployment on Sepolia,
 | NextKey UserRegistry | [`0x612034AB34Ec262d5417EA3163718E7455157908`](https://sepolia.etherscan.io/address/0x612034AB34Ec262d5417EA3163718E7455157908) |
 | Registry deployment tx | [`0xb6b94e4f…924749`](https://sepolia.etherscan.io/tx/0xb6b94e4f5675cb8273960482e3926ee6523d3f4baa1e03b266d6f6a699924749) |
 | Registry implementation | `0x47B442d0CF617c41CAbAFf5f02f44DD1e5f72546` |
+| `visa.nextkey.eth` Permissioned Resolver | [`0x52A02f288AA5dde082206D85d4001880D64F4101`](https://sepolia.etherscan.io/address/0x52A02f288AA5dde082206D85d4001880D64F4101) |
 
 The registry proxy address is deterministic: its salt is `keccak256(keccak256("UserRegistry"), namehash("nextkey.eth"), version)` with version `0`. Redeploying requires bumping the version, or the CREATE2 address collides.
 
@@ -171,6 +185,7 @@ Required environment variables: <!-- TODO -->
 Sponsor qualification evidence is collected in [`evidence/`](./evidence) as it is produced, not assembled at the end:
 
 - `cre-simulation.log` — terminal output of a successful Confidential Workflow simulation
+- `encryption-loop.log` — store, share and open, run against the hackathon deployment
 - ENSv2 transaction hashes for registry deployment, subname registration and role grants
 - Selfie Check flow captured from the World ID Sandbox App
 

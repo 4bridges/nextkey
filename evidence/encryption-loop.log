@@ -1,0 +1,54 @@
+# NextKey — the encryption path, end to end.
+# ENSv2 hackathon deployment on Sepolia. Recorded 2026-09-05.
+#
+# The seed phrase below is a throwaway generated for this demonstration and
+# guards nothing. Never put a phrase you rely on into a testnet prototype.
+
+PS C:\Users\fundel\Documents\nextkey> node scripts/nextkey.mjs keygen alice
+
+  identity    alice
+  public key  HZ7cnPv9LevqU0Vo4e9fs3t18EUcPSE1VbkrskAhEx8=
+  stored in   .keys/alice.json  (gitignored — losing it loses access)
+
+PS C:\Users\fundel\Documents\nextkey> node scripts/nextkey.mjs keygen anna
+
+  identity    anna
+  public key  k5aC2G4AISBxAIweGzqdC+6mHGhxu3aucfwz8V0V6wA=
+  stored in   .keys/anna.json  (gitignored — losing it loses access)
+
+PS C:\Users\fundel\Documents\nextkey> node --env-file=.env scripts/nextkey.mjs publish anna.nextkey.eth anna
+
+  publishing anna's public key to anna.nextkey.eth · nextkey.pubkey
+  → 0xd0deb560cbf55ae7df767c8a536ff76864c8bfe61b61436475836d781020e932 success
+
+PS C:\Users\fundel\Documents\nextkey> node --env-file=.env scripts/nextkey.mjs store visa alice "witch collapse practice feed shame open despair creek road again ice least"
+
+  visa.nextkey.eth
+  encrypting 74 characters with a fresh AES-256-GCM key
+  → 0x88b82fd9c83631a98613d968fb727fe6c860e8fc60c52edb10b7a73c99132987 success
+  granting the owner access the same way as anyone else
+  grant record  nextkey.grant.ec3732779f96c87e
+  → 0xba8e69252eb92c650cddaa7ee166ac96f2f92ff108fa7ce30d3d755a3b508ff0 success
+
+PS C:\Users\fundel\Documents\nextkey> node --env-file=.env scripts/nextkey.mjs share visa alice anna.nextkey.eth
+
+  sharing visa.nextkey.eth with anna.nextkey.eth
+  their public key comes from their own ENS record — they never registered with us
+  grant record  nextkey.grant.e8d67b995039bdcf
+  → 0x6a051d14f8425b87398a4d093c6068b8bccf9cdff7fbbc5329f38eff06d91290 success
+
+PS C:\Users\fundel\Documents\nextkey> node scripts/nextkey.mjs open visa anna
+
+  visa.nextkey.eth  opened as anna
+  witch collapse practice feed shame open despair creek road again ice least
+
+PS C:\Users\fundel\Documents\nextkey> node scripts/nextkey.mjs open visa alice
+
+  visa.nextkey.eth  opened as alice
+  witch collapse practice feed shame open despair creek road again ice least
+
+# Two recipients, two grants, one ciphertext. Anna decrypts with the key behind
+# the public key she published on her own name; she never registered with
+# NextKey. The owner takes the identical path — there is no owner-only branch
+# and no master key, which is why "we cannot read your secrets" is a statement
+# about the code rather than a promise about our conduct.
