@@ -146,3 +146,5 @@ vite.config.ts.timestamp-*
 !evidence/*.log
 
 .cre_build_tmp.js
+
+.registration-*.json
