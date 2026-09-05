@@ -224,11 +224,19 @@ git clone https://github.com/4bridges/nextkey.git
 cd nextkey
 npm install                       # viem, @noble/curves, @noble/hashes
 
-node scripts/spike-read-ens.mjs                       # resolves through the hackathon Universal Resolver
-node scripts/resolver.mjs read-text visa nextkey.secret   # the ciphertext
-node scripts/agent.mjs   show                             # the agent's open release request
+node scripts/agent.mjs   show                              # the agent's open release request
+node scripts/resolver.mjs read-text visa nextkey.secret   # the ciphertext, read through the Universal Resolver
 node scripts/resolver.mjs show-roles agent 0xABCf3893FBe9802343f9b444575250Aa979Fb59c
+node scripts/spike-read-ens.mjs                           # plumbing check — see below
 ```
+
+The first three return live data. `spike-read-ens.mjs` is different: it verifies that the
+Universal Resolver override took effect and that resolution completes without throwing,
+and it does that against `nextkey.eth`, the parent, which deliberately carries no records.
+Empty values there are the expected result, not a failure — the check is that the calls
+return rather than what they return. Forgetting the override is a *silent* failure, since
+viem's built-in address quietly resolves against production ENS, which is why this check
+exists at all.
 
 The same state in a browser, which is what the demo link opens:
 
