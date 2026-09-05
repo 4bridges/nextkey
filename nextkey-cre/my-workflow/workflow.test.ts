@@ -1,133 +1,112 @@
-import { describe, expect } from 'bun:test'
-import type { TeeRuntime } from '@chainlink/cre-sdk'
-import { test } from '@chainlink/cre-sdk/test'
-import { initWorkflow, onCronTrigger } from './workflow'
+import { describe, expect, it } from 'bun:test'
+import { decide } from './workflow'
 
-const API_TOKEN = 'test-token'
+/**
+ * The release decision, as executable assertions.
+ *
+ * `decide()` is deliberately a pure function so that the security properties of
+ * the release rule can be stated as tests rather than as prose. Everything the
+ * enclave protects flows through it; nothing but its return value leaves.
+ *
+ * The template's original handler-level test is gone. It exercised the shipped
+ * example (score over an echoed response) and no longer type-checks against our
+ * config. It also had to hand-build a fake `TeeRuntime`, because — as the
+ * template itself notes — the public test surface does not yet ship a TEE
+ * runtime factory. Testing the extracted decision instead is both honest and
+ * more useful: the plumbing is proven by `cre workflow simulate`, the logic is
+ * proven here.
+ */
 
-const makeConfig = () => ({
-	schedule: '0 */1 * * * *',
-	url: 'https://postman-echo.com/headers',
-	secretId: 'API_TOKEN',
-	scoreThreshold: 500,
+const req = (over: Partial<Parameters<typeof decide>[0]> = {}) => ({
+	requestId: 'req_test',
+	secret: 'visa.alice.nextkey.eth',
+	policy: { quorum: 2, delaySeconds: 60 },
+	approvals: [
+		{ guardianRef: 'g1', at: 1_000 },
+		{ guardianRef: 'g2', at: 1_030 },
+	],
+	cancelledAt: null,
+	observedAt: 1_200,
+	...over,
 })
 
-// The public test surface does not yet ship a TEE runtime factory
-// (`newTestRuntime` returns a DON `Runtime`), so we stand up the small slice of
-// `TeeRuntime` the handler actually uses: config, getSecret, callCapability
-// (which HTTPClient.sendRequest goes through), log, and usingTheDons.
-type FakeTeeRuntimeOptions = {
-	statusCode?: number
-	body?: string
-}
-
-const makeFakeTeeRuntime = ({ statusCode = 200, body = 'hello' }: FakeTeeRuntimeOptions = {}) => {
-	const capturedHeaders: string[] = []
-	const reports: unknown[] = []
-	const logs: string[] = []
-
-	const runtime = {
-		config: makeConfig(),
-		getSecret: (request: { id?: string }) => ({
-			result: () => ({ id: request.id, value: API_TOKEN }),
-		}),
-		callCapability: ({ payload }: { payload: { multiHeaders?: Record<string, unknown> } }) => {
-			const auth = payload.multiHeaders?.Authorization as { values?: string[] } | undefined
-			capturedHeaders.push(...(auth?.values ?? []))
-			return {
-				result: () => ({
-					statusCode,
-					body: new TextEncoder().encode(body),
-				}),
-			}
-		},
-		log: (message: string) => logs.push(message),
-		usingTheDons: () => ({
-			report: (input: unknown) => {
-				reports.push(input)
-				return { result: () => ({}) }
-			},
-		}),
-	}
-
-	return { runtime: runtime as unknown as TeeRuntime<ReturnType<typeof makeConfig>>, capturedHeaders, reports, logs }
-}
-
-describe('onCronTrigger', () => {
-	test('injects the enclave-fetched secret into the outbound request', () => {
-		const { runtime, capturedHeaders } = makeFakeTeeRuntime()
-
-		onCronTrigger(runtime)
-
-		expect(capturedHeaders).toEqual([`Bearer ${API_TOKEN}`])
-	})
-
-	test('confirms the secret reached the API when the response echoes it back', () => {
-		const { runtime } = makeFakeTeeRuntime({ body: `{"authorization":"Bearer ${API_TOKEN}"}` })
-
-		expect(onCronTrigger(runtime)).toContain('secret reached API: true')
-	})
-
-	test('reports the secret did not reach the API when it is absent', () => {
-		const { runtime } = makeFakeTeeRuntime({ body: '{"authorization":"Bearer other"}' })
-
-		expect(onCronTrigger(runtime)).toContain('secret reached API: false')
-	})
-
-	test('crosses back to the DON to generate a report', () => {
-		const { runtime, reports } = makeFakeTeeRuntime()
-
-		onCronTrigger(runtime)
-
-		expect(reports).toHaveLength(1)
-		expect(reports[0]).toMatchObject({
-			encoderName: 'evm',
-			signingAlgo: 'ecdsa',
-			hashingAlgo: 'keccak256',
+describe('release decision', () => {
+	it('releases once the quorum is met and the waiting period has elapsed', () => {
+		expect(decide(req())).toEqual({
+			verdict: 'RELEASE',
+			reason: 'quorum_and_delay_satisfied',
 		})
 	})
 
-	test('APPROVEs when the confidential score clears the threshold', () => {
-		// 'zzzzzzzz' sums to 976, above the 500 threshold.
-		const { runtime } = makeFakeTeeRuntime({ body: 'zzzzzzzz' })
-
-		expect(onCronTrigger(runtime)).toContain('APPROVE')
+	it('holds while the waiting period is still running', () => {
+		// quorum reached at 1030, delay 60 → releasable at 1090
+		expect(decide(req({ observedAt: 1_089 }))).toEqual({
+			verdict: 'PENDING',
+			reason: 'waiting_period',
+		})
 	})
 
-	test('REJECTs when the confidential score is below the threshold', () => {
-		// 'a' sums to 97, below the 500 threshold.
-		const { runtime } = makeFakeTeeRuntime({ body: 'a' })
-
-		expect(onCronTrigger(runtime)).toContain('REJECT')
+	it('releases exactly at the boundary, not one second later', () => {
+		expect(decide(req({ observedAt: 1_090 })).verdict).toBe('RELEASE')
 	})
 
-	test('throws on a non-2xx response and never reaches the DON', () => {
-		const { runtime, reports } = makeFakeTeeRuntime({ statusCode: 401 })
-
-		expect(() => onCronTrigger(runtime)).toThrow('status: 401')
-		expect(reports).toHaveLength(0)
+	it('holds while too few guardians have approved', () => {
+		expect(decide(req({ approvals: [{ guardianRef: 'g1', at: 1_000 }] }))).toEqual({
+			verdict: 'PENDING',
+			reason: 'quorum_not_met',
+		})
 	})
 
-	test('does not log the secret or the raw response body', () => {
-		const { runtime, logs } = makeFakeTeeRuntime({ body: 'sensitive-response' })
-
-		onCronTrigger(runtime)
-
-		for (const line of logs) {
-			expect(line).not.toContain(API_TOKEN)
-			expect(line).not.toContain('sensitive-response')
-		}
+	it('counts a guardian once, however often they approve', () => {
+		// Without de-duplication a single compromised guardian could reach any
+		// quorum on their own.
+		const spammed = req({
+			approvals: [
+				{ guardianRef: 'g1', at: 1_000 },
+				{ guardianRef: 'g1', at: 1_001 },
+				{ guardianRef: 'g1', at: 1_002 },
+			],
+		})
+		expect(decide(spammed).reason).toBe('quorum_not_met')
 	})
-})
 
-describe('initWorkflow', () => {
-	test('registers the cron handler with a Nitro TEE constraint', () => {
-		const handlers = initWorkflow(makeConfig())
+	it('starts the clock when the quorum is reached, not when the request was filed', () => {
+		// The security property this rule exists for. An attacker files early,
+		// lets the window elapse quietly, and only then collects approvals — if
+		// the clock ran from the first approval, that would release instantly.
+		//
+		// First approval at 1000, quorum completed at 5000, delay 60.
+		// Releasable at 5060, not at 1060.
+		const late = req({
+			approvals: [
+				{ guardianRef: 'g1', at: 1_000 },
+				{ guardianRef: 'g2', at: 5_000 },
+			],
+			observedAt: 5_059,
+		})
+		expect(decide(late).reason).toBe('waiting_period')
+		expect(decide({ ...late, observedAt: 5_060 }).verdict).toBe('RELEASE')
+	})
 
-		expect(handlers).toHaveLength(1)
-		expect(handlers[0].fn).toBe(onCronTrigger)
+	it("denies a cancelled request even when everything else is satisfied", () => {
+		// The owner's veto beats quorum and elapsed time. This ordering is the
+		// whole point of the waiting period.
+		expect(decide(req({ cancelledAt: 1_100 }))).toEqual({
+			verdict: 'DENY',
+			reason: 'cancelled_by_owner',
+		})
+	})
 
-		// handlerInTee attaches TEE requirements; cre.handler does not.
-		expect(handlers[0].requirements).toBeDefined()
+	it('releases immediately when the policy sets no delay', () => {
+		expect(
+			decide(req({ policy: { quorum: 2, delaySeconds: 0 }, observedAt: 1_030 })).verdict,
+		).toBe('RELEASE')
+	})
+
+	it('requires the full quorum even when it is one', () => {
+		expect(
+			decide(req({ policy: { quorum: 1, delaySeconds: 0 }, approvals: [], observedAt: 9_999 }))
+				.reason,
+		).toBe('quorum_not_met')
 	})
 })

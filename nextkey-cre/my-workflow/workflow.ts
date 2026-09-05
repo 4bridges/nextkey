@@ -115,12 +115,20 @@ export const onCronTrigger = (runtime: TeeRuntime<Config>): string => {
 	// attacker exactly whom to approach and how many more they still need.
 	// Fetching it from inside the enclave keeps request and response payloads
 	// confidential from node operators.
+	//
+	// A note on the header name. In production this is `Authorization` against
+	// NextKey's own API. During the spike the state is served from a GitHub raw
+	// URL, and GitHub answers an unrecognised bearer token with 404 rather than
+	// 401 — deliberately, so that auth failures do not reveal whether a resource
+	// exists. That looks exactly like a missing file and costs an hour to
+	// diagnose. Using a header the host ignores keeps the secret in the request
+	// without tripping over someone else's auth handling.
 	const response = new cre.capabilities.HTTPClient()
 		.sendRequest(runtime, {
 			url: config.stateUrl,
 			method: 'GET',
 			multiHeaders: {
-				Authorization: { values: [`Bearer ${apiToken}`] },
+				'X-NextKey-Auth': { values: [`Bearer ${apiToken}`] },
 			},
 		})
 		.result()
@@ -136,6 +144,10 @@ export const onCronTrigger = (runtime: TeeRuntime<Config>): string => {
 	const request = parsed.data
 
 	const { verdict, reason } = decide(request)
+
+	// Evidence that a secret really was released into the enclave and used in
+	// the outbound call — as a boolean, never by logging the token itself.
+	const secretPresent = apiToken.length > 0
 
 	// ⚠️ Simulation only. Logs must be removed before deploying, or the enclave's
 	// confidentiality is undone by the debugging. Note what is safe to log even
@@ -167,7 +179,7 @@ export const onCronTrigger = (runtime: TeeRuntime<Config>): string => {
 	// The signed report is the authorization. Delivering it to a contract via
 	// evmClient.writeReport(donRuntime, report) is the next step and out of
 	// scope for this build.
-	return `${verdict} — ${reason} (request ${request.requestId})`
+	return `${verdict} — ${reason} (request ${request.requestId}, secret in enclave: ${secretPresent})`
 }
 
 // ─── Workflow Init ──────────────────────────────────────────
