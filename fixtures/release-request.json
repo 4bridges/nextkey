@@ -1,11 +1,20 @@
 {
-  "requestId": "req_2026_09_05_001",
-  "secret": "visa.alice.nextkey.eth",
-  "policy": { "quorum": 2, "delaySeconds": 60 },
+  "_note": "onChainRequest is read verbatim from agent.nextkey.eth; the approvals around it are fabricated stand-ins for guardians that do not exist yet.",
+  "onChainRequest": "{\"requestId\":\"0x5ab6aad279b3700b\",\"v\":1,\"secret\":\"visa.nextkey.eth\",\"recipient\":\"anna.nextkey.eth\",\"filedAt\":1788638062,\"agent\":\"0xABCf3893FBe9802343f9b444575250Aa979Fb59c\"}",
+  "policy": {
+    "quorum": 2,
+    "delaySeconds": 60
+  },
   "approvals": [
-    { "guardianRef": "g1", "at": 1788560000 },
-    { "guardianRef": "g2", "at": 1788560030 }
+    {
+      "guardianRef": "g1",
+      "at": 1788638092
+    },
+    {
+      "guardianRef": "g2",
+      "at": 1788638122
+    }
   ],
   "cancelledAt": null,
-  "observedAt": 1788560200
+  "observedAt": 1788638183
 }

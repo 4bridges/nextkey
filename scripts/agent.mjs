@@ -27,6 +27,7 @@
  *   node --env-file=.env scripts/agent.mjs propose visa anna.nextkey.eth
  *   node scripts/agent.mjs show
  *   node --env-file=.env scripts/agent.mjs prove-boundary visa [--onchain]
+ *   node scripts/agent.mjs fixture 2 60 2
  *
  * Between `keygen`/`fund` and `propose`, the owner must create the name and
  * hand over the one role:
@@ -107,6 +108,7 @@ const usage = () => console.log(`
   agent.mjs propose        <label> <recipient.eth>
   agent.mjs show
   agent.mjs prove-boundary <label> [--onchain]
+  agent.mjs fixture        [quorum] [delaySeconds] [approvals]
 `)
 
 if (cmd === 'keygen') {
@@ -246,6 +248,57 @@ else if (cmd === 'prove-boundary') {
   console.log(r.status)
   console.log(`  https://sepolia.etherscan.io/tx/${hash}`)
   console.log(`\n  Status "reverted" is the result we wanted. The protocol said no.\n`)
+}
+
+else if (cmd === 'fixture') {
+  /**
+   * Build the state the confidential workflow evaluates.
+   *
+   * Two halves, and the point of this command is that only one of them is
+   * invented here. `onChainRequest` is read off the chain verbatim — the exact
+   * bytes stored at agent.nextkey.eth, not a reconstruction — so the hash the
+   * enclave computes is the hash of what the agent actually filed. Anyone can
+   * repeat that: read the record, hash it, compare it to the verdict.
+   *
+   * The guardian approvals around it are fabricated, because guardians are not
+   * built yet and pretending otherwise would be the dishonest kind of demo.
+   * They stand in for the confidential half: the shape is real, the people are
+   * not, and the file says so.
+   *
+   *   node scripts/agent.mjs fixture [quorum] [delaySeconds] [approvals]
+   */
+  const nums = rest.filter((a) => !a.startsWith('--')).map(Number)
+  const [quorum = 2, delaySeconds = 60, approvalCount = 2] = nums
+
+  const onChainRequest = await reader.getEnsText({ name: AGENT_NAME, key: RECORD_REQUEST })
+  if (!onChainRequest) throw new Error(`${AGENT_NAME} holds no request — run propose first`)
+
+  const filedAt = JSON.parse(onChainRequest).filedAt
+  const approvals = Array.from({ length: approvalCount }, (_, i) => ({
+    guardianRef: `g${i + 1}`,
+    at: filedAt + 30 * (i + 1),
+  }))
+  const quorumReachedAt = approvals.length >= quorum ? approvals[quorum - 1].at : filedAt
+
+  const fixture = {
+    _note: 'onChainRequest is read verbatim from agent.nextkey.eth; the approvals around it are fabricated stand-ins for guardians that do not exist yet.',
+    onChainRequest,
+    policy: { quorum, delaySeconds },
+    approvals,
+    cancelledAt: null,
+    observedAt: quorumReachedAt + delaySeconds + 1,
+  }
+
+  const out = new URL('../fixtures/release-request.json', import.meta.url)
+  mkdirSync(new URL('../fixtures/', import.meta.url), { recursive: true })
+  writeFileSync(out, JSON.stringify(fixture, null, 2) + '\n')
+
+  console.log(`\n  read from   ${AGENT_NAME} · ${RECORD_REQUEST}`)
+  console.log(`  requestHash ${keccak256(toBytes(onChainRequest))}`)
+  console.log(`  policy      quorum ${quorum}, delay ${delaySeconds}s, ${approvalCount} approval(s)`)
+  console.log(`  expecting   ${approvalCount >= quorum ? 'RELEASE' : 'PENDING (quorum_not_met)'}`)
+  console.log(`  written to  fixtures/release-request.json\n`)
+  console.log(`  Commit and push it, then the enclave can fetch it from the raw URL.\n`)
 }
 
 else usage()

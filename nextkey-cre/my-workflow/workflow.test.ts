@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test'
-import { decide } from './workflow'
+import { decide, requestHashOf } from './workflow'
+import fixture from '../../fixtures/release-request.json'
 
 /**
  * The release decision, as executable assertions.
@@ -108,5 +109,44 @@ describe('release decision', () => {
 			decide(req({ policy: { quorum: 1, delaySeconds: 0 }, approvals: [], observedAt: 9_999 }))
 				.reason,
 		).toBe('quorum_not_met')
+	})
+})
+
+/**
+ * Binding a verdict to the request it judged.
+ *
+ * The enclave's inputs are invisible by design, and that creates a gap: "the
+ * enclave approved this" cannot be checked unless the verdict says *what* it
+ * approved. It does, by carrying the hash of the public request record.
+ *
+ * The string under test is not invented here. `agent.mjs fixture` reads it
+ * verbatim from `agent.nextkey.eth \u00b7 nextkey.request` on Sepolia, and the
+ * expected hash is the one `agent.mjs propose` printed when the agent filed
+ * it \u2014 computed at write time, from the other end of the chain. So this
+ * asserts that the enclave and the chain agree about what was asked.
+ *
+ * It also means the fixture cannot be quietly edited: any change to the
+ * request, including one that only reorders its keys, fails here.
+ */
+describe('binding to the on-chain request', () => {
+	const onChainRequest = fixture.onChainRequest
+
+	it('reproduces the hash the agent published on chain', () => {
+		expect(requestHashOf(onChainRequest)).toBe(
+			'0xb74ac56696e0e84612546123e2ec0a495a5b071be625b10141f2af4f59ce5336',
+		)
+	})
+
+	it('changes if a single field of the request changes', () => {
+		const tampered = onChainRequest.replace('anna.nextkey.eth', 'mallory.nextkey.eth')
+		expect(tampered).not.toBe(onChainRequest)
+		expect(requestHashOf(tampered)).not.toBe(requestHashOf(onChainRequest))
+	})
+
+	it('parses into a request naming the secret and the recipient', () => {
+		const parsed = JSON.parse(onChainRequest)
+		expect(parsed.v).toBe(1)
+		expect(parsed.secret).toBe('visa.nextkey.eth')
+		expect(parsed.recipient).toBe('anna.nextkey.eth')
 	})
 })
