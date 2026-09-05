@@ -68,7 +68,20 @@ Terminal output in [`evidence/encryption-loop.log`](./evidence/encryption-loop.l
 
 **The owner is a recipient like any other.** There is no master key and no owner-only branch in the code — keeping one would make "we cannot read your secrets" a lie. The honest cost: lose your local key file and the secret is gone. We would rather state that than hold a key we promise not to use.
 
-<!-- TODO: add file/line pointers into the code for each row above before submission -->
+**Where each row lives in the code.** Links are pinned to a commit, so the line numbers stay correct.
+
+| Row above | Code |
+|---|---|
+| Share a secret with a name | [`nextkey.mjs` · `share`](https://github.com/4bridges/nextkey/blob/ecccb6e/scripts/nextkey.mjs#L215) — reads the recipient's key from *their* record, then [`grantFor`](https://github.com/4bridges/nextkey/blob/ecccb6e/scripts/nextkey.mjs#L145) wraps the content key to it |
+| How a grant is addressed | [`nextkey.mjs` · `grantKey`](https://github.com/4bridges/nextkey/blob/ecccb6e/scripts/nextkey.mjs#L68) — SHA-256 over the recipient's public key, first 16 hex |
+| Key wrapping | [`nextkey.mjs` · `wrapKey`](https://github.com/4bridges/nextkey/blob/ecccb6e/scripts/nextkey.mjs#L141) — X25519 ECDH, HKDF-SHA256 salted with both public keys |
+| Limit access to seven days | [`register-subname.mjs` · `register`](https://github.com/4bridges/nextkey/blob/ecccb6e/scripts/register-subname.mjs#L118) — the subname's `expiry`, passed to the registry |
+| The owner's roles on a subname | [`register-subname.mjs` · `OWNER_ROLES`](https://github.com/4bridges/nextkey/blob/ecccb6e/scripts/register-subname.mjs#L44) — deliberately without `ROLE_REGISTRAR`: a secret is a leaf |
+| Revoke access | [`nextkey.mjs` · `revoke`](https://github.com/4bridges/nextkey/blob/ecccb6e/scripts/nextkey.mjs#L250) — clears the grant, and says plainly what revocation cannot undo |
+| Delegate one setter to the agent | [`resolver.mjs` · `grant-setter`](https://github.com/4bridges/nextkey/blob/ecccb6e/scripts/resolver.mjs#L234) — and why the first argument is calldata, not a name |
+| Read the resulting roles | [`resolver.mjs` · `show-roles`](https://github.com/4bridges/nextkey/blob/ecccb6e/scripts/resolver.mjs#L277) — resource id recovered from the contract's own refusal |
+| Give the agent an identity | [`agent.mjs` · `propose`](https://github.com/4bridges/nextkey/blob/ecccb6e/scripts/agent.mjs#L150) and [`prove-boundary`](https://github.com/4bridges/nextkey/blob/ecccb6e/scripts/agent.mjs#L198) |
+| Resolve through the Universal Resolver | [`resolver.mjs` · `read-text`](https://github.com/4bridges/nextkey/blob/ecccb6e/scripts/resolver.mjs#L387) — the path a real client takes |
 
 ### Hackathon deployment
 
@@ -101,8 +114,6 @@ This project builds against the dedicated ENSv2 hackathon deployment on Sepolia,
 The registry proxy address is deterministic: its salt is `keccak256(keccak256("UserRegistry"), namehash("nextkey.eth"), version)` with version `0`. Redeploying requires bumping the version, or the CREATE2 address collides.
 
 `nextkey.eth` was registered directly against the `ETHRegistrar` rather than through the manager app — see [`FEEDBACK-ENS.md`](./FEEDBACK-ENS.md) for why, and `scripts/register-name.mjs` for how.
-
-<!-- TODO: add the Permissioned Resolver proxy address once deployed -->
 
 **Important:** viem and ethers ship with a built-in Universal Resolver address. It must be overridden once, or resolution silently hits the wrong deployment:
 
@@ -203,15 +214,84 @@ Source: [`nextkey-cre/my-workflow/workflow.ts`](./nextkey-cre/my-workflow/workfl
 
 ## Run it locally
 
-<!-- TODO: fill in once the app scaffold exists. Must be tested from a clean clone before submission. -->
+Two paths. The first needs nothing but Node and shows the live state of everything
+described above; the second writes to the chain and needs a funded Sepolia key.
+
+### Read-only — no key, no wallet
 
 ```bash
 git clone https://github.com/4bridges/nextkey.git
 cd nextkey
-# ...
+npm install                       # viem, @noble/curves, @noble/hashes
+
+node scripts/spike-read-ens.mjs                       # resolves through the hackathon Universal Resolver
+node scripts/resolver.mjs read-text visa nextkey.secret   # the ciphertext
+node scripts/agent.mjs   show                             # the agent's open release request
+node scripts/resolver.mjs show-roles agent 0xABCf3893FBe9802343f9b444575250Aa979Fb59c
 ```
 
-Required environment variables: <!-- TODO -->
+The same state in a browser, which is what the demo link opens:
+
+```bash
+npx serve web -l 8080     # then http://localhost:8080/demo.html
+```
+
+Open `web/` over `http://`, not by double-clicking the file — ES modules are blocked
+on `file://` and the failure looks like a bug in the page.
+
+### The decision rule and the confidential workflow
+
+```bash
+cd nextkey-cre
+bun install
+bun test                          # 12 tests: the release rule, and the on-chain binding
+cre workflow simulate my-workflow # needs the CRE CLI; no beta access required
+```
+
+`cre workflow simulate` fetches `fixtures/release-request.json` over its raw GitHub URL
+from inside the enclave, so the simulation reflects whatever is committed on `main`.
+
+### Writing to the chain
+
+Everything below spends Sepolia gas and MockUSDC. **Use a wallet that holds testnet
+assets only.** Scripts run in print-only mode without a key — they show the exact call
+to make rather than making it — so you can inspect each step before arming it.
+
+```bash
+cp .env.example .env    # then fill in the values below
+```
+
+| Variable | Needed for | Notes |
+|---|---|---|
+| `REGISTRAR_PRIVATE_KEY` | every write | Owner key, `0x`-prefixed, 66 characters. Testnet only |
+| `SEPOLIA_RPC_URL` | optional | Defaults to `ethereum-sepolia-rpc.publicnode.com`, which permits wider `getLogs` ranges than most public endpoints |
+| `NEXTKEY_REGISTRY` | optional | Defaults to our deployed registry; set it to use your own |
+| `REGISTRAR_OWNER` | optional | Address the scripts register names to |
+
+Never put a seed phrase in `.env` or a terminal — only a single account's private key.
+`.env`, `.keys/` and `.registration-*.json` are gitignored; `git check-ignore -v .env`
+confirms it before you commit.
+
+The full path, from an empty account to a shared secret:
+
+```bash
+node --env-file=.env scripts/register-name.mjs    check nextkey        # price, then commit-reveal
+node --env-file=.env scripts/deploy-registry.mjs  deploy               # your own UserRegistry
+node --env-file=.env scripts/register-subname.mjs register visa
+node --env-file=.env scripts/resolver.mjs         deploy               # a Permissioned Resolver
+node --env-file=.env scripts/resolver.mjs         attach   visa 0xResolver
+
+node scripts/nextkey.mjs keygen alice
+node scripts/nextkey.mjs keygen anna
+node --env-file=.env scripts/nextkey.mjs publish anna.nextkey.eth anna
+node --env-file=.env scripts/nextkey.mjs store   visa alice "correct horse battery staple"
+node --env-file=.env scripts/nextkey.mjs share   visa alice anna.nextkey.eth
+node scripts/nextkey.mjs open visa anna     # and open visa alice — same path, no master key
+```
+
+Requires Node 22 or newer for `--env-file`, and [Bun](https://bun.sh) plus the
+[CRE CLI](https://docs.chain.link/cre) for the workflow. The ENSv2 hackathon deployment
+resets periodically; if a name has vanished, re-register it.
 
 ---
 
@@ -226,14 +306,19 @@ Required environment variables: <!-- TODO -->
 
 Sponsor qualification evidence is collected in [`evidence/`](./evidence) as it is produced, not assembled at the end:
 
-- `cre-simulation.log` — terminal output of a successful Confidential Workflow simulation
-- `encryption-loop.log` — store, share and open, run against the hackathon deployment
-- `agent-boundary.log` — the release agent's role state, and its write attempt being refused
-- `cre-decision.log` — the confidential verdict, bound by hash to the on-chain request
-- ENSv2 transaction hashes for registry deployment, subname registration and role grants
-- Selfie Check flow captured from the World ID Sandbox App
+| File | What it evidences |
+|---|---|
+| [`cre-simulation.log`](./evidence/cre-simulation.log) | A Confidential Workflow running to completion, with the secret reaching the enclave |
+| [`encryption-loop.log`](./evidence/encryption-loop.log) | `store` → `share` → `open`, against the hackathon deployment, with transaction hashes |
+| [`agent-boundary.log`](./evidence/agent-boundary.log) | The agent's role state read from the resolver, and its forbidden write being refused |
+| [`cre-decision.log`](./evidence/cre-decision.log) | The verdict, bound by hash to the request on chain, and how to check it yourself |
 
-<!-- TODO: fill in as each piece is produced -->
+Transaction hashes for the registry deployment, subname registration, role grants and
+the rejected write are in the tables above and in the logs.
+
+Still to come: the Selfie Check flow, once World ID Sandbox access is granted. If it is
+not granted before the deadline, that slot is dropped rather than half-built, and this
+line will say so.
 
 ---
 
