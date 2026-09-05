@@ -38,7 +38,7 @@ Access control is not a table in our backend. It is state in a public registry t
 
 Each stored secret becomes a **subname** in a `UserRegistry` deployed through the Verifiable Factory and parented under `nextkey.eth`. Every subname is an ERC1155Singleton token with exactly one owner, and carries its own Permissioned Resolver. The product's sharing semantics then coincide with protocol primitives:
 
-**What ENS does and does not do here.** It would be easy to claim that ENSv2 grants Anna permission to *read* a secret. It does not, and no chain could: everything stored on a public chain is publicly readable. We assumed otherwise for a while and the contracts corrected us — the Permissioned Resolver's primitive is `grantSetterRoles(bytes name, address)`, which governs who may **write** a record.
+**What ENS does and does not do here.** It would be easy to claim that ENSv2 grants Anna permission to *read* a secret. It does not, and no chain could: everything stored on a public chain is publicly readable. We assumed otherwise for a while and the contracts corrected us — the Permissioned Resolver's primitive is `grantSetterRoles`, which governs who may **write** a record — and, as it turned out, which setter they may call with which key on which name.
 
 So NextKey splits the two concerns rather than conflating them. **Confidentiality comes from cryptography**: the record holds ciphertext, and who can decrypt it is decided by wrapping the key to the recipient's X25519 public key — itself published as a text record, which is how we encrypt for someone we know only by name, with no key server and no registration on their side. **Control comes from protocol roles**: who may update the pointer, who may revoke it, who may delegate.
 
@@ -47,9 +47,9 @@ So NextKey splits the two concerns rather than conflating them. **Confidentialit
 | Share a secret with `anna.eth` | A key blob wrapped to Anna's `nextkey.pubkey` record is written into the subname. Anna can decrypt it; anyone can see that something was shared |
 | Limit access to seven days | The subname's `expiry`. Resolution stops once `block.timestamp >= expiry` — enforced by the registry, not by us |
 | Revoke access | Overwrite or clear the record. Only accounts holding the setter role can do it, so revocation is as strong as the role model |
-| Delegate writing to the release agent | `grantSetterRoles()` on exactly one name. The agent may propose; it holds no key material and cannot decrypt anything |
-| Keep control while delegating | Roles and their admins are separate. The owner keeps the admin role, so a delegate can act but cannot pass the right on |
-| Give the agent an identity | Its own namespace with that single role — ENS's own bonus criterion for this hackathon: *agents as namespaces, each with their own identity and permissions* |
+| Delegate writing to the release agent | `grantSetterRoles()` for one setter, one key, one name. The agent may propose; it holds no key material and cannot decrypt anything |
+| Keep control while delegating | Roles and their admins are separate. The delegate's bitmap has no admin half, so it can act and cannot pass the right on |
+| Give the agent an identity | Its own namespace holding that single role — ENS's own bonus criterion for this hackathon: *agents as namespaces, each with their own identity and permissions* |
 
 Each user's **notification channel** is a text record too, which is why step 3 above works for people who have never heard of NextKey.
 
@@ -95,7 +95,8 @@ This project builds against the dedicated ENSv2 hackathon deployment on Sepolia,
 | NextKey UserRegistry | [`0x612034AB34Ec262d5417EA3163718E7455157908`](https://sepolia.etherscan.io/address/0x612034AB34Ec262d5417EA3163718E7455157908) |
 | Registry deployment tx | [`0xb6b94e4f…924749`](https://sepolia.etherscan.io/tx/0xb6b94e4f5675cb8273960482e3926ee6523d3f4baa1e03b266d6f6a699924749) |
 | Registry implementation | `0x47B442d0CF617c41CAbAFf5f02f44DD1e5f72546` |
-| `visa.nextkey.eth` Permissioned Resolver | [`0x52A02f288AA5dde082206D85d4001880D64F4101`](https://sepolia.etherscan.io/address/0x52A02f288AA5dde082206D85d4001880D64F4101) |
+| Permissioned Resolver (serves every subname) | [`0x52A02f288AA5dde082206D85d4001880D64F4101`](https://sepolia.etherscan.io/address/0x52A02f288AA5dde082206D85d4001880D64F4101) |
+| Release agent | `0xABCf3893FBe9802343f9b444575250Aa979Fb59c` |
 
 The registry proxy address is deterministic: its salt is `keccak256(keccak256("UserRegistry"), namehash("nextkey.eth"), version)` with version `0`. Redeploying requires bumping the version, or the CREATE2 address collides.
 
@@ -138,6 +139,29 @@ Selfie Check is used as a **risk and eligibility signal**, not as a login.
 The hardest question for a product like this one is how somebody gets back in after losing everything, without opening the same door to an attacker. Plain social recovery fails here: an attacker who can pressure, impersonate or replay their way past the guardian step is through. NextKey requires both — the guardians confirm the request, *and* Selfie Check establishes that a unique, live human is the one asking. The selfie never leaves the device; the app receives only an anonymous proof.
 
 <!-- TODO: link to the recovery flow implementation and add the Sandbox test evidence -->
+
+---
+
+### The release agent, and what stops it
+
+Automation is useful right up to the moment it can act alone. NextKey's release agent is a **namespace, not a service account**: `agent.nextkey.eth` is a name in our registry, the agent signs with its own key, and that key holds one role on one resource.
+
+The permission is finer than "may write to this name". ENSv2 scopes a setter role to a *setter, a key and a name* together, which we measured rather than assumed:
+
+| Account | Name · record | Roles on the name | Roles at the root | May write |
+|---|---|---|---|---|
+| Agent | `agent.nextkey.eth` · `nextkey.request` | `0x10` — bit 4, no admin half | `0x0` | **yes** |
+| Agent | `agent.nextkey.eth` · `nextkey.notify` | `0x0` | `0x0` | no |
+| Agent | `visa.nextkey.eth` · `nextkey.secret` | `0x0` | `0x0` | no |
+| Owner | any of the above | `0x0` | `0x1111…1111` | yes, everywhere |
+
+Three things follow, and none of them depend on our code behaving well. The agent can write exactly one field, on the one name that is its own — a different key on that same name is a different resource where it holds nothing. It cannot delegate, because its bitmap has no admin half. And the owner's authority descends from the root rather than sitting on any single name, which is what makes ownership and delegation different in kind rather than in degree.
+
+The boundary is filed on chain as a **rejected transaction**: [`0x6f0e35fd…790e68`](https://sepolia.etherscan.io/tx/0x6f0e35fd5ae0d00cd5d5867bfbe60a78356ca83b3d5644afa2ede46234790e68). The agent, signing with its own key, asked the resolver to overwrite `nextkey.secret` on `visa.nextkey.eth`, and the resolver refused. Same contract as the proposal it is allowed to write; only the name differs. Status `reverted` is the result we wanted.
+
+A proposal itself is public — [`0x14796928…ea485c`](https://sepolia.etherscan.io/tx/0x14796928813fd4b495c6a3442c0207d719ab98e4154fb205d1ee7601d7ea485c) — so anyone watching the name sees that a release was requested, for which secret and for whom. What stays confidential is the deliberation, and that happens next.
+
+Full output in [`evidence/agent-boundary.log`](./evidence/agent-boundary.log); the code is `scripts/agent.mjs` and `scripts/resolver.mjs`.
 
 ---
 
@@ -186,6 +210,7 @@ Sponsor qualification evidence is collected in [`evidence/`](./evidence) as it i
 
 - `cre-simulation.log` — terminal output of a successful Confidential Workflow simulation
 - `encryption-loop.log` — store, share and open, run against the hackathon deployment
+- `agent-boundary.log` — the release agent's role state, and its write attempt being refused
 - ENSv2 transaction hashes for registry deployment, subname registration and role grants
 - Selfie Check flow captured from the World ID Sandbox App
 

@@ -90,6 +90,80 @@ That is correct behaviour; a public chain cannot withhold data from readers, and
 
 **The reset notice.** The banner warns that registered names and state may be reset periodically, most recently 2026-07-30. That is useful and we planned around it — worth keeping prominent in the docs too, not only in the app.
 
+## 7. `grantSetterRoles(bytes name, address)` does not take a name
+
+The parameter is called `name`, its type is `bytes`, and every other setter on
+this resolver takes the DNS-encoded name as exactly that. So we passed the
+DNS-encoded name. It reverts with:
+
+```
+UnsupportedResolverProfile(0x05616765)
+```
+
+Those four bytes are the first four bytes of the DNS-encoded name — `\x05age`,
+the length byte and half of "agent" — read as a function selector. The
+parameter is not a name at all. It is **the calldata of the setter being
+authorized**: the resolver runs `decodeSetter` on it, takes the profile from
+the selector and the name from the arguments, and grants the role for that
+pairing. The working call is
+
+```ts
+grantSetterRoles(
+  encodeFunctionData({ abi, functionName: 'setText', args: [dnsName, key, ''] }),
+  account,
+)
+```
+
+Renaming the parameter to `setterCall` would prevent this entirely, and it
+costs nothing.
+
+We lost an evening here, and the reason is worth stating plainly: the revert
+was not wrong, it was *unrecognisable*. `UnsupportedResolverProfile` is a
+truthful description of what happened, but it describes a layer we did not
+know we were in. We read it as a permission failure and went looking at role
+bitmaps, because that is what the function name suggested.
+
+**What we did not expect, and what makes the correction worthwhile:** the
+permission is finer than the documentation implies. It is not "may write to
+this name" but "may call this setter, with this key, on this name". We
+verified this rather than assuming it — an account granted
+`setText(nextkey.request)` on a name resolves to resource
+`0x4fc08dd2…c9bc0d`, while `setText(nextkey.notify)` on the *same* name is
+resource `0x85d07a57…33cfee`, where it holds nothing. Per-record, not
+per-name. That is a genuinely strong primitive and it deserves a worked
+example in the docs, because nobody will find it from the signature.
+
+---
+
+## 8. Role state is readable only through the error path
+
+Having granted the role, we wanted to verify it — a claim like "this agent
+holds exactly one permission" should be checkable.
+
+The resolver exposes `roles(uint256 resource, address)`, so the bitmap is
+readable *if you know the resource id*. Obtaining it is the problem. It is not
+the namehash. `getRecordId(bytes32 node)` exists and looked like the answer,
+but `getRecordId(namehash(name))` returns `0`, and a `roles()` query against
+resource `0` reports no roles for an account that demonstrably has them — a
+wrong answer rather than an error, which is the dangerous kind.
+
+The only reliable source we found for the resource id is the authorization
+error itself, which carries `(resource, requiredRoleBitmap, account)`. So our
+tooling now provokes a refusal on purpose — a simulated `setText` from the
+zero address — and reads the resource out of the revert. It works and it is
+gas-free, but a contract whose error path is a more dependable interface than
+its getters is a documentation gap worth closing: either document the
+derivation, or have `getRecordId` return what `roles` expects.
+
+One consequence is worth flagging on its own. Per-resource roles are only half
+of the picture: the owner of a name shows `0x0` on that name's resource and can
+nevertheless write, because authority also descends from `ROOT_RESOURCE`. Any
+tool that reports only the per-resource bitmap — ours did, for an hour — will
+tell a user they have no permissions while they are in fact fully privileged.
+`hasRootRoles` and `ROOT_RESOURCE` are in the bytecode but not in the tutorial.
+
+---
+
 ---
 
 ## What worked well
@@ -98,6 +172,8 @@ The Universal Resolver override is documented clearly and the ready-made viem sn
 
 The explorer earns its place. Being able to see other teams' registrations, subregistry deployments and role grants as a readable activity feed is what let us diagnose several of the problems above without waiting for support — twice we recovered a missing address or signature by decoding somebody else's working transaction. A block explorer would not have shown us that.
 
-Enhanced Access Control is a genuinely good fit for what we are building. Reversible revocation, per-name setter roles, the separation of a role from its admin, and expiry enforced by the registry mean the *control* half of our model is protocol state rather than a table we ask people to trust us with. The confidentiality half is ours to solve with cryptography, as it should be — and being pushed to draw that line clearly made the design better.
+Enhanced Access Control is a genuinely good fit for what we are building, and better than we knew when we chose it. Reversible revocation, *per-record* setter roles, the separation of a role from its admin, root authority that descends while a delegated role stays nailed to one node, and expiry enforced by the registry mean the *control* half of our model is protocol state rather than a table we ask people to trust us with. The confidentiality half is ours to solve with cryptography, as it should be — and being pushed to draw that line clearly made the design better.
+
+**Reverts that carry their reasons.** Findings 7 and 8 above were both solved by reading structured revert data — a resource id, a required role bitmap, an account, a profile selector. Compare that with the empty `0x` reverts of finding 3, where a proxy delegatecalling a non-existent function leaves nothing to read. Every custom error the resolver throws saved us hours, and one of them ended up as our only reliable way to query role state at all. Whoever wrote those errors should know they are load-bearing.
 
 Once past the interface mismatches, the whole chain worked on the first attempt: `nextkey.eth` → our own UserRegistry → a subname → its Permissioned Resolver → a text record read back through the Universal Resolver. That is a lot of moving parts to get right on a beta deployment, and it did.

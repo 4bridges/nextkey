@@ -1,0 +1,100 @@
+# NextKey — the release agent's namespace and the limits of its permission.
+# ENSv2 hackathon deployment on Sepolia. Recorded 2026-09-05.
+#
+# The claim under test: the agent can propose a release and cannot perform one.
+# Not because our code is careful — because the protocol refuses it.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 1. The agent files a proposal on its own name.
+# ─────────────────────────────────────────────────────────────────────────────
+
+PS> node --env-file=.env scripts/agent.mjs propose visa anna.nextkey.eth
+
+  agent      0xABCf3893FBe9802343f9b444575250Aa979Fb59c
+  proposing  release of visa.nextkey.eth to anna.nextkey.eth
+  requestId  0x5ab6aad279b3700b
+  writing to agent.nextkey.eth · nextkey.request
+
+  → 0x14796928813fd4b495c6a3442c0207d719ab98e4154fb205d1ee7601d7ea485c success
+
+  requestHash 0xb74ac56696e0e84612546123e2ec0a495a5b071be625b10141f2af4f59ce5336
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 2. What the agent may do, read out of the resolver.
+# ─────────────────────────────────────────────────────────────────────────────
+
+PS> node scripts/resolver.mjs show-roles agent 0xABCf3893FBe9802343f9b444575250Aa979Fb59c
+
+  name        agent.nextkey.eth
+  setter      setText(nextkey.request)
+  resource    0x4fc08dd2f1ee163dc8f69c31c0a701d127c63b500848fae212785e3524c9bc0d
+  requires    0x10
+  account     0xABCf3893FBe9802343f9b444575250Aa979Fb59c
+  ──────────────────────────────────────────────────────────────────────
+  on this name   0x10
+    may use      4
+    admin over   — none, cannot delegate onward
+  at the root    0x0
+  ──────────────────────────────────────────────────────────────────────
+  may write   YES
+  authority   this name only — scoped, cannot reach any other
+
+# One bit, on one resource, with no admin half: the agent may use the
+# permission and may not pass it to anyone else.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 3. The same agent, the same name, a different record.
+# ─────────────────────────────────────────────────────────────────────────────
+
+PS> node scripts/resolver.mjs show-roles agent 0xABCf3893FBe9802343f9b444575250Aa979Fb59c nextkey.notify
+
+  setter      setText(nextkey.notify)
+  resource    0x85d07a57e7623e6bebb274a138d4ead93752a0e9424fa8448a0ebdd74e33cfee
+  on this name   0x0
+  at the root    0x0
+  may write   no
+  authority   none
+
+# A different key is a different resource. The permission is per-record, not
+# per-name: the agent may write the one field it was given and no other field
+# on the very name it owns.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 4. The owner, for contrast.
+# ─────────────────────────────────────────────────────────────────────────────
+
+PS> node scripts/resolver.mjs show-roles agent 0x9780aFE81EF5b58333c83e05d5C07797BD81dd0B
+
+  account     0x9780aFE81EF5b58333c83e05d5C07797BD81dd0B
+  on this name   0x0
+  at the root    0x1111111111111111111111111111111111111111111111111111111111111111
+    may use      0, 4, 8, 12, … 124
+    admin over   0, 4, 8, 12, … 124
+  may write   YES
+  authority   inherited from the root — reaches every name
+
+# Ownership descends from the root and reaches everything. Delegation is nailed
+# to a single node. That difference is the whole delegation model, and it is
+# two lines of contract state rather than a policy we ask anyone to trust.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 5. The boundary, filed on chain.
+# ─────────────────────────────────────────────────────────────────────────────
+
+PS> node --env-file=.env scripts/agent.mjs prove-boundary visa --onchain
+
+  agent    0xABCf3893FBe9802343f9b444575250Aa979Fb59c
+  holds    the setter role on agent.nextkey.eth
+  attempts to overwrite nextkey.secret on visa.nextkey.eth
+  resolver 0x52A02f288AA5dde082206D85d4001880D64F4101   (the same contract — only the name differs)
+
+  ✓ rejected — setText reverted: 0x4b27a133 (resource, required role, account)
+
+  filing the rejected call on chain as evidence
+  → 0x6f0e35fd5ae0d00cd5d5867bfbe60a78356ca83b3d5644afa2ede46234790e68 reverted
+  https://sepolia.etherscan.io/tx/0x6f0e35fd5ae0d00cd5d5867bfbe60a78356ca83b3d5644afa2ede46234790e68
+
+# Status "reverted" is the intended result. The transaction is the evidence:
+# the agent, signing with its own key, asked the resolver to overwrite the
+# secret, and the resolver said no. Same contract as the proposal it is allowed
+# to write — only the name differs.

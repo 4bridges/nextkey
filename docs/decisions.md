@@ -133,3 +133,23 @@ Why. What was rejected and why not. What it cost or saved.
 ```
 
 Entries that record a *reversal* are the most valuable ones — they are what makes this log worth reading rather than a list of things that happened to work.
+
+---
+
+## 2026-09-05 (late) — the agent gets a namespace, and a limit
+
+**The release agent is a namespace, not a service account.** `agent.nextkey.eth` is a name in our own registry; the agent signs with its own key, funded separately, and holds one role on one resource. An agent that signs with the owner's key is not an agent with a permission — it is the owner with extra steps, and every claim about the boundary would be theatre.
+
+**The boundary is demonstrated, not asserted.** `agent.mjs prove-boundary --onchain` files the forbidden call as a real transaction so it can be opened on Etherscan: [`0x6f0e35fd…790e68`](https://sepolia.etherscan.io/tx/0x6f0e35fd5ae0d00cd5d5867bfbe60a78356ca83b3d5644afa2ede46234790e68), status `reverted`. Gas estimation refuses to send a call it knows will fail, so the script sets the gas limit explicitly. A rejected transaction anyone can inspect is worth more than a paragraph of prose about least privilege.
+
+**The permission turned out finer than we designed for.** We expected `grantSetterRoles` to mean "may write to this name". It means "may call this setter, with this key, on this name": `setText(nextkey.request)` on `agent.nextkey.eth` is resource `0x4fc08dd2…c9bc0d`, while `setText(nextkey.notify)` on the *same* name is `0x85d07a57…33cfee`, where the agent holds nothing. Measured, not assumed — and the README now claims per-record scoping because we checked it.
+
+**Two corrections to my own tooling, both recorded because both were the kind that produce confident wrong answers.**
+
+`grantSetterRoles(bytes name, address)` does not take a name. It takes the encoded calldata of the setter being authorized. The parameter's ABI name says otherwise and we believed it, which cost an evening. Now finding 7 in `FEEDBACK-ENS.md`.
+
+`show-roles` first derived the resource id from the namehash via `getRecordId`, which returns `0`, and a `roles()` query on resource `0` answers "no roles" for an account that has them. A wrong answer, not an error. It now provokes a refusal from the zero address and reads the resource out of the revert — the contract's error path is a more dependable interface than its getters, which is finding 8.
+
+And it reported per-resource roles only, which told us the *owner* had no permissions on a name he can freely write. Authority also descends from `ROOT_RESOURCE`, and a tool that shows one half of a two-half model is not incomplete, it is misleading. Both halves are printed now.
+
+**Still open.** The workflow does not yet evaluate this request. The agent writes a proposal and a `requestHash`; binding a confidential verdict to that hash is the next piece, and it is what turns the Chainlink slot from qualified into earned.

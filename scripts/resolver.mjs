@@ -13,7 +13,8 @@
  *   node --env-file=.env scripts/resolver.mjs deploy
  *   node --env-file=.env scripts/resolver.mjs attach       visa 0xResolver
  *   node --env-file=.env scripts/resolver.mjs set-text     visa nextkey.notify <value>
- *   node --env-file=.env scripts/resolver.mjs grant-setter visa 0xAgent
+ *   node --env-file=.env scripts/resolver.mjs grant-setter agent 0xAgent nextkey.request
+ *   node          scripts/resolver.mjs show-roles      agent 0xAgent
  *   node          scripts/resolver.mjs read-text     visa nextkey.notify
  */
 
@@ -123,8 +124,28 @@ const resolverAbi = [
     ],
     outputs: [] },
   { name: 'grantSetterRoles', type: 'function', stateMutability: 'nonpayable',
-    inputs: [{ name: 'name', type: 'bytes' }, { name: 'account', type: 'address' }],
+    inputs: [{ name: 'setterCall', type: 'bytes' }, { name: 'account', type: 'address' }],
     outputs: [] },
+]
+
+/**
+ * Role state, recovered from the implementation's bytecode with probe-abi.mjs.
+ * Two things the documentation does not say: the resource is a `uint256`
+ * record id rather than a namehash, and `getRecordId(bytes32 node)` is how you
+ * obtain it.
+ */
+const rolesAbi = [
+  { name: 'getRecordId', type: 'function', stateMutability: 'view',
+    inputs: [{ name: 'node', type: 'bytes32' }], outputs: [{ type: 'uint256' }] },
+  { name: 'roles', type: 'function', stateMutability: 'view',
+    inputs: [{ name: 'resource', type: 'uint256' }, { name: 'account', type: 'address' }],
+    outputs: [{ type: 'uint256' }] },
+  { name: 'hasRoles', type: 'function', stateMutability: 'view',
+    inputs: [{ name: 'resource', type: 'uint256' }, { name: 'roleBitmap', type: 'uint256' },
+             { name: 'account', type: 'address' }],
+    outputs: [{ type: 'bool' }] },
+  { name: 'ROOT_RESOURCE', type: 'function', stateMutability: 'view',
+    inputs: [], outputs: [{ type: 'uint256' }] },
 ]
 
 const send = async ({ to, abi, functionName, args }) => {
@@ -211,18 +232,156 @@ else if (command === 'set-text') {
 }
 
 else if (command === 'grant-setter') {
-  // Delegate write access for one name to another account — the release agent,
-  // for instance. Note what this is not: it is not read access. There is no
-  // such thing on a public chain.
+  /**
+   * Delegate write access to another account — the release agent, for instance.
+   * Note what this is not: it is not read access. There is no such thing on a
+   * public chain.
+   *
+   * The first argument is NOT the name, though its type (`bytes`) and its name
+   * in the ABI (`name`) both suggest it is. Passing the DNS-encoded name
+   * reverts with `UnsupportedResolverProfile(0x05616765)` — and those four
+   * bytes are the first four bytes of that very name, read as a function
+   * selector. The parameter is the *calldata of the setter being authorized*:
+   * the resolver runs `decodeSetter` on it, takes the profile from the
+   * selector and the name from the arguments, and grants the role for that
+   * pairing.
+   *
+   * Which makes the permission finer than we assumed. It is not "may write to
+   * this name" but "may call this setter on this name" — so the agent can be
+   * given `setText` and nothing else, on one name and no other.
+   *
+   * The value passed here is irrelevant to the grant; only selector and name
+   * are read out. We send an empty string to make that obvious.
+   *
+   *   resolver.mjs grant-setter <label> <account> [key]
+   */
   const account = a
+  const key = b ?? 'nextkey.request'
   const fqdn = `${label}.${PARENT}`
   const dnsName = toHex(packetToBytes(fqdn))
   const resolver = await publicClient.readContract({
     address: NEXTKEY_REGISTRY, abi: registryAbi, functionName: 'getResolver', args: [label],
   })
+
+  const setterCall = encodeFunctionData({
+    abi: resolverAbi, functionName: 'setText', args: [dnsName, key, ''],
+  })
+
   console.log(`  name        ${fqdn}`)
   console.log(`  grantee     ${account}`)
-  await send({ to: resolver, abi: resolverAbi, functionName: 'grantSetterRoles', args: [dnsName, account] })
+  console.log(`  authorizes  setText(${key}) — selector ${setterCall.slice(0, 10)}`)
+  console.log(`  calldata    ${setterCall.slice(0, 42)}…`)
+  await send({ to: resolver, abi: resolverAbi, functionName: 'grantSetterRoles', args: [setterCall, account] })
+}
+
+else if (command === 'show-roles') {
+  /**
+   * Read the role bitmap an account holds on one name, straight from the
+   * resolver. A claim like "the agent holds exactly one permission" should be
+   * checkable rather than believed, and this is where it is checked.
+   *
+   * Roles are addressed by a numeric resource id. It is not the namehash, and
+   * `getRecordId(namehash)` answers 0 — the derivation is internal and
+   * undocumented, so guessing it is a waste of an evening.
+   *
+   * We do not have to guess. The resolver states the resource itself whenever
+   * it refuses a call: its authorization error carries (resource, required
+   * role, account). So we ask it to refuse one on purpose — a simulated
+   * `setText` from the zero address, which holds nothing anywhere — and read
+   * the resource out of the refusal. No transaction, no gas, and it stays
+   * correct if ENS changes the derivation tomorrow.
+   *
+   * Roles occupy nybbles; a role's admin sits at `role << 128`, so an account
+   * that may use a permission but not pass it on shows bits in the low half
+   * only.
+   *
+   *   resolver.mjs show-roles <label> <account> [key]
+   */
+  const account = a
+  const key = b ?? 'nextkey.request'
+  const fqdn = `${label}.${PARENT}`
+  const dnsName = toHex(packetToBytes(fqdn))
+  const resolver = await publicClient.readContract({
+    address: NEXTKEY_REGISTRY, abi: registryAbi, functionName: 'getResolver', args: [label],
+  })
+
+  /** Walk the error chain for the raw revert payload viem could not decode. */
+  const rawRevert = (e) => {
+    for (let cur = e, i = 0; cur && i < 12; cur = cur.cause, i++) {
+      const v = cur.raw ?? cur.data
+      if (typeof v === 'string' && v.startsWith('0x') && v.length >= 202) return v
+    }
+  }
+
+  let resource, required
+  try {
+    await publicClient.simulateContract({
+      address: resolver, abi: resolverAbi, functionName: 'setText',
+      args: [dnsName, key, ''], account: zeroAddress,
+    })
+    console.log(`  The zero address was allowed to write. That is not a role model.\n`)
+    process.exit(1)
+  } catch (e) {
+    const raw = rawRevert(e)
+    if (!raw) {
+      console.log(`  could not read the resource out of the refusal:`)
+      console.log(`  ${e.shortMessage ?? e.message.split('\n')[0]}\n`)
+      process.exit(1)
+    }
+    resource = BigInt('0x' + raw.slice(10, 74))
+    required = BigInt('0x' + raw.slice(74, 138))
+  }
+
+  const bitmap = await publicClient.readContract({
+    address: resolver, abi: rolesAbi, functionName: 'roles', args: [resource, account] })
+
+  // Per-resource roles are only half the picture, and reporting them alone is
+  // misleading: the name's owner shows 0x0 here and can nevertheless write,
+  // because authority also descends from a root resource. An account with root
+  // roles rules every name; an account with one resource role rules one node.
+  // That difference is the delegation model, so both halves get printed.
+  let rootBitmap = null
+  try {
+    const root = await publicClient.readContract({
+      address: resolver, abi: rolesAbi, functionName: 'ROOT_RESOURCE' })
+    rootBitmap = await publicClient.readContract({
+      address: resolver, abi: rolesAbi, functionName: 'roles', args: [root, account] })
+  } catch { /* left null and reported as unread rather than as zero */ }
+
+  const split = (bm) => {
+    const bits = []
+    for (let i = 0n; i < 256n; i++) if ((bm >> i) & 1n) bits.push(Number(i))
+    return { use: bits.filter((n) => n < 128), admin: bits.filter((n) => n >= 128).map((n) => n - 128) }
+  }
+  const here = split(bitmap)
+  const root = rootBitmap === null ? null : split(rootBitmap)
+  const effective = rootBitmap === null ? bitmap : bitmap | rootBitmap
+
+  console.log(`  name        ${fqdn}`)
+  console.log(`  setter      setText(${key})`)
+  console.log(`  resource    0x${resource.toString(16)}   (from the contract's own refusal)`)
+  console.log(`  requires    0x${required.toString(16)}`)
+  console.log(`  account     ${account}`)
+  console.log(`  ${'─'.repeat(70)}`)
+  console.log(`  on this name   0x${bitmap.toString(16)}`)
+  console.log(`    may use      ${here.use.length ? here.use.join(', ') : '— none'}`)
+  console.log(`    admin over   ${here.admin.length ? here.admin.join(', ') : '— none, cannot delegate onward'}`)
+  if (root) {
+    console.log(`  at the root    0x${rootBitmap.toString(16)}`)
+    console.log(`    may use      ${root.use.length ? root.use.join(', ') : '— none'}`)
+    console.log(`    admin over   ${root.admin.length ? root.admin.join(', ') : '— none'}`)
+  } else {
+    console.log(`  at the root    — could not read ROOT_RESOURCE`)
+  }
+  console.log(`  ${'─'.repeat(70)}`)
+  console.log(`  may write   ${(effective & required) === required ? 'YES' : 'no'}`)
+  console.log(`  authority   ${
+    (bitmap & required) === required && rootBitmap && (rootBitmap & required) === required
+      ? 'both — root and this name'
+      : (bitmap & required) === required ? 'this name only — scoped, cannot reach any other'
+      : rootBitmap && (rootBitmap & required) === required ? 'inherited from the root — reaches every name'
+      : 'none'}`)
+  console.log()
 }
 
 else if (command === 'read-text') {
