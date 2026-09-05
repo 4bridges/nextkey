@@ -179,7 +179,25 @@ This is deliberately load-bearing rather than decorative: remove the workflow an
 
 **Secrets in this build** are resolved from the local environment rather than from the Vault DON, which keeps the demo reproducible for anyone with the CRE CLI and no beta grant. Chainlink Labs confirmed during the hackathon that `cre workflow simulate` runs confidential workflows without beta access; the grant is only needed to deploy to the confidential workflow DON and to store secrets on the Vault DON.
 
-<!-- TODO: link to the workflow source and reference evidence/cre-simulation.log -->
+### Making a confidential verdict checkable
+
+An enclave's inputs are invisible by design, and that creates a gap: *the enclave approved this* cannot be checked by anyone who cannot see what it was given. So the verdict carries the hash of the public request:
+
+```
+[USER LOG] Decision for 0x5ab6aad279b3700b: RELEASE (quorum_and_delay_satisfied)
+[USER LOG] Bound to on-chain request 0xb74ac56696e0e84612546123e2ec0a495a5b071be625b10141f2af4f59ce5336
+
+"RELEASE — quorum_and_delay_satisfied (request 0x5ab6aad279b3700b,
+ bound to 0xb74ac566…, secret in enclave: true)"
+```
+
+That hash is of the record the agent wrote at `agent.nextkey.eth · nextkey.request` in [`0x14796928…ea485c`](https://sepolia.etherscan.io/tx/0x14796928813fd4b495c6a3442c0207d719ab98e4154fb205d1ee7601d7ea485c). Read the record, hash it, compare — `bun test` does exactly that against the live fixture. The enclave hashes the stored bytes before parsing them, because re-serialising a parsed object reorders keys and would produce a hash matching nothing on chain.
+
+What crosses back out: request id, verdict, coarse reason, and a hash of something already public. What does not: the guardians, the approval count, the policy, and the credential. `quorum_not_met` reports that a threshold was missed without reporting by how much, because the distance to a threshold is itself useful to an attacker.
+
+The guardian approvals in `fixtures/release-request.json` are fabricated stand-ins — guardians are not built yet, and the fixture says so in its first field. The request they surround is real and on chain.
+
+Source: [`nextkey-cre/my-workflow/workflow.ts`](./nextkey-cre/my-workflow/workflow.ts) · rule tests in `workflow.test.ts` · evidence in [`evidence/cre-simulation.log`](./evidence/cre-simulation.log) and [`evidence/cre-decision.log`](./evidence/cre-decision.log).
 
 ---
 
@@ -211,6 +229,7 @@ Sponsor qualification evidence is collected in [`evidence/`](./evidence) as it i
 - `cre-simulation.log` — terminal output of a successful Confidential Workflow simulation
 - `encryption-loop.log` — store, share and open, run against the hackathon deployment
 - `agent-boundary.log` — the release agent's role state, and its write attempt being refused
+- `cre-decision.log` — the confidential verdict, bound by hash to the on-chain request
 - ENSv2 transaction hashes for registry deployment, subname registration and role grants
 - Selfie Check flow captured from the World ID Sandbox App
 

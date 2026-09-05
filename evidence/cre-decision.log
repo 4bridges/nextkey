@@ -1,0 +1,72 @@
+# NextKey — the confidential release decision, bound to the chain.
+# Chainlink CRE Confidential Workflow, AWS Nitro us-west-2. Recorded 2026-09-05.
+#
+# What this run demonstrates, in one sentence: a verdict about a request that
+# an autonomous agent filed on chain, decided over data that never left the
+# enclave, and tied to that request by a hash anyone can recompute.
+
+PS> cre workflow simulate my-workflow
+
+! Using default private key for chain write simulation.
+✓ Workflow compiled
+✓ Simulation limits enabled
+  Binary hash: 7be2a5d4a51de312c2ce8bc8cc9a8892b20fc424ac6d81ac8262d0266bc27419
+  Config hash: d953d5cbcc7da1259941b9fec9dbf0fed2ef5cd91bb17aab86890ecbe5b025cc
+
+2026-09-05T22:13:12Z [SIMULATION] Simulator Initialized
+2026-09-05T22:13:12Z [SIMULATION] Running trigger trigger=cron-trigger@1.0.0
+
+╭────────────────────────────────────────────────────────────────────────────────────╮
+│ Trigger requested TEE Execution your trigger will run in one of the following Tees: │
+│     - AWS Nitro in us-west-2                                                        │
+│ During real execution, user logs for this trigger will not be visible, and will not │
+│ leave the TEE. They are presented in the simulator for debugging only.              │
+╰────────────────────────────────────────────────────────────────────────────────────╯
+
+2026-09-05T22:14:00Z [USER LOG] Decision for 0x5ab6aad279b3700b: RELEASE (quorum_and_delay_satisfied)
+2026-09-05T22:14:00Z [USER LOG] Bound to on-chain request 0xb74ac56696e0e84612546123e2ec0a495a5b071be625b10141f2af4f59ce5336
+
+✓ Workflow Simulation Result:
+"RELEASE — quorum_and_delay_satisfied (request 0x5ab6aad279b3700b, bound to 0xb74ac566…, secret in enclave: true)"
+
+2026-09-05T22:14:00Z [SIMULATION] Execution finished signal received
+
+# ─────────────────────────────────────────────────────────────────────────────
+# How to check this rather than believe it
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# 1. Read the request off the chain. It is a public text record:
+#
+#      node scripts/agent.mjs show
+#
+#    It was written by tx 0x14796928813fd4b495c6a3442c0207d719ab98e4154fb205d1ee7601d7ea485c,
+#    signed by the agent's own key, under an ENS role that permits that one
+#    record on that one name and nothing else.
+#
+# 2. Hash it. `show` prints the hash; `bun test` asserts it independently.
+#    It is 0xb74ac56696e0e84612546123e2ec0a495a5b071be625b10141f2af4f59ce5336.
+#
+# 3. Compare with the hash in the verdict above. They agree, so the enclave
+#    judged this request — not a different one, and not a modified one.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# What crossed back out of the enclave, and what did not
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Out:  the request id, the verdict, a coarse reason, and the hash of a record
+#       that was already public.
+#
+# Not out:  who the guardians are, how many approved, what the quorum is, how
+#       far the request was from its threshold, and the API credential. The
+#       distance to a threshold is itself useful to an attacker — which is why
+#       the reason is `quorum_not_met` rather than `1_of_2`.
+#
+# Honest scope: CRE protects data *during execution*, not source code. This
+# workflow is public, as it should be for an open-source project. The claim is
+# narrow and true — the secret never passes a node an operator can inspect. It
+# is not a claim that the release logic is hidden.
+#
+# Also honest: the guardian approvals in fixtures/release-request.json are
+# fabricated stand-ins. Guardians are not built yet. The request they surround
+# is real and on chain; the people are not, and the fixture says so in its
+# first field.

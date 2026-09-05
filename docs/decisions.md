@@ -153,3 +153,24 @@ Entries that record a *reversal* are the most valuable ones — they are what ma
 And it reported per-resource roles only, which told us the *owner* had no permissions on a name he can freely write. Authority also descends from `ROOT_RESOURCE`, and a tool that shows one half of a two-half model is not incomplete, it is misleading. Both halves are printed now.
 
 **Still open.** The workflow does not yet evaluate this request. The agent writes a proposal and a `requestHash`; binding a confidential verdict to that hash is the next piece, and it is what turns the Chainlink slot from qualified into earned.
+
+---
+
+## 2026-09-05 (night, later) — the verdict is bound to the request
+
+**The confidential workflow now decides about a real on-chain request, and says which one.**
+
+The gap it closes is specific. An enclave's inputs are invisible by design, so "the enclave approved this" is a claim about something nobody else can see — worth very little on its own. The workflow now hashes the request record verbatim as stored at `agent.nextkey.eth · nextkey.request` and returns that hash with the verdict. Read the record, hash it, compare. `bun test` does it against the live fixture, so the assertion is executable rather than described.
+
+```
+"RELEASE — quorum_and_delay_satisfied (request 0x5ab6aad279b3700b,
+ bound to 0xb74ac566…, secret in enclave: true)"
+```
+
+**Hash first, parse second.** Re-serialising a parsed object reorders keys and yields a hash that matches nothing on chain. The request therefore travels through the schema as an opaque string and is parsed only after hashing. Easy to get wrong, and it would have failed silently — the hash would simply never have matched, and the obvious suspicion would have fallen on the chain read.
+
+**The fixture is generated, not written.** `agent.mjs fixture` reads the record off the chain and wraps the confidential half around it. Only the guardian approvals are invented, and the file's first field says so. A fixture that quietly hand-copies the request would make the whole binding circular.
+
+**What this changes for the Chainlink slot.** The substantive criterion is that the workflow is a meaningful part of the product rather than an isolated example. Until tonight our honest answer was *not yet*: the rule was tested, the simulation ran, but it judged invented data. It now judges a request an independent agent filed on chain under a scoped ENS role, and its verdict is checkable against that request. Qualified became earned.
+
+**Still deliberately out of scope.** Delivering the signed report to a contract via `evmClient.writeReport` — so a RELEASE would write the grant itself. The decision path is complete; the actuation path is one step short, and saying so is better than implying otherwise.
