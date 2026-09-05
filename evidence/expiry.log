@@ -1,0 +1,64 @@
+# NextKey — watching a name expire.
+# ENSv2 hackathon deployment on Sepolia. Recorded 2026-09-06.
+#
+# The README claims that limiting access to a period is the subname's expiry,
+# and that resolution stops once block.timestamp >= expiry — enforced by the
+# registry rather than by us. That is a claim about someone else's contract.
+# The only honest way to make it is to let a name expire and watch.
+
+PS> node --env-file=.env scripts/demo-expiry.mjs 240
+
+Expiry, demonstrated rather than asserted
+────────────────────────────────────────────────────────────────────────
+  name        fleeting23418.nextkey.eth
+  lifetime    240s
+  expires at  21:34:23 UTC
+  registry    0x612034AB34Ec262d5417EA3163718E7455157908
+  resolver    0x52A02f288AA5dde082206D85d4001880D64F4101
+
+  register               0x71050738d259148ccee57998c6b7cf79af6b8fe32d04ff8dfc52f4615b9fcacd success
+  write record           0x0213f59d1ae3d55330934238f34636ac879e9a8b9c2ba9530df3392fdd408ad7 success
+
+  registry reports expiry 1788644063  (21:34:23 UTC)
+  we asked for            1788644063
+
+  Reading fleeting23418.nextkey.eth · nextkey.demo through the Universal Resolver.
+────────────────────────────────────────────────────────────────────────
+  21:31:04   199s left   "This record is readable until the name expires…"
+  21:31:25   179s left   "This record is readable until the name expires…"
+  21:31:45   158s left   "This record is readable until the name expires…"
+  21:32:05   138s left   "This record is readable until the name expires…"
+  21:32:25   118s left   "This record is readable until the name expires…"
+  21:32:45    98s left   "This record is readable until the name expires…"
+  21:33:05    78s left   "This record is readable until the name expires…"
+  21:33:25    58s left   "This record is readable until the name expires…"
+  21:33:45    38s left   "This record is readable until the name expires…"
+  21:34:05    18s left   "This record is readable until the name expires…"
+  21:34:25    -2s left   — empty
+────────────────────────────────────────────────────────────────────────
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Reading the result
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Readable at 18 seconds remaining. Empty at 2 seconds past. No grace period,
+# no lag: the boundary is where the registry says it is.
+#
+# Two details make this evidence rather than a self-test.
+#
+# It reads through the Universal Resolver, the path any client takes. Reading
+# the resolver directly would have kept answering — the record is still in its
+# storage, untouched. Expiry does not delete anything; it ends resolution, and
+# resolution is how a client finds a record at all.
+#
+# The expiry was verified against the registry (findExpiry) rather than assumed
+# from what we passed in. Those agreed, so the countdown above is measured
+# against the contract's own view of the deadline.
+#
+# What this means for NextKey: "limit access to seven days" is not a policy we
+# apply. It is a uint64 the registry enforces against everyone, including us.
+# The ciphertext and every wrapped key survive in resolver storage exactly as
+# before — and become unreachable by name, which is the only way anyone was
+# ever reaching them.
+#
+# fleeting23418.nextkey.eth is left expired on purpose. It is the artifact.

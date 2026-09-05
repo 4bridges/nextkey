@@ -45,8 +45,8 @@ So NextKey splits the two concerns rather than conflating them. **Confidentialit
 | What the user does | What happens in the protocol |
 |---|---|
 | Share a secret with `anna.eth` | A key blob wrapped to Anna's `nextkey.pubkey` record is written into the subname. Anna can decrypt it; anyone can see that something was shared |
-| Limit access to seven days | The subname's `expiry`. Resolution stops once `block.timestamp >= expiry` — enforced by the registry, not by us |
-| Revoke access | Overwrite or clear the record. Only accounts holding the setter role can do it, so revocation is as strong as the role model |
+| Limit access to seven days | The subname's `expiry`. Resolution stops once `block.timestamp >= expiry` — enforced by the registry, not by us. [Watched happen](./evidence/expiry.log): readable at 18s remaining, empty at 2s past, no grace period |
+| Revoke access | Clear the grant record. Only accounts holding the setter role can, so revocation is as strong as the role model. [Executed](./evidence/revocation.log): Anna opens, the owner revokes, Anna cannot |
 | Delegate writing to the release agent | `grantSetterRoles()` for one setter, one key, one name. The agent may propose; it holds no key material and cannot decrypt anything |
 | Keep control while delegating | Roles and their admins are separate. The delegate's bitmap has no admin half, so it can act and cannot pass the right on |
 | Give the agent an identity | Its own namespace holding that single role — ENS's own bonus criterion for this hackathon: *agents as namespaces, each with their own identity and permissions* |
@@ -320,6 +320,8 @@ Sponsor qualification evidence is collected in [`evidence/`](./evidence) as it i
 | [`encryption-loop.log`](./evidence/encryption-loop.log) | `store` → `share` → `open`, against the hackathon deployment, with transaction hashes |
 | [`agent-boundary.log`](./evidence/agent-boundary.log) | The agent's role state read from the resolver, and its forbidden write being refused |
 | [`cre-decision.log`](./evidence/cre-decision.log) | The verdict, bound by hash to the request on chain, and how to check it yourself |
+| [`revocation.log`](./evidence/revocation.log) | Access withdrawn and the recipient locked out, with what revocation cannot undo |
+| [`expiry.log`](./evidence/expiry.log) | A name expiring in real time, read through the Universal Resolver until it stops answering |
 
 Transaction hashes for the registry deployment, subname registration, role grants and
 the rejected write are in the tables above and in the logs.

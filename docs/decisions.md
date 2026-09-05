@@ -123,6 +123,23 @@ Worth recording as a pattern: the bug was in the *addressing*, not in the crypto
 
 ---
 
+## 2026-09-06 — the last two claims get evidence
+
+**Revocation and expiry were described in the README and had never been run.** Both are now executed rather than asserted, which closes the gap this project has been punished for twice already: the read-permission assumption, and the "most-used implementation" heuristic. Writing a claim down is not the same as knowing it holds.
+
+**Revocation.** Anna opens the secret, the owner clears her grant, Anna cannot open it — [`evidence/revocation.log`](../evidence/revocation.log), transactions `0xa8951116…67905b` and `0xe83544fb…4826f`. The grant was then restored so the live demo keeps working, and it returned to the same record address, because a grant is addressed by the recipient's key and Anna's key did not change. The fingerprint scheme paying for itself.
+
+The log ends with what revocation cannot do: it does not make Anna forget. No system can retract knowledge, and `revoke` prints that at the moment a user is most likely to assume otherwise.
+
+**Expiry.** A throwaway subname with a 240-second life, a record written to it, and then a read through the Universal Resolver every twenty seconds until the registry stopped answering. Readable at 18 seconds remaining, empty at 2 seconds past. No grace period.
+
+Two choices make it evidence rather than a self-test. It reads through the Universal Resolver, the path a client takes — reading the resolver directly would have kept answering, since the record is still in storage and expiry ends resolution rather than deleting anything. And the deadline was read back from the registry with `findExpiry` instead of assumed from what we passed in.
+
+`scripts/demo-expiry.mjs` reports honestly when it fails: if the name were still resolving after expiry it says the run proves nothing and suggests a longer window, rather than printing a conclusion the data does not support. A demonstration script that can only succeed is a decoration.
+
+**`fleeting23418.nextkey.eth` is left expired on purpose.** It is the artifact.
+---
+
 ## Template for further entries
 
 ```

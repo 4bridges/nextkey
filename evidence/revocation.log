@@ -1,0 +1,73 @@
+# NextKey — revocation, and its honest limit.
+# ENSv2 hackathon deployment on Sepolia. Recorded 2026-09-06.
+#
+# The README claims that access can be withdrawn and that who may withdraw it
+# is enforced by the setter role on the name. This is that claim, executed.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 1. Before: Anna can open the secret.
+# ─────────────────────────────────────────────────────────────────────────────
+
+PS> node scripts/nextkey.mjs open visa anna
+
+  visa.nextkey.eth  opened as anna
+  witch collapse practice feed shame open despair creek road again ice least
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 2. The owner withdraws it.
+# ─────────────────────────────────────────────────────────────────────────────
+
+PS> node --env-file=.env scripts/nextkey.mjs revoke visa anna.nextkey.eth
+
+  revoking anna.nextkey.eth's access to visa.nextkey.eth
+  grant record  nextkey.grant.e8d67b995039bdcf
+  the ciphertext stays; the wrapped key is cleared
+  → 0xa89511166f9dd3c2a0f2918c7063b273da9e28458bb1578a428927903e67905b success
+
+  Note what this does and does not do. Anyone who already decrypted
+  the secret still knows it — no system can retract knowledge. What ends is
+  future access, and who may end it is enforced by the setter role on the name.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 3. After: Anna cannot.
+# ─────────────────────────────────────────────────────────────────────────────
+
+PS> node scripts/nextkey.mjs open visa anna
+
+  Error: no grant at nextkey.grant.e8d67b995039bdcf for "anna"
+         — access was never given, or was revoked
+
+# The ciphertext at visa.nextkey.eth is untouched and still public. What ended
+# is Anna's ability to unwrap the key to it. Nothing was deleted from her
+# machine and nothing needed to be: the wrapped key lived on chain, in a record
+# only an account holding the setter role could clear.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 4. Restored, so the live demo keeps working.
+# ─────────────────────────────────────────────────────────────────────────────
+
+PS> node --env-file=.env scripts/nextkey.mjs share visa alice anna.nextkey.eth
+
+  sharing visa.nextkey.eth with anna.nextkey.eth
+  their public key comes from their own ENS record — they never registered with us
+  grant record  nextkey.grant.e8d67b995039bdcf
+  → 0xe83544fbcb128fecd64fec8839fe37a96a0460b57d7227bd604c488e3ca4826f success
+
+# The grant returns to the same address, because a grant is addressed by the
+# recipient's key and Anna's key did not change. That is the property the
+# fingerprint scheme was chosen for.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# What this does not demonstrate
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# That Anna forgot the secret. She did not, and no product can arrange that.
+# Revocation ends future access; it cannot retract knowledge already obtained.
+# A system claiming otherwise would be lying, and the note printed by `revoke`
+# says so at the moment a user is most likely to assume the opposite.
+#
+# Nor does it stop a third party who copied the grant record while it was
+# public from decrypting it — if they hold Anna's private key. They do not,
+# which is the whole point of wrapping to a key rather than storing a
+# permission. But "revoked" means "no longer granted", not "unreadable to
+# anyone who ever held the key".
