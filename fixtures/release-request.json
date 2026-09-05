@@ -1,0 +1,11 @@
+{
+  "requestId": "req_2026_09_05_001",
+  "secret": "visa.alice.nextkey.eth",
+  "policy": { "quorum": 2, "delaySeconds": 60 },
+  "approvals": [
+    { "guardianRef": "g1", "at": 1788560000 },
+    { "guardianRef": "g2", "at": 1788560030 }
+  ],
+  "cancelledAt": null,
+  "observedAt": 1788560200
+}

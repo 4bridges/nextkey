@@ -1,6 +1,5 @@
 {
   "schedule": "0 */1 * * * *",
-  "url": "https://postman-echo.com/headers",
-  "secretId": "API_TOKEN",
-  "scoreThreshold": 500
+  "stateUrl": "https://raw.githubusercontent.com/4bridges/nextkey/main/fixtures/release-request.json",
+  "secretId": "API_TOKEN"
 }
