@@ -8,14 +8,19 @@ index.html      the landing page, in ten languages
 demo.html       the live view
 i18n.js         the nine translations — English is not in here, see below
 app.js          bundled reader for demo.html — built, do not edit
+brand/          the mark, icons, social card and manifest — see brand/README.md
 src/app.js      the source app.js is built from
 ```
 
 ## Deploy
 
 Everything is a plain file with relative paths, so it also works from a
-subdirectory. Upload `index.html`, `demo.html`, `i18n.js` and `app.js`. `src/`
-and this README are not needed on the server.
+subdirectory. Upload `index.html`, `demo.html`, `i18n.js`, `app.js` and the
+whole `brand/` folder. `src/` and this README are not needed on the server.
+
+`brand/site.webmanifest` references icons by absolute path (`/brand/…`), so it
+assumes the site sits at the domain root. Serving from a subdirectory means
+editing those four paths.
 
 **No `.htaccess` is required.** An earlier plan called for SPA routing, which on
 Apache needs a rewrite to `index.html` or a direct hit on `/demo` returns 404.

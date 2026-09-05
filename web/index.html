@@ -3,7 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22%239a5218%22%2F%3E%3Ccircle%20cx%3D%2213%22%20cy%3D%2213%22%20r%3D%225.2%22%20fill%3D%22none%22%20stroke%3D%22%23faf9f7%22%20stroke-width%3D%222.6%22%2F%3E%3Cpath%20d%3D%22M16.5%2016.5%20L24%2024%20M21%2021%20l2.5-2.5%20M24%2024%20l2-2%22%20fill%3D%22none%22%20stroke%3D%22%23faf9f7%22%20stroke-width%3D%222.6%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E">
+<link rel="icon" href="./brand/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="./brand/favicon.ico" sizes="16x16 32x32 48x48">
+<link rel="apple-touch-icon" href="./brand/apple-touch-icon.png">
+<link rel="manifest" href="./brand/site.webmanifest">
+<meta name="theme-color" content="#9a5218">
 <title>NextKey — hand over secrets by ENS name</title>
 <meta name="description" content="Share a seed phrase or credential with someone by their ENS name. Access ends when you say. Recovery proves a living human, not a backup file.">
 <link rel="canonical" href="https://nextkey.li/">
@@ -22,7 +26,12 @@
 <meta property="og:title" content="NextKey — hand over secrets by ENS name">
 <meta property="og:description" content="Share a seed phrase or credential with someone by their ENS name. Access ends when you say. Recovery proves a living human, not a backup file.">
 <meta property="og:url" content="https://nextkey.li/">
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="https://nextkey.li/brand/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="NextKey — hand over a seed phrase without handing over control">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://nextkey.li/brand/og-image.png">
 <style>
   :root{
     color-scheme: light dark;
@@ -64,6 +73,8 @@
   h3{font-size:1.08rem;font-weight:640;margin-bottom:.3rem}
   p{margin:0 0 1rem;max-width:var(--measure)}
   .lead{font-size:1.12rem;color:var(--muted);max-width:40rem}
+  .brandline{display:flex;align-items:center;gap:.5rem}
+  .brandmark{width:1.5rem;height:1.5rem;flex:none}
   .eyebrow{
     font-size:.9rem;letter-spacing:.13em;text-transform:uppercase;
     color:var(--accent);font-weight:640;margin:0 0 1.1rem
@@ -90,8 +101,8 @@
   .topbar span.lbl{font-size:.88rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
   /* A native <select> hands the phone's own full-width picker to the user.
      Ten two-letter codes do not need a sheet covering the screen, so this is
-     a small menu anchored to its button — two columns, five rows, no taller
-     than it has to be. */
+     a small menu anchored to its button — one column, scrolling if it runs
+     out of room, and never wider than the codes it holds. */
   .langpick{position:relative}
   .langbtn{
     font:inherit;font-size:.9rem;font-weight:640;letter-spacing:.03em;
@@ -111,14 +122,17 @@
     position:absolute;top:calc(100% + .35rem);inset-inline-end:0;z-index:20;
     background:var(--surface);border:1px solid var(--line);border-radius:8px;
     padding:.3rem;width:max-content;
-    display:grid;grid-template-columns:repeat(2,1fr);gap:.15rem;
+    display:flex;flex-direction:column;gap:.1rem;
+    /* Ten rows are taller than a short phone in landscape, so the list
+       scrolls rather than running off the bottom. */
+    max-height:min(20rem,60vh);overflow-y:auto;overscroll-behavior:contain;
     box-shadow:0 6px 24px rgba(0,0,0,.13)
   }
   .langmenu[hidden]{display:none}
   .langmenu button{
     font:inherit;font-size:.92rem;font-weight:640;letter-spacing:.03em;
     color:var(--ink);background:none;border:0;border-radius:5px;
-    padding:.42rem .75rem;cursor:pointer;text-align:center
+    padding:.42rem 1.1rem;cursor:pointer;text-align:center
   }
   .langmenu button:hover{background:var(--code)}
   .langmenu button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
@@ -243,7 +257,12 @@
 
   <!-- 1 — Hero -->
   <section class="hero">
-    <p class="eyebrow">NextKey</p>
+    <p class="eyebrow brandline">
+      <svg class="brandmark" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+        <path d="M32 4.5 54.8 17.75v26.5L32 57.5 9.2 44.25v-26.5z" stroke="currentColor" stroke-width="5.5" stroke-linejoin="round"/>
+        <circle cx="32" cy="27" r="7" stroke="currentColor" stroke-width="5"/>
+        <path d="M32 34v13" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+      </svg>NextKey</p>
     <h1 data-i18n="hero.h1">Hand over a seed phrase without handing over control</h1>
     <p class="lead" data-i18n="hero.lead">
       NextKey shares secrets by ENS name, releases them by rules, and restores access
@@ -642,6 +661,7 @@
     btn.setAttribute('aria-expanded', 'true')
     var cur = opts.filter(function (o) { return o.getAttribute('aria-current') === 'true' })[0]
     ;(cur || opts[0]).focus()
+    ;(cur || opts[0]).scrollIntoView({ block: 'nearest' })
   }
   function close(refocus) {
     menu.hidden = true
@@ -667,12 +687,13 @@
   opts.forEach(function (o, i) {
     o.addEventListener('click', function () { choose(o.dataset.code) })
     o.addEventListener('keydown', function (e) {
-      // Two columns, so left and right step by one and up and down by two.
-      var step = { ArrowDown: 2, ArrowUp: -2, ArrowRight: 1, ArrowLeft: -1 }[e.key]
+      // One column, so every arrow steps by one; the list wraps at both ends.
+      var step = { ArrowDown: 1, ArrowUp: -1, ArrowRight: 1, ArrowLeft: -1 }[e.key]
       if (step) {
         e.preventDefault()
         var n = (i + step + opts.length) % opts.length
         opts[n].focus()
+        opts[n].scrollIntoView({ block: 'nearest' })
       } else if (e.key === 'Escape') {
         e.preventDefault(); close(true)
       } else if (e.key === 'Home') {
