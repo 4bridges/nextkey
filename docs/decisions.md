@@ -74,6 +74,29 @@ Worth keeping: the real signature is better than the documented one. Assigning s
 
 ---
 
+## 2026-09-05 (evening) — the correction that mattered
+
+**ENSv2 does not grant read permission, and we had been describing the product as if it did.**
+
+The plan said sharing a secret meant granting someone the right to read one text record. The contracts disagreed. The Permissioned Resolver's primitive is `grantSetterRoles(bytes name, address)` — it governs who may **write**. There is no read permission to grant, and there could not be: everything on a public chain is publicly readable.
+
+Found by reading the resolver's bytecode after `setText(bytes32,string,string)` reverted with empty data. The real signature is `setText(bytes name, string key, string value)`, taking the DNS-encoded name.
+
+The product survives the correction; the description did not. NextKey now splits the two concerns explicitly:
+
+- **Confidentiality by cryptography.** The record holds ciphertext. Who can decrypt is decided by wrapping the key to the recipient's X25519 public key, which is itself a text record on their name.
+- **Control by protocol roles.** Who may update the pointer, revoke it, or delegate — that is what ENSv2 enforces, and it enforces it against us as much as against anyone.
+
+This is the more honest claim, and the stronger one. Asserting that a public chain keeps secrets would have been false, and an ENS judge would have seen through it in a minute.
+
+**Also learned, and now in `FEEDBACK-ENS.md`:** the registry's `getResolver` / `getSubregistry` take the label as a *string*, not `bytes32`; `findTokenId(string)` exists and is the correct way to obtain a mutable token id; and the resolver's setters take DNS-encoded names. None of this is in the documentation.
+
+**The tool that made it possible** is `scripts/probe-abi.mjs`: it follows the EIP-1967 slot to the implementation, extracts the selector constants from the bytecode and looks them up. With unverified contracts and unreliable docs, reading the truth out of the deployed code was the only reliable method — and it turned three separate dead ends into three ten-minute fixes.
+
+**End-to-end verification.** `nextkey.eth` → our UserRegistry → `visa.nextkey.eth` → its Permissioned Resolver → text record, read back through the Universal Resolver rather than the resolver directly. That is the path a real client takes, which is what makes it evidence rather than a self-test.
+
+---
+
 ## Template for further entries
 
 ```

@@ -38,18 +38,22 @@ Access control is not a table in our backend. It is state in a public registry t
 
 Each stored secret becomes a **subname** in a `UserRegistry` deployed through the Verifiable Factory and parented under `nextkey.eth`. Every subname is an ERC1155Singleton token with exactly one owner, and carries its own Permissioned Resolver. The product's sharing semantics then coincide with protocol primitives:
 
+**What ENS does and does not do here.** It would be easy to claim that ENSv2 grants Anna permission to *read* a secret. It does not, and no chain could: everything stored on a public chain is publicly readable. We assumed otherwise for a while and the contracts corrected us — the Permissioned Resolver's primitive is `grantSetterRoles(bytes name, address)`, which governs who may **write** a record.
+
+So NextKey splits the two concerns rather than conflating them. **Confidentiality comes from cryptography**: the record holds ciphertext, and who can decrypt it is decided by wrapping the key to the recipient's X25519 public key — itself published as a text record, which is how we encrypt for someone we know only by name, with no key server and no registration on their side. **Control comes from protocol roles**: who may update the pointer, who may revoke it, who may delegate.
+
 | What the user does | What happens in the protocol |
 |---|---|
-| Share a secret with `anna.eth` | `grantRoles()` on that resource. The Permissioned Resolver exposes 11 roles, 8 of them per-record — so we delegate the right to **one** text record and nothing else |
-| Limit access to seven days | The subname's `expiry` field. Access ends once `block.timestamp >= expiry` |
-| Revoke access | `revokeRoles()`. Unlike ENSv1 fuses, Enhanced Access Control is reversible |
-| Stop Anna from passing it on | Simply never grant `ROLE_CAN_TRANSFER_ADMIN` — the access becomes non-transferable |
-| Name a guardian | A role scoped to the recovery resource only: may confirm, may not read |
-| Run a release agent | Its own namespace holding exactly one role — *propose* a release. It cannot read and cannot release |
+| Share a secret with `anna.eth` | A key blob wrapped to Anna's `nextkey.pubkey` record is written into the subname. Anna can decrypt it; anyone can see that something was shared |
+| Limit access to seven days | The subname's `expiry`. Resolution stops once `block.timestamp >= expiry` — enforced by the registry, not by us |
+| Revoke access | Overwrite or clear the record. Only accounts holding the setter role can do it, so revocation is as strong as the role model |
+| Delegate writing to the release agent | `grantSetterRoles()` on exactly one name. The agent may propose; it holds no key material and cannot decrypt anything |
+| Keep control while delegating | Roles and their admins are separate. The owner keeps the admin role, so a delegate can act but cannot pass the right on |
+| Give the agent an identity | Its own namespace with that single role — ENS's own bonus criterion for this hackathon: *agents as namespaces, each with their own identity and permissions* |
 
-That last row is also ENS's own bonus criterion for this hackathon: *agents as namespaces, each with their own identity and permissions.*
+Each user's **notification channel** is a text record too, which is why step 3 above works for people who have never heard of NextKey.
 
-Two more ENSv2 features carry real weight here: the recipient's **X25519 public key** lives in a text record, so we can encrypt for someone we know only by name — no key server, no registration. And each user's **notification channel** is a text record too, which is why step 3 above works for people who have never heard of NextKey.
+**Verified end to end** on the hackathon deployment: `nextkey.eth` → our UserRegistry → `visa.nextkey.eth` → its Permissioned Resolver → a text record read back through the **Universal Resolver**, the same path any client would take. See `scripts/resolver.mjs`.
 
 <!-- TODO: add file/line pointers into the code for each row above before submission -->
 
