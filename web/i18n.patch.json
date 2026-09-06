@@ -1,0 +1,11 @@
+{
+  "de": { "t.chain.spent": "Dieser Name trägt jetzt Ihr Geheimnis und kann kein zweites tragen. Laden Sie die Seite neu, um mit einem frischen zu beginnen." },
+  "fr": { "t.chain.spent": "Ce nom porte désormais votre secret et ne peut pas en porter un second. Rechargez la page pour recommencer avec un nom neuf." },
+  "es": { "t.chain.spent": "Ese nombre ya lleva su secreto y no puede llevar otro. Recargue la página para empezar de nuevo con uno nuevo." },
+  "it": { "t.chain.spent": "Quel nome ora porta il suo segreto e non può portarne un secondo. Ricarichi la pagina per ricominciare con uno nuovo." },
+  "pt": { "t.chain.spent": "Esse nome leva agora o seu segredo e não pode levar outro. Recarregue a página para recomeçar com um novo." },
+  "ru": { "t.chain.spent": "Это имя теперь несёт ваш секрет и второго нести не может. Перезагрузите страницу, чтобы начать заново со свежим." },
+  "ua": { "t.chain.spent": "Це ім'я тепер несе ваш секрет і другого нести не може. Перезавантажте сторінку, щоб почати спочатку з новим." },
+  "cn": { "t.chain.spent": "这个名字现在装着您的秘密，装不下第二份。刷新页面即可用一个新的名字重新开始。" },
+  "fa": { "t.chain.spent": "این نام اکنون رازِ شما را در خود دارد و نمی‌تواند راز دومی بگیرد. برای شروع دوباره با نامی تازه، صفحه را بازخوانی کنید." }
+}
