@@ -50,6 +50,40 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   .iconbtn:hover{border-color:var(--muted)}
   .iconbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   .iconbtn svg{width:1.15rem;height:1.15rem}
+  .barctl{display:flex;align-items:center;gap:.5rem}
+  .langpick{position:relative}
+  .langbtn{
+    font:inherit;font-size:.9rem;font-weight:640;letter-spacing:.03em;
+    color:var(--ink);background:var(--surface);
+    border:1px solid var(--line);border-radius:6px;
+    padding:0 .55rem;height:2.15rem;cursor:pointer;
+    display:inline-flex;align-items:center;gap:.4rem
+  }
+  .langbtn:hover{border-color:var(--muted)}
+  .langbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .langbtn .caret{
+    width:0;height:0;border:4px solid transparent;border-top-color:currentColor;
+    translate:0 2px;opacity:.65
+  }
+  .langbtn[aria-expanded="true"] .caret{rotate:180deg;translate:0 -2px}
+  .langmenu{
+    position:absolute;top:calc(100% + .4rem);inset-inline-end:0;z-index:40;
+    background:var(--surface);border:1px solid var(--line);border-radius:8px;
+    padding:.3rem;width:max-content;
+    display:flex;flex-direction:column;gap:.1rem;
+    max-height:min(20rem,60vh);overflow-y:auto;overscroll-behavior:contain;
+    box-shadow:0 6px 24px rgba(0,0,0,.13)
+  }
+  .langmenu[hidden]{display:none}
+  .langmenu button{
+    font:inherit;font-size:.92rem;font-weight:640;letter-spacing:.03em;
+    color:var(--ink);background:none;border:0;border-radius:5px;
+    padding:.42rem 1.1rem;cursor:pointer;text-align:center
+  }
+  .langmenu button:hover{background:var(--code)}
+  .langmenu button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+  .langmenu button[aria-current="true"]{background:var(--accent);color:var(--accent-ink)}
+  [dir="rtl"] footer a{margin-right:0;margin-left:1.1rem}
   :root[data-theme="dark"] .i-moon{display:none}
   :root:not([data-theme="dark"]) .i-sun{display:none}
   @media (prefers-color-scheme: dark){
@@ -106,30 +140,50 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 <header class="bar">
   <div class="wrap barin">
     <a class="brand" href="./index.html" aria-label="NextKey"><svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M32 4.5 54.8 17.75v26.5L32 57.5 9.2 44.25v-26.5z" stroke="currentColor" stroke-width="5.5" stroke-linejoin="round"/><circle cx="32" cy="27" r="7" stroke="currentColor" stroke-width="5"/><path d="M32 34v13" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg><b>NextKey</b></a>
-    <button class="iconbtn" id="themebtn" type="button"
-            aria-label="Switch to dark theme" title="Switch theme">
-      <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a6.8 6.8 0 0 0 11 11z"/>
-      </svg>
-      <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="12" cy="12" r="4.2"/>
-        <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.2 5.2l1.4 1.4M17.4 17.4l1.4 1.4M18.8 5.2l-1.4 1.4M6.6 17.4l-1.4 1.4"/>
-      </svg>
-    </button>
+    <div class="barctl">
+      <button class="iconbtn" id="themebtn" type="button"
+              aria-label="Switch to dark theme" title="Switch theme">
+        <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a6.8 6.8 0 0 0 11 11z"/>
+        </svg>
+        <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4.2"/>
+          <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.2 5.2l1.4 1.4M17.4 17.4l1.4 1.4M18.8 5.2l-1.4 1.4M6.6 17.4l-1.4 1.4"/>
+        </svg>
+      </button>
+      <span class="lbl" id="lang-label" data-i18n="ui.lang" hidden>Language</span>
+      <div class="langpick">
+        <button class="langbtn" id="langbtn" type="button"
+                aria-haspopup="listbox" aria-expanded="false"
+                aria-labelledby="lang-label langbtn">EN<span class="caret"></span></button>
+        <div class="langmenu" id="langmenu" role="listbox" aria-labelledby="lang-label" hidden>
+          <button type="button" role="option" data-code="en">EN</button>
+          <button type="button" role="option" data-code="de">DE</button>
+          <button type="button" role="option" data-code="fr">FR</button>
+          <button type="button" role="option" data-code="it">IT</button>
+          <button type="button" role="option" data-code="es">ES</button>
+          <button type="button" role="option" data-code="pt">PT</button>
+          <button type="button" role="option" data-code="cn">CN</button>
+          <button type="button" role="option" data-code="ua">UA</button>
+          <button type="button" role="option" data-code="ru">RU</button>
+          <button type="button" role="option" data-code="fa">FA</button>
+        </div>
+      </div>
+    </div>
   </div>
 </header>
 
 <div class="wrap" style="padding-top:2.6rem;padding-bottom:2rem;border-bottom:1px solid var(--line)">
 
-  <p class="eyebrow">Live from the chain</p>
-  <h1>A secret, its grants, and an agent asking to release it</h1>
-  <p class="lead">
+  <p class="eyebrow" data-i18n="d.eyebrow">Live from the chain</p>
+  <h1 data-i18n="d.h1">A secret, its grants, and an agent asking to release it</h1>
+  <p class="lead" data-i18n="d.lead">
     Every value below is read from the ENSv2 hackathon deployment on Sepolia when this
     page loads. Nothing is cached or replayed. Read-only — no wallet, no signing.
   </p>
-  <p class="meta">Read at <span id="read-at">—</span> · Universal Resolver
+  <p class="meta"><span data-i18n="d.readat">Read at</span> <span id="read-at">—</span> · <span data-i18n="d.via">Universal Resolver</span>
     <span class="mono">0xd26f2040…faf142</span></p>
 </div>
 
@@ -137,8 +191,8 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 
   <noscript>
     <div class="fallback">
-      <p><strong>This page reads the chain with JavaScript, which is switched off.</strong></p>
-      <p>The same values are readable without it. Open
+      <p data-i18n-html="d.nojs1"><strong>This page reads the chain with JavaScript, which is switched off.</strong></p>
+      <p data-i18n-html="d.nojs2">The same values are readable without it. Open
         <a href="https://hackathon-deployment-portal-app.ens-cf.workers.dev/">the ENS explorer</a>
         and look up <span class="mono">visa.nextkey.eth</span>,
         <span class="mono">anna.nextkey.eth</span> and
@@ -151,56 +205,185 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   <div class="grid">
 
     <section class="panel">
-      <h2>The secret</h2>
+      <h2 data-i18n="d.p1h">The secret</h2>
       <p class="what"><span class="mono">visa.nextkey.eth</span> · <span class="mono">nextkey.secret</span></p>
       <div class="body" id="p-secret" data-state="loading"></div>
     </section>
 
     <section class="panel">
-      <h2>The recipient</h2>
-      <p class="what"><span class="mono">anna.nextkey.eth</span> · her key, and the grant it addresses</p>
+      <h2 data-i18n="d.p2h">The recipient</h2>
+      <p class="what"><span class="mono">anna.nextkey.eth</span> · <span data-i18n="d.p2w">her key, and the grant it addresses</span></p>
       <div class="body" id="p-recipient" data-state="loading"></div>
     </section>
 
     <section class="panel">
-      <h2>The owner</h2>
-      <p class="what"><span class="mono">visa.nextkey.eth</span> · the owner's own grant</p>
+      <h2 data-i18n="d.p5h">A recipient on hardware</h2>
+      <p class="what"><span class="mono">bob.nextkey.eth</span> · <span data-i18n="d.p5w">his key lives on a Ledger</span></p>
+      <div class="body" id="p-device" data-state="loading"></div>
+    </section>
+
+    <section class="panel">
+      <h2 data-i18n="d.p3h">The owner</h2>
+      <p class="what"><span class="mono">visa.nextkey.eth</span> · <span data-i18n="d.p3w">the owner's own grant</span></p>
       <div class="body" id="p-owner" data-state="loading"></div>
     </section>
 
     <section class="panel">
-      <h2>The agent's proposal</h2>
-      <p class="what"><span class="mono">agent.nextkey.eth</span> · <span class="mono">nextkey.request</span>, hashed here</p>
+      <h2 data-i18n="d.p4h">The agent's proposal</h2>
+      <p class="what"><span class="mono">agent.nextkey.eth</span> · <span class="mono">nextkey.request</span><span data-i18n="d.p4w">, hashed here</span></p>
       <div class="body" id="p-agent" data-state="loading"></div>
     </section>
 
   </div>
 
   <div class="fallback">
-    <p><strong>What you cannot see here, and why that is the point.</strong></p>
-    <p>The plaintext. Opening the secret needs a private key that lives on a recipient's
+    <p data-i18n-html="d.notseen1"><strong>What you cannot see here, and why that is the point.</strong></p>
+    <p data-i18n="d.notseen2">The plaintext. Opening the secret needs a private key that lives on a recipient's
        own machine and is never published, so no web page can do it for you — including
        this one. What is on display is the whole public surface of a shared secret: the
        ciphertext, who has been granted access, and the request an agent filed to release
        it. That surface reveals that something was shared. It does not reveal what.</p>
-    <p>The guardian approvals behind the agent's request are also absent, and deliberately:
+    <p data-i18n="d.notseen3">The guardian approvals behind the agent's request are also absent, and deliberately:
        they are evaluated inside a confidential enclave. A public guardian list is a target
        list.</p>
   </div>
 </main>
 
 <footer class="wrap">
-  <p>Prototype · ENSv2 beta on Sepolia testnet · not audited. The seed phrase behind this
+  <p data-i18n="d.foot">Prototype · ENSv2 beta on Sepolia testnet · not audited. The seed phrase behind this
      ciphertext was generated for the demonstration and guards nothing.</p>
   <p>
-    <a href="./index.html">About NextKey</a>
-    <a href="https://github.com/4bridges/nextkey">Source</a>
+    <a href="./index.html" data-i18n="d.about">About NextKey</a>
+    <a href="https://github.com/4bridges/nextkey" data-i18n="d.source">Source</a>
     <a href="https://hackathon-deployment-portal-app.ens-cf.workers.dev/">ENS explorer</a>
   </p>
 </footer>
 
+<script src="./i18n.js"></script>
 <script>
+/**
+ * Same overlay as the landing page, same storage keys, so a language or theme
+ * chosen on one page is already chosen on the other. English lives in this
+ * document; the other nine are applied over it.
+ *
+ * The one addition: after switching, the panels are re-rendered from values
+ * already fetched, so changing language does not re-read the chain.
+ */
 (function () {
+  var CODES = ['en','de','fr','it','es','pt','cn','ua','ru','fa']
+  var TAGS  = { en:'en', de:'de', fr:'fr', it:'it', es:'es', pt:'pt',
+                cn:'zh-Hans', ua:'uk', ru:'ru', fa:'fa' }
+  var RTL   = { fa: true }
+
+  var nodes = document.querySelectorAll('[data-i18n], [data-i18n-html]')
+  var base = {}
+  nodes.forEach(function (el) {
+    var html = el.hasAttribute('data-i18n-html')
+    var key = el.getAttribute(html ? 'data-i18n-html' : 'data-i18n')
+    base[key] = (html ? el.innerHTML : el.textContent).replace(/\s+/g, ' ').trim()
+  })
+  var META = document.querySelector('meta[name="description"]')
+  base['d.meta.title'] = document.title
+  base['d.meta.desc'] = META ? META.getAttribute('content') : ''
+
+  function store(k, v) { try { localStorage.setItem(k, v) } catch (e) {} }
+  function recall(k) { try { return localStorage.getItem(k) } catch (e) { return null } }
+
+  function apply(code) {
+    var dict = code === 'en' ? {} : (window.I18N && window.I18N[code]) || {}
+    var pick = function (k) {
+      return Object.prototype.hasOwnProperty.call(dict, k) ? dict[k] : base[k]
+    }
+    nodes.forEach(function (el) {
+      var html = el.hasAttribute('data-i18n-html')
+      var key = el.getAttribute(html ? 'data-i18n-html' : 'data-i18n')
+      var v = pick(key)
+      if (v == null) return
+      if (html) el.innerHTML = v; else el.textContent = v
+    })
+    document.title = pick('d.meta.title')
+    if (META) META.setAttribute('content', pick('d.meta.desc'))
+
+    var root = document.documentElement
+    root.setAttribute('lang', TAGS[code] || 'en')
+    // app.js reads this to translate the strings it builds at runtime.
+    root.dataset.i18nLang = code
+    if (RTL[code]) root.setAttribute('dir', 'rtl'); else root.removeAttribute('dir')
+    if (window.__nextkeyRerender) window.__nextkeyRerender()
+  }
+
+  function normalise(v) {
+    if (!v) return null
+    v = String(v).toLowerCase()
+    if (CODES.indexOf(v) !== -1) return v
+    var m = { zh:'cn', 'zh-cn':'cn', 'zh-hans':'cn', uk:'ua', fa:'fa', 'pt-br':'pt', 'pt-pt':'pt' }
+    if (m[v]) return m[v]
+    var short = v.split('-')[0]
+    return CODES.indexOf(short) !== -1 ? short : (m[short] || null)
+  }
+
+  var url = new URLSearchParams(location.search)
+  var chosen = normalise(url.get('lang')) || normalise(recall('nextkey.lang'))
+            || normalise(navigator.language) || 'en'
+
+  var btn = document.getElementById('langbtn')
+  var menu = document.getElementById('langmenu')
+  var opts = Array.prototype.slice.call(menu.querySelectorAll('[data-code]'))
+
+  function mark(code) {
+    btn.firstChild.nodeValue = code.toUpperCase()
+    opts.forEach(function (o) {
+      var on = o.dataset.code === code
+      o.setAttribute('aria-current', on ? 'true' : 'false')
+      o.setAttribute('aria-selected', on ? 'true' : 'false')
+    })
+  }
+  function open() {
+    menu.hidden = false
+    btn.setAttribute('aria-expanded', 'true')
+    var cur = opts.filter(function (o) { return o.getAttribute('aria-current') === 'true' })[0]
+    ;(cur || opts[0]).focus()
+    ;(cur || opts[0]).scrollIntoView({ block: 'nearest' })
+  }
+  function close(refocus) {
+    menu.hidden = true
+    btn.setAttribute('aria-expanded', 'false')
+    if (refocus) btn.focus()
+  }
+  function choose(code) {
+    apply(code); mark(code); store('nextkey.lang', code)
+    var q = new URLSearchParams(location.search)
+    if (code === 'en') q.delete('lang'); else q.set('lang', code)
+    var qs = q.toString()
+    history.replaceState(null, '', location.pathname + (qs ? '?' + qs : ''))
+    close(true)
+  }
+
+  btn.addEventListener('click', function () { menu.hidden ? open() : close(false) })
+  opts.forEach(function (o, i) {
+    o.addEventListener('click', function () { choose(o.dataset.code) })
+    o.addEventListener('keydown', function (e) {
+      var step = { ArrowDown: 1, ArrowUp: -1, ArrowRight: 1, ArrowLeft: -1 }[e.key]
+      if (step) {
+        e.preventDefault()
+        var n = (i + step + opts.length) % opts.length
+        opts[n].focus(); opts[n].scrollIntoView({ block: 'nearest' })
+      } else if (e.key === 'Escape') { e.preventDefault(); close(true) }
+      else if (e.key === 'Home') { e.preventDefault(); opts[0].focus() }
+      else if (e.key === 'End') { e.preventDefault(); opts[opts.length - 1].focus() }
+    })
+  })
+  btn.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); open() }
+    else if (e.key === 'Escape') close(false)
+  })
+  document.addEventListener('click', function (e) {
+    if (!menu.hidden && !menu.contains(e.target) && e.target !== btn) close(false)
+  })
+
+  apply(chosen); mark(chosen)
+
+  // ── Light and dark ──
   var tbtn = document.getElementById('themebtn')
   var root = document.documentElement
   var dark = window.matchMedia('(prefers-color-scheme: dark)')
@@ -209,7 +392,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   tbtn.addEventListener('click', function () {
     var next = isDark() ? 'light' : 'dark'
     root.setAttribute('data-theme', next)
-    try { localStorage.setItem('nextkey.theme', next) } catch (e) {}
+    store('nextkey.theme', next)
     label()
   })
   dark.addEventListener('change', function(){ if(!root.getAttribute('data-theme')) label() })
