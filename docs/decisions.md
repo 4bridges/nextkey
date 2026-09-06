@@ -140,6 +140,29 @@ Two choices make it evidence rather than a self-test. It reads through the Unive
 **`fleeting23418.nextkey.eth` is left expired on purpose.** It is the artifact.
 ---
 
+## 2026-09-06 — the loop closes
+
+**`scripts/release.mjs` acts on the verdict.** Until today the chain held a proposal and a decision, and a person then wrote the grant by hand. The gap was in the README as an admission; it is now code.
+
+The order of the demonstration matters more than the demonstration. First revoke Anna's access, so that what follows restores it by process rather than by hand. Then file a fresh proposal, which replaces the record on chain — and watch the previous verdict be **refused**, because its hash no longer matches what is there:
+
+```
+✗ verdict is bound to the live request   on chain 0x7b2a1ed6…3b8ce0f3
+                                         verdict  0xb74ac566…4f59ce5336
+REFUSED
+```
+
+An approval given for one request cannot be spent on another. Only after re-running the workflow against the current request does the same command release: `0xac483f31…e36fd0`. Anna can open the secret again, and nobody typed `share`.
+
+**A check nobody has seen fail is not a check**, which is why `evidence/release-loop.log` leads with the refusal and not with the success.
+
+**The crypto moved into `scripts/nextkey-core.mjs`.** `release.mjs` has to wrap a content key exactly as `share` does, and two implementations of that rule would eventually disagree — producing a grant nobody can open, discovered three steps from its cause. That is not hypothetical: it is the shape of the grant-addressing bug from Friday. One rule, one place.
+
+The refactor cost a regression check (`open visa anna` and `open visa alice`, both unchanged) and made the README's pinned line numbers wrong — they pointed at a layout that no longer exists. Replaced with file-and-function references on `main`, which cannot go stale the same way. Precision traded for durability, deliberately.
+
+**What is still not enforced, and the distinction is the point.** Nothing stops the owner from ignoring the verdict and calling `share` directly; they hold the key and the ENS role, which is the design. In production the DON's signed report would be delivered on chain and a contract would gate the write — the check would be the chain's rather than a file on a laptop. That step is not built. Saying "the loop is closed" without that sentence would be the kind of claim this project has spent a week not making.
+---
+
 ## Template for further entries
 
 ```

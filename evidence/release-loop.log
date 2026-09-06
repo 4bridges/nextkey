@@ -1,0 +1,110 @@
+# NextKey — from proposal to decision to act.
+# ENSv2 hackathon deployment on Sepolia. Recorded 2026-09-06.
+#
+# Until this run the loop stopped one step short: the agent filed a proposal,
+# the enclave judged it, and a person then wrote the grant by hand. That gap is
+# where a system quietly stops being a system.
+#
+# The order below is deliberate. The refusal comes first, because a check
+# nobody has seen fail is not a check.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 1. Access is withdrawn, so that what follows restores it by process.
+# ─────────────────────────────────────────────────────────────────────────────
+
+PS> node --env-file=.env scripts/nextkey.mjs revoke visa anna.nextkey.eth
+
+  revoking anna.nextkey.eth's access to visa.nextkey.eth
+  grant record  nextkey.grant.e8d67b995039bdcf
+  → 0xa6b3bc1790a5c3130479e619662ee75996b8886e46a757f6adabf62220aef5be success
+
+PS> node scripts/nextkey.mjs open visa anna
+
+  Error: no grant at nextkey.grant.e8d67b995039bdcf for "anna"
+         — access was never given, or was revoked
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 2. A verdict that no longer matches the chain is refused.
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# The agent files a fresh proposal, which replaces the record. The verdict from
+# the previous run now describes a request that is no longer there.
+
+PS> node --env-file=.env scripts/agent.mjs propose visa anna.nextkey.eth
+
+  requestId  0x57663ef80875b452
+  → 0x50710bce5288ad654894a1ec22b6f724b8ad301142da78fcaeaa05a4c960d1bd success
+  requestHash 0x7b2a1ed622c22c8eebf5b591a25c5bfcf2d1896ce61d1d05efdf53f13b8ce0f3
+
+PS> node scripts/release.mjs check --from-log evidence/cre-decision.log   # the OLD verdict
+
+  ✓ verdict is RELEASE                     RELEASE — quorum_and_delay_satisfied
+  ✗ verdict is bound to the live request   on chain 0x7b2a1ed6…3b8ce0f3
+                                           verdict  0xb74ac566…4f59ce5336
+  ✗ request ids agree                      0x57663ef80875b452
+  ✓ request version is supported           v1
+
+  REFUSED: verdict is bound to the live request; request ids agree
+
+  A hash mismatch is the interesting failure. It means the request on
+  chain is not the one the enclave judged — it was replaced after the
+  decision.
+
+# This is the property worth having. An approval given for one request cannot
+# be spent on another, and the check is arithmetic rather than trust: hash the
+# record that is there now, compare.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 3. The workflow judges the current request.
+# ─────────────────────────────────────────────────────────────────────────────
+
+PS> cre workflow simulate my-workflow
+
+  [USER LOG] Decision for 0x57663ef80875b452: RELEASE (quorum_and_delay_satisfied)
+  [USER LOG] Bound to on-chain request 0x7b2a1ed622c22c8eebf5b591a25c5bfcf2d1896ce61d1d05efdf53f13b8ce0f3
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 4. Now the same check passes, and the release is carried out.
+# ─────────────────────────────────────────────────────────────────────────────
+
+PS> node --env-file=.env scripts/release.mjs execute --from-log evidence/cre-decision.log --as alice
+
+  verdict     RELEASE — quorum_and_delay_satisfied
+  request     0x57663ef80875b452
+  ✓ verdict is RELEASE
+  ✓ verdict is bound to the live request   0x7b2a1ed622c22c8eebf5b591a25c5bfcf2d1896ce61d1d05efdf53f13b8ce0f3
+  ✓ request ids agree                      0x57663ef80875b452
+  ✓ request version is supported           v1
+  would release  visa.nextkey.eth  →  anna.nextkey.eth
+
+  executing as alice
+  grant record  nextkey.grant.e8d67b995039bdcf
+  → 0xac483f31175ebe6d376cd10ab0ff613612a43bed21326617e7ad1a901ae36fd0 success
+
+PS> node scripts/nextkey.mjs open visa anna
+
+  visa.nextkey.eth  opened as anna
+  witch collapse practice feed shame open despair creek road again ice least
+
+# Anna can open the secret again, and nobody typed `share`. An agent proposed,
+# an enclave decided, and the decision was checked against the chain before it
+# was acted on.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# What this enforces, and what it does not
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Enforced here: a verdict must say RELEASE, and its hash must equal the hash of
+# the request that is on chain at the moment of acting. PENDING and DENY are
+# answers, not obstacles, and are refused the same way a mismatch is.
+#
+# NOT enforced: nothing stops the owner from ignoring all of this and calling
+# `nextkey.mjs share` directly. The owner holds the key and the ENS role — that
+# is the design, and no script can revoke it.
+#
+# In production the DON's signed report would be delivered on chain and a
+# contract would gate the write, so the check would be enforced by the chain
+# rather than by a file on someone's laptop. That step is not built. What is
+# built is the decision, its binding to a public request, and a client that
+# refuses to act when the two disagree — which is worth having, and is not the
+# same thing as being unable to act otherwise.

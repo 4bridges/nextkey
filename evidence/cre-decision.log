@@ -1,5 +1,5 @@
 # NextKey — the confidential release decision, bound to the chain.
-# Chainlink CRE Confidential Workflow, AWS Nitro us-west-2. Recorded 2026-09-05.
+# Chainlink CRE Confidential Workflow, AWS Nitro us-west-2. Recorded 2026-09-06.
 #
 # What this run demonstrates, in one sentence: a verdict about a request that
 # an autonomous agent filed on chain, decided over data that never left the
@@ -13,8 +13,8 @@ PS> cre workflow simulate my-workflow
   Binary hash: 7be2a5d4a51de312c2ce8bc8cc9a8892b20fc424ac6d81ac8262d0266bc27419
   Config hash: d953d5cbcc7da1259941b9fec9dbf0fed2ef5cd91bb17aab86890ecbe5b025cc
 
-2026-09-05T22:13:12Z [SIMULATION] Simulator Initialized
-2026-09-05T22:13:12Z [SIMULATION] Running trigger trigger=cron-trigger@1.0.0
+2026-09-06T10:14:41Z [SIMULATION] Simulator Initialized
+2026-09-06T10:14:41Z [SIMULATION] Running trigger trigger=cron-trigger@1.0.0
 
 ╭────────────────────────────────────────────────────────────────────────────────────╮
 │ Trigger requested TEE Execution your trigger will run in one of the following Tees: │
@@ -23,13 +23,13 @@ PS> cre workflow simulate my-workflow
 │ leave the TEE. They are presented in the simulator for debugging only.              │
 ╰────────────────────────────────────────────────────────────────────────────────────╯
 
-2026-09-05T22:14:00Z [USER LOG] Decision for 0x5ab6aad279b3700b: RELEASE (quorum_and_delay_satisfied)
-2026-09-05T22:14:00Z [USER LOG] Bound to on-chain request 0xb74ac56696e0e84612546123e2ec0a495a5b071be625b10141f2af4f59ce5336
+2026-09-06T10:15:00Z [USER LOG] Decision for 0x57663ef80875b452: RELEASE (quorum_and_delay_satisfied)
+2026-09-06T10:15:00Z [USER LOG] Bound to on-chain request 0x7b2a1ed622c22c8eebf5b591a25c5bfcf2d1896ce61d1d05efdf53f13b8ce0f3
 
 ✓ Workflow Simulation Result:
-"RELEASE — quorum_and_delay_satisfied (request 0x5ab6aad279b3700b, bound to 0xb74ac566…, secret in enclave: true)"
+"RELEASE — quorum_and_delay_satisfied (request 0x57663ef80875b452, bound to 0x7b2a1ed6…, secret in enclave: true)"
 
-2026-09-05T22:14:00Z [SIMULATION] Execution finished signal received
+2026-09-06T10:15:00Z [SIMULATION] Execution finished signal received
 
 # ─────────────────────────────────────────────────────────────────────────────
 # How to check this rather than believe it
@@ -39,15 +39,19 @@ PS> cre workflow simulate my-workflow
 #
 #      node scripts/agent.mjs show
 #
-#    It was written by tx 0x14796928813fd4b495c6a3442c0207d719ab98e4154fb205d1ee7601d7ea485c,
+#    It was written by tx 0x50710bce5288ad654894a1ec22b6f724b8ad301142da78fcaeaa05a4c960d1bd,
 #    signed by the agent's own key, under an ENS role that permits that one
 #    record on that one name and nothing else.
 #
 # 2. Hash it. `show` prints the hash; `bun test` asserts it independently.
-#    It is 0xb74ac56696e0e84612546123e2ec0a495a5b071be625b10141f2af4f59ce5336.
+#    It is 0x7b2a1ed622c22c8eebf5b591a25c5bfcf2d1896ce61d1d05efdf53f13b8ce0f3.
 #
 # 3. Compare with the hash in the verdict above. They agree, so the enclave
 #    judged this request — not a different one, and not a modified one.
+#
+#    `scripts/release.mjs check` performs exactly that comparison, and refuses
+#    to act when it fails. See evidence/release-loop.log for a run where it
+#    does fail, on purpose.
 #
 # ─────────────────────────────────────────────────────────────────────────────
 # What crossed back out of the enclave, and what did not

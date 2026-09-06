@@ -68,20 +68,21 @@ Terminal output in [`evidence/encryption-loop.log`](./evidence/encryption-loop.l
 
 **The owner is a recipient like any other.** There is no master key and no owner-only branch in the code — keeping one would make "we cannot read your secrets" a lie. The honest cost: lose your local key file and the secret is gone. We would rather state that than hold a key we promise not to use.
 
-**Where each row lives in the code.** Links are pinned to a commit, so the line numbers stay correct.
+**Where each row lives in the code.** Named by function rather than by line number: the crypto moved into a shared module when `release.mjs` needed the same key wrapping, and a pinned line would have gone on describing a layout that no longer exists.
 
 | Row above | Code |
 |---|---|
-| Share a secret with a name | [`nextkey.mjs` · `share`](https://github.com/4bridges/nextkey/blob/ecccb6e/scripts/nextkey.mjs#L215) — reads the recipient's key from *their* record, then [`grantFor`](https://github.com/4bridges/nextkey/blob/ecccb6e/scripts/nextkey.mjs#L145) wraps the content key to it |
-| How a grant is addressed | [`nextkey.mjs` · `grantKey`](https://github.com/4bridges/nextkey/blob/ecccb6e/scripts/nextkey.mjs#L68) — SHA-256 over the recipient's public key, first 16 hex |
-| Key wrapping | [`nextkey.mjs` · `wrapKey`](https://github.com/4bridges/nextkey/blob/ecccb6e/scripts/nextkey.mjs#L141) — X25519 ECDH, HKDF-SHA256 salted with both public keys |
-| Limit access to seven days | [`register-subname.mjs` · `register`](https://github.com/4bridges/nextkey/blob/ecccb6e/scripts/register-subname.mjs#L118) — the subname's `expiry`, passed to the registry |
-| The owner's roles on a subname | [`register-subname.mjs` · `OWNER_ROLES`](https://github.com/4bridges/nextkey/blob/ecccb6e/scripts/register-subname.mjs#L44) — deliberately without `ROLE_REGISTRAR`: a secret is a leaf |
-| Revoke access | [`nextkey.mjs` · `revoke`](https://github.com/4bridges/nextkey/blob/ecccb6e/scripts/nextkey.mjs#L250) — clears the grant, and says plainly what revocation cannot undo |
-| Delegate one setter to the agent | [`resolver.mjs` · `grant-setter`](https://github.com/4bridges/nextkey/blob/ecccb6e/scripts/resolver.mjs#L234) — and why the first argument is calldata, not a name |
-| Read the resulting roles | [`resolver.mjs` · `show-roles`](https://github.com/4bridges/nextkey/blob/ecccb6e/scripts/resolver.mjs#L277) — resource id recovered from the contract's own refusal |
-| Give the agent an identity | [`agent.mjs` · `propose`](https://github.com/4bridges/nextkey/blob/ecccb6e/scripts/agent.mjs#L150) and [`prove-boundary`](https://github.com/4bridges/nextkey/blob/ecccb6e/scripts/agent.mjs#L198) |
-| Resolve through the Universal Resolver | [`resolver.mjs` · `read-text`](https://github.com/4bridges/nextkey/blob/ecccb6e/scripts/resolver.mjs#L387) — the path a real client takes |
+| Share a secret with a name | [`nextkey-core.mjs` · `shareSecret`](https://github.com/4bridges/nextkey/blob/main/scripts/nextkey-core.mjs) — reads the recipient's key from *their* record, then `grantFor` wraps the content key to it |
+| How a grant is addressed | [`nextkey-core.mjs` · `grantKey`](https://github.com/4bridges/nextkey/blob/main/scripts/nextkey-core.mjs) — SHA-256 over the recipient's public key, first 16 hex |
+| Key wrapping | [`nextkey-core.mjs` · `wrapKey`](https://github.com/4bridges/nextkey/blob/main/scripts/nextkey-core.mjs) — X25519 ECDH, HKDF-SHA256 salted with both public keys |
+| Limit access to seven days | [`register-subname.mjs` · `register`](https://github.com/4bridges/nextkey/blob/main/scripts/register-subname.mjs) — the subname's `expiry`; demonstrated by [`demo-expiry.mjs`](https://github.com/4bridges/nextkey/blob/main/scripts/demo-expiry.mjs) |
+| The owner's roles on a subname | [`register-subname.mjs` · `OWNER_ROLES`](https://github.com/4bridges/nextkey/blob/main/scripts/register-subname.mjs) — deliberately without `ROLE_REGISTRAR`: a secret is a leaf |
+| Revoke access | [`nextkey.mjs` · `revoke`](https://github.com/4bridges/nextkey/blob/main/scripts/nextkey.mjs) — clears the grant, and says plainly what revocation cannot undo |
+| Delegate one setter to the agent | [`resolver.mjs` · `grant-setter`](https://github.com/4bridges/nextkey/blob/main/scripts/resolver.mjs) — and why the first argument is calldata, not a name |
+| Read the resulting roles | [`resolver.mjs` · `show-roles`](https://github.com/4bridges/nextkey/blob/main/scripts/resolver.mjs) — resource id recovered from the contract's own refusal |
+| Give the agent an identity | [`agent.mjs` · `propose` and `prove-boundary`](https://github.com/4bridges/nextkey/blob/main/scripts/agent.mjs) |
+| Act on a verdict | [`release.mjs`](https://github.com/4bridges/nextkey/blob/main/scripts/release.mjs) — checks the verdict against the live request before writing anything |
+| Resolve through the Universal Resolver | [`resolver.mjs` · `read-text`](https://github.com/4bridges/nextkey/blob/main/scripts/resolver.mjs) — the path a real client takes |
 
 ### Hackathon deployment
 
@@ -206,9 +207,28 @@ That hash is of the record the agent wrote at `agent.nextkey.eth · nextkey.requ
 
 What crosses back out: request id, verdict, coarse reason, and a hash of something already public. What does not: the guardians, the approval count, the policy, and the credential. `quorum_not_met` reports that a threshold was missed without reporting by how much, because the distance to a threshold is itself useful to an attacker.
 
+### Acting on the verdict
+
+A decision nobody acts on is a decision in name only, so `scripts/release.mjs` closes the loop: it reads the verdict, hashes the request that is on chain **at that moment**, and writes the grant only if the two agree and the verdict says RELEASE.
+
+The run worth reading is the one that fails. Filing a fresh proposal replaces the record, and the previous verdict is then refused:
+
+```
+✓ verdict is RELEASE                     RELEASE — quorum_and_delay_satisfied
+✗ verdict is bound to the live request   on chain 0x7b2a1ed6…3b8ce0f3
+                                         verdict  0xb74ac566…4f59ce5336
+✗ request ids agree                      0x57663ef80875b452
+
+REFUSED: verdict is bound to the live request; request ids agree
+```
+
+An approval given for one request cannot be spent on another, and the check is arithmetic rather than trust. With the workflow re-run against the current request, the same command releases: [`0xac483f31…e36fd0`](https://sepolia.etherscan.io/tx/0xac483f31175ebe6d376cd10ab0ff613612a43bed21326617e7ad1a901ae36fd0). Anna, whose access had been revoked, can open the secret again — and nobody typed `share`.
+
+**What is not enforced.** Nothing stops the owner from ignoring all of this and calling `nextkey.mjs share` directly; they hold the key and the ENS role, which is the design. In production the DON's signed report would be delivered on chain and a contract would gate the write, making the check the chain's rather than a laptop's. That step is not built, and the difference is real.
+
 The guardian approvals in `fixtures/release-request.json` are fabricated stand-ins — guardians are not built yet, and the fixture says so in its first field. The request they surround is real and on chain.
 
-Source: [`nextkey-cre/my-workflow/workflow.ts`](./nextkey-cre/my-workflow/workflow.ts) · rule tests in `workflow.test.ts` · evidence in [`evidence/cre-simulation.log`](./evidence/cre-simulation.log) and [`evidence/cre-decision.log`](./evidence/cre-decision.log).
+Source: [`nextkey-cre/my-workflow/workflow.ts`](./nextkey-cre/my-workflow/workflow.ts) and [`scripts/release.mjs`](./scripts/release.mjs) · rule tests in `workflow.test.ts` · evidence in [`evidence/cre-simulation.log`](./evidence/cre-simulation.log), [`evidence/cre-decision.log`](./evidence/cre-decision.log) and [`evidence/release-loop.log`](./evidence/release-loop.log).
 
 ---
 
@@ -322,6 +342,7 @@ Sponsor qualification evidence is collected in [`evidence/`](./evidence) as it i
 | [`cre-decision.log`](./evidence/cre-decision.log) | The verdict, bound by hash to the request on chain, and how to check it yourself |
 | [`revocation.log`](./evidence/revocation.log) | Access withdrawn and the recipient locked out, with what revocation cannot undo |
 | [`expiry.log`](./evidence/expiry.log) | A name expiring in real time, read through the Universal Resolver until it stops answering |
+| [`release-loop.log`](./evidence/release-loop.log) | Proposal → decision → act, including the run where a stale verdict is refused |
 
 Transaction hashes for the registry deployment, subname registration, role grants and
 the rejected write are in the tables above and in the logs.

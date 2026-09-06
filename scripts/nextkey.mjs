@@ -29,137 +29,19 @@
  *   clear   visa nextkey.grant.abc123    empty one record outright
  */
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs'
+import { writeFileSync, mkdirSync, existsSync } from 'node:fs'
 import { webcrypto as wc } from 'node:crypto'
-import { createPublicClient, createWalletClient, http, toHex, zeroAddress } from 'viem'
-import { packetToBytes } from 'viem/ens'
-import { privateKeyToAccount } from 'viem/accounts'
-import { sepolia } from 'viem/chains'
-// @noble v2 moved to explicit .js subpaths and renamed sha256's module to
-// sha2. The v1 spellings resolve to nothing and fail at import time.
 import { x25519 } from '@noble/curves/ed25519.js'
-import { hkdf } from '@noble/hashes/hkdf.js'
-import { sha256 } from '@noble/hashes/sha2.js'
-import { ENSV2_SEPOLIA as D } from './deployment.mjs'
+import {
+  PARENT, RECORD_SECRET, RECORD_PUBKEY,
+  grantKey, b64, un64, KEYS_DIR as KEYS, identityPath, loadIdentity,
+  randomX25519Secret, seal, unseal, grantFor, openGrant,
+  readRecord, setRecord, shareSecret,
+} from './nextkey-core.mjs'
 
-/** randomPrivateKey() became randomSecretKey() in v2. Accept either. */
-const randomX25519Secret = () =>
-  (x25519.utils.randomSecretKey ?? x25519.utils.randomPrivateKey)()
-
-const PARENT = 'nextkey.eth'
-const REGISTRY = process.env.NEXTKEY_REGISTRY ?? '0x612034AB34Ec262d5417EA3163718E7455157908'
-const RPC = process.env.SEPOLIA_RPC_URL ?? 'https://ethereum-sepolia-rpc.publicnode.com'
-const KEYS = new URL('../.keys/', import.meta.url)
-
-const RECORD_SECRET = 'nextkey.secret'
-const RECORD_PUBKEY = 'nextkey.pubkey'
-
-/**
- * A grant is addressed by the recipient's *key*, not by their name.
- *
- * Addressing it by name looked friendlier and was wrong: a name is mutable —
- * it can move, expire, or be one of several a person holds — while the key
- * that can open the grant is the only stable thing about the recipient. Two
- * spellings of the same person ("anna", "anna.nextkey.eth") also produced two
- * different records, which is how this surfaced.
- *
- * The name is not lost; it travels inside the value as `for`, so the ENS
- * explorer still shows who a grant was written for.
- */
-const fingerprint = (pub) => Buffer.from(sha256(pub)).toString('hex').slice(0, 16)
-const grantKey = (pub) => `nextkey.grant.${fingerprint(pub)}`
-
-// ─── Chain plumbing ────────────────────────────────────────────────────────
-const hackathonSepolia = {
-  ...sepolia,
-  contracts: { ...sepolia.contracts, ensUniversalResolver: { address: D.upgradableUniversalResolverProxy } },
-}
-const reader = createPublicClient({ chain: hackathonSepolia, transport: http(RPC) })
-const pk = process.env.REGISTRAR_PRIVATE_KEY
-const writer = pk
-  ? createWalletClient({ account: privateKeyToAccount(pk), chain: sepolia, transport: http(RPC) })
-  : undefined
-
-const registryAbi = [{ name: 'getResolver', type: 'function', stateMutability: 'view',
-  inputs: [{ name: 'label', type: 'string' }], outputs: [{ type: 'address' }] }]
-const resolverAbi = [{ name: 'setText', type: 'function', stateMutability: 'nonpayable',
-  inputs: [{ name: 'name', type: 'bytes' }, { name: 'key', type: 'string' }, { name: 'value', type: 'string' }],
-  outputs: [] }]
-
-const resolverFor = async (label) => {
-  const r = await reader.readContract({ address: REGISTRY, abi: registryAbi, functionName: 'getResolver', args: [label] })
-  if (r === zeroAddress) throw new Error(`${label}.${PARENT} has no resolver — run resolver.mjs attach first`)
-  return r
-}
-
-const setRecord = async (label, key, value) => {
-  if (!writer) throw new Error('REGISTRAR_PRIVATE_KEY not set — this command writes')
-  const resolver = await resolverFor(label)
-  const hash = await writer.writeContract({
-    address: resolver, abi: resolverAbi, functionName: 'setText',
-    args: [toHex(packetToBytes(`${label}.${PARENT}`)), key, value],
-  })
-  process.stdout.write(`  → ${hash} `)
-  const r = await reader.waitForTransactionReceipt({ hash })
-  console.log(r.status)
-}
-
-const readRecord = (name, key) => reader.getEnsText({ name, key })
-
-// ─── Identities ────────────────────────────────────────────────────────────
-// Private keys never leave this machine and never touch the chain. The .keys
-// directory is gitignored; losing it means losing access, which is the honest
-// property of any system where we cannot decrypt for you.
-const b64 = (u8) => Buffer.from(u8).toString('base64')
-const un64 = (s) => new Uint8Array(Buffer.from(s, 'base64'))
-
-const identityPath = (name) => new URL(`${name}.json`, KEYS)
-
-const loadIdentity = (name) => {
-  const p = identityPath(name)
-  if (!existsSync(p)) throw new Error(`no identity "${name}" — run: nextkey.mjs keygen ${name}`)
-  const j = JSON.parse(readFileSync(p, 'utf8'))
-  return { name, sk: un64(j.privateKey), pk: un64(j.publicKey) }
-}
-
-// ─── Crypto ────────────────────────────────────────────────────────────────
-// AES-256-GCM for the content; X25519 + HKDF-SHA256 to wrap the content key
-// for one recipient. An ephemeral keypair per grant means two grants of the
-// same secret share no key material.
-const aes = async (raw) => wc.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt'])
-
-const seal = async (key, plaintext) => {
-  const iv = wc.getRandomValues(new Uint8Array(12))
-  const ct = new Uint8Array(await wc.subtle.encrypt({ name: 'AES-GCM', iv },
-    await aes(key), new TextEncoder().encode(plaintext)))
-  return { iv: b64(iv), ct: b64(ct) }
-}
-
-const unseal = async (key, { iv, ct }) => new TextDecoder().decode(
-  await wc.subtle.decrypt({ name: 'AES-GCM', iv: un64(iv) }, await aes(key), un64(ct)))
-
-/** HKDF over the ECDH output, bound to both public keys so a shared secret
- *  cannot be replayed into a different pairing. */
-const wrapKey = (shared, ephPub, recipientPub) =>
-  hkdf(sha256, shared, new Uint8Array([...ephPub, ...recipientPub]),
-    new TextEncoder().encode('nextkey/v1/wrap'), 32)
-
-const grantFor = async (contentKey, recipientPubKey, forWhom) => {
-  const ephSk = randomX25519Secret()
-  const ephPk = x25519.getPublicKey(ephSk)
-  const kek = wrapKey(x25519.getSharedSecret(ephSk, recipientPubKey), ephPk, recipientPubKey)
-  const { iv, ct } = await seal(kek, b64(contentKey))
-  // `for` is a label for humans reading the explorer. Nothing depends on it:
-  // the grant is found by key fingerprint and opened by key.
-  return JSON.stringify({ v: 1, for: forWhom, epk: b64(ephPk), iv, ct })
-}
-
-const openGrant = async (grantJson, identity) => {
-  const g = JSON.parse(grantJson)
-  const ephPk = un64(g.epk)
-  const kek = wrapKey(x25519.getSharedSecret(identity.sk, ephPk), ephPk, identity.pk)
-  return un64(await unseal(kek, g))
-}
+// Everything above the command list now lives in nextkey-core.mjs, because
+// release.mjs needs the same key wrapping and two copies of that rule would
+// eventually disagree. See that file for why the grant is addressed by key.
 
 // ─── Commands ──────────────────────────────────────────────────────────────
 const [cmd, ...rest] = process.argv.slice(2)
@@ -218,18 +100,12 @@ else if (cmd === 'store') {
 else if (cmd === 'share') {
   const [label, identity, recipient] = rest
   const id = loadIdentity(identity)
-
-  const ownGrant = await readRecord(`${label}.${PARENT}`, grantKey(id.pk))
-  if (!ownGrant) throw new Error(`${identity} holds no grant on ${label} — cannot re-share what you cannot open`)
-  const contentKey = await openGrant(ownGrant, id)
-
-  const theirPub = await readRecord(recipient, RECORD_PUBKEY)
-  if (!theirPub) throw new Error(`${recipient} has published no ${RECORD_PUBKEY} record — nothing to encrypt to`)
-
   console.log(`\n  sharing ${label}.${PARENT} with ${recipient}`)
   console.log(`  their public key comes from their own ENS record — they never registered with us`)
-  console.log(`  grant record  ${grantKey(un64(theirPub))}`)
-  await setRecord(label, grantKey(un64(theirPub)), await grantFor(contentKey, un64(theirPub), recipient))
+  await shareSecret({
+    label, identity: id, recipient,
+    log: (key) => console.log(`  grant record  ${key}`),
+  })
   console.log()
 }
 
