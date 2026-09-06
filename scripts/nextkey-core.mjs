@@ -100,11 +100,37 @@ export const setRecord = async (label, key, value) => {
 export const identityPath = (name) => new URL(`${name}.json`, KEYS)
 export const KEYS_DIR = KEYS
 
+/**
+ * An identity is defined by what it can do, not by what it stores.
+ *
+ * Both kinds expose the same two things: a public key, and a way to arrive at
+ * the ECDH shared secret for a grant. A software identity holds a private key
+ * and computes it here; a Ledger identity holds nothing and asks the device,
+ * which requires a person to approve. Every caller works with either, and no
+ * caller can tell the difference — which is why adding hardware support
+ * changed nothing on the sending side.
+ */
 export const loadIdentity = (name) => {
   const p = identityPath(name)
   if (!existsSync(p)) throw new Error(`no identity "${name}" — run: nextkey.mjs keygen ${name}`)
   const j = JSON.parse(readFileSync(p, 'utf8'))
-  return { name, sk: un64(j.privateKey), pk: un64(j.publicKey) }
+  const pk = un64(j.publicKey)
+
+  if (j.device === 'ledger') {
+    return {
+      name, pk, device: 'ledger', path: j.path, address: j.address,
+      // Imported lazily so that a project without a Ledger attached never
+      // loads the native HID module, and never pays for a dependency it is
+      // not using.
+      sharedWith: async (ephPub) => {
+        const { ledgerSharedSecret } = await import('./ledger.mjs')
+        return ledgerSharedSecret(ephPub, j.path)
+      },
+    }
+  }
+
+  const sk = un64(j.privateKey)
+  return { name, pk, sk, sharedWith: async (ephPub) => x25519.getSharedSecret(sk, ephPub) }
 }
 
 // ─── Crypto ────────────────────────────────────────────────────────────────
@@ -147,7 +173,10 @@ export const grantFor = async (contentKey, recipientPubKey, forWhom) => {
 export const openGrant = async (grantJson, identity) => {
   const g = JSON.parse(grantJson)
   const ephPk = un64(g.epk)
-  const kek = wrapKey(x25519.getSharedSecret(identity.sk, ephPk), ephPk, identity.pk)
+  // The only line that differs between a key file and a hardware wallet, and
+  // it differs by delegation rather than by branching.
+  const shared = await identity.sharedWith(ephPk)
+  const kek = wrapKey(shared, ephPk, identity.pk)
   return un64(await unseal(kek, g))
 }
 

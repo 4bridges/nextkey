@@ -21,6 +21,8 @@
  *
  * Commands:
  *   keygen  alice                        create an identity, keep the key local
+ *   keygen  bob --ledger --account 3     the key stays on the device instead
+ *   ledger-accounts                      which wallet is which, by address
  *   publish alice.eth alice              put alice's public key in her ENS record
  *   store   visa alice "seed words…"     encrypt into visa.nextkey.eth
  *   share   visa alice anna.eth          wrap the content key for anna.eth
@@ -48,7 +50,8 @@ const [cmd, ...rest] = process.argv.slice(2)
 
 const usage = () => {
   console.log(`
-  nextkey.mjs keygen  <identity>
+  nextkey.mjs keygen  <identity> [--ledger [--account <n> | --path <p>]]
+  nextkey.mjs ledger-accounts [count]
   nextkey.mjs publish <ens-name> <identity>
   nextkey.mjs store   <label> <identity> "<secret>"
   nextkey.mjs share   <label> <identity> <recipient.eth>
@@ -59,15 +62,65 @@ const usage = () => {
 }
 
 if (cmd === 'keygen') {
-  const [name] = rest
+  const name = rest.find((a) => !a.startsWith('--'))
   if (!name) { usage(); process.exit(1) }
   mkdirSync(KEYS, { recursive: true })
-  const sk = randomX25519Secret()
-  const pub = x25519.getPublicKey(sk)
-  writeFileSync(identityPath(name), JSON.stringify({ privateKey: b64(sk), publicKey: b64(pub) }, null, 2))
-  console.log(`\n  identity    ${name}`)
-  console.log(`  public key  ${b64(pub)}`)
-  console.log(`  stored in   .keys/${name}.json  (gitignored — losing it loses access)\n`)
+
+  if (rest.includes('--ledger')) {
+    // A hardware identity stores no private key, because there is none to
+    // store. What lands on disk is a public key and a derivation path — losing
+    // the file costs nothing, and copying it gains an attacker nothing.
+    const { ledgerPublicKey, ledgerAddress, disconnect, DEFAULT_PATH, accountPath } =
+      await import('./ledger.mjs')
+
+    // Two ways to say which wallet, because one device commonly holds several.
+    // `--account 3` matches the numbering Ledger Live shows; `--path` is there
+    // for anyone who knows exactly what they want. A full path is awkward to
+    // type in PowerShell, where apostrophes delimit strings.
+    const idxOf = (f) => rest.indexOf(f)
+    const path =
+      idxOf('--path') !== -1 ? rest[idxOf('--path') + 1]
+      : idxOf('--account') !== -1 ? accountPath(rest[idxOf('--account') + 1])
+      : DEFAULT_PATH
+    console.log(`\n  reading the public key from the device (path ${path})`)
+    const pub = await ledgerPublicKey(path)
+    const address = await ledgerAddress(path)
+    await disconnect()
+
+    writeFileSync(identityPath(name), JSON.stringify(
+      { device: 'ledger', path, address, publicKey: b64(pub) }, null, 2))
+    console.log(`\n  identity    ${name}  (Ledger)`)
+    console.log(`  address     ${address}`)
+    console.log(`  public key  ${b64(pub)}`)
+    console.log(`  stored in   .keys/${name}.json — public key and path only,`)
+    console.log(`              because the private half exists nowhere but the device`)
+    console.log(`
+  Publish it the same way as any other identity:
+    nextkey.mjs publish <your-name>.nextkey.eth ${name}
+
+  From then on nothing about sending to you differs. Opening will ask you to
+  approve on the device, every time.\n`)
+  } else {
+    const sk = randomX25519Secret()
+    const pub = x25519.getPublicKey(sk)
+    writeFileSync(identityPath(name), JSON.stringify({ privateKey: b64(sk), publicKey: b64(pub) }, null, 2))
+    console.log(`\n  identity    ${name}`)
+    console.log(`  public key  ${b64(pub)}`)
+    console.log(`  stored in   .keys/${name}.json  (gitignored — losing it loses access)\n`)
+  }
+}
+
+else if (cmd === 'ledger-accounts') {
+  const { ledgerAccounts, disconnect } = await import('./ledger.mjs')
+  const count = Number(rest.find((a) => /^\d+$/.test(a)) ?? 5)
+  console.log(`\n  Reading the first ${count} accounts from the device.\n`)
+  for (const a of await ledgerAccounts(count)) {
+    console.log(`  --account ${String(a.n).padEnd(3)} ${a.path.padEnd(18)} ${a.address}`)
+  }
+  console.log(`
+  Pick the one you recognise, then:
+    nextkey.mjs keygen <identity> --ledger --account <n>\n`)
+  await disconnect()
 }
 
 else if (cmd === 'publish') {
@@ -120,10 +173,14 @@ else if (cmd === 'open') {
   if (!grantJson) throw new Error(
     `no grant at ${grantKey(id.pk)} for "${identity}" — access was never given, or was revoked`)
 
+  if (id.device === 'ledger') {
+    console.log(`\n  ${identity} is a Ledger identity — approve on the device.`)
+  }
   const contentKey = await openGrant(grantJson, id)
   const plaintext = await unseal(contentKey, JSON.parse(sealedJson))
-  console.log(`\n  ${label}.${PARENT}  opened as ${identity}`)
+  console.log(`\n  ${label}.${PARENT}  opened as ${identity}${id.device ? ' (Ledger)' : ''}`)
   console.log(`  ${plaintext}\n`)
+  if (id.device === 'ledger') (await import('./ledger.mjs')).disconnect()
 }
 
 else if (cmd === 'revoke') {

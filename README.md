@@ -18,16 +18,18 @@ You place a secret: a seed phrase, a private key, a credential, a document. Then
 
 **Under what conditions** is answered inside a trusted execution environment. A release agent can propose but never act alone; the condition itself — a guardian quorum, a time lock, prolonged inactivity — is evaluated inside a Chainlink CRE Confidential Workflow, so the secret never passes a node anyone can inspect.
 
-And when someone has lost everything — device gone, backup gone — recovery does not depend on a file they were supposed to keep. Their guardians confirm, and World's Selfie Check proves that a unique, living person is the one asking.
+**Where your own key lives** is your decision alone. A file on your machine, or a Ledger — the difference is invisible to whoever shares with you, because what they read is a public key in your ENS record and nothing else. On a device, opening a secret costs a deliberate button press, so software running on your laptop cannot do it while you are away from it.
+
+And when someone has lost everything, recovery is meant to rest on guardians plus a proof that a unique, living person is asking, rather than on a file they were supposed to keep. That part is designed and not built — see the note under Prize tracks.
 
 ---
 
 ## How it works
 
 1. **Place a secret.** Encrypted in your browser before it goes anywhere.
-2. **Share it with a name.** `anna.eth`, not `0x7f3a…`. NextKey reads the public key from her ENS records and wraps this one secret's key to it — that record and nothing else on your account.
+2. **Share it with a name.** `anna.eth`, not `0x7f3a…`. NextKey reads the public key from her ENS records and wraps this one secret's key to it — that record and nothing else on your account. Whether her key sits in a file or on a Ledger is her business, and changes nothing for you.
 3. **Anna hears about it.** Through whatever channel she declared in her own ENS records. She never signed up for NextKey.
-4. **If she loses everything, she gets back in.** Her guardians confirm, and Selfie Check proves a unique, living person is asking.
+4. **If she loses everything, she gets back in.** Her guardians confirm, and a liveness proof establishes that a unique, living person is asking. *(Designed; the liveness half is not built — see Prize tracks.)*
 5. **Some releases happen without you.** The agent proposes; an enclave decides, against rules you wrote yourself.
 
 ---
@@ -66,7 +68,7 @@ A grant is stored under the recipient's **key fingerprint**, not their name — 
 
 Terminal output in [`evidence/encryption-loop.log`](./evidence/encryption-loop.log).
 
-**The owner is a recipient like any other.** There is no master key and no owner-only branch in the code — keeping one would make "we cannot read your secrets" a lie. The honest cost: lose your local key file and the secret is gone. We would rather state that than hold a key we promise not to use.
+**The owner is a recipient like any other.** There is no master key and no owner-only branch in the code — keeping one would make "we cannot read your secrets" a lie. The honest cost: lose your local key file and the secret is gone. We would rather state that than hold a key we promise not to use — and a recipient who would rather not carry that risk can put their key on a Ledger instead, which is the section further down.
 
 **Where each row lives in the code.** Named by function rather than by line number: the crypto moved into a shared module when `release.mjs` needed the same key wrapping, and a pinned line would have gone on describing a layout that no longer exists.
 
@@ -82,6 +84,7 @@ Terminal output in [`evidence/encryption-loop.log`](./evidence/encryption-loop.l
 | Read the resulting roles | [`resolver.mjs` · `show-roles`](https://github.com/4bridges/nextkey/blob/main/scripts/resolver.mjs) — resource id recovered from the contract's own refusal |
 | Give the agent an identity | [`agent.mjs` · `propose` and `prove-boundary`](https://github.com/4bridges/nextkey/blob/main/scripts/agent.mjs) |
 | Act on a verdict | [`release.mjs`](https://github.com/4bridges/nextkey/blob/main/scripts/release.mjs) — checks the verdict against the live request before writing anything |
+| A key that never leaves a device | [`ledger.mjs`](https://github.com/4bridges/nextkey/blob/main/scripts/ledger.mjs) — EIP-1024 key agreement performed on the Ledger |
 | Resolve through the Universal Resolver | [`resolver.mjs` · `read-text`](https://github.com/4bridges/nextkey/blob/main/scripts/resolver.mjs) — the path a real client takes |
 
 ### Hackathon deployment
@@ -145,6 +148,8 @@ Explorer and registration app for this deployment:
 ---
 
 ## World ID Selfie Check in NextKey
+
+> **Designed, not built.** Sandbox access was requested at the start of the event and has not arrived. This section describes the intended role so the recovery story is legible; no code implements it, and no claim in this repository depends on it.
 
 Selfie Check is used as a **risk and eligibility signal**, not as a login.
 
@@ -229,6 +234,34 @@ An approval given for one request cannot be spent on another, and the check is a
 The guardian approvals in `fixtures/release-request.json` are fabricated stand-ins — guardians are not built yet, and the fixture says so in its first field. The request they surround is real and on chain.
 
 Source: [`nextkey-cre/my-workflow/workflow.ts`](./nextkey-cre/my-workflow/workflow.ts) and [`scripts/release.mjs`](./scripts/release.mjs) · rule tests in `workflow.test.ts` · evidence in [`evidence/cre-simulation.log`](./evidence/cre-simulation.log), [`evidence/cre-decision.log`](./evidence/cre-decision.log) and [`evidence/release-loop.log`](./evidence/release-loop.log).
+
+---
+
+## Ledger in NextKey
+
+**A recipient decides how well their own key is protected, and nobody else has to know.**
+
+NextKey addresses a recipient by the X25519 public key they publish in their own ENS record. Where the matching private half lives was never part of that interface — so a Ledger can simply be a NextKey identity:
+
+```
+node scripts/nextkey.mjs keygen bob --ledger --account 3
+```
+
+`.keys/bob.json` then holds a public key and a derivation path and **no private key**, because there is none to hold. Losing that file costs nothing; copying it gains an attacker nothing. The device uses **EIP-1024** — `getEIP1024PublicEncryptionKey` for the published key, `getEIP1024SharedSecret` to perform the ECDH on the device itself.
+
+**The sender's side did not change at all.** Sharing with Bob is the same command, the same arguments and the same code path as sharing with Anna, whose key is a file:
+
+| Step | Transaction |
+|---|---|
+| Alice shares with `bob.nextkey.eth` | [`0xea187e10…57e50a`](https://sepolia.etherscan.io/tx/0xea187e10a5cd287601bdf79f22a4b0543e5e625b45c3cea2f181369fac57e50a) |
+
+In the codebase this cost one line. `openGrant` used to compute the shared secret from a stored private key; it now asks the identity for it — `await identity.sharedWith(ephPk)` — and a software identity answers locally while a hardware one asks the device. Nothing else branches.
+
+**Opening costs a button press, every time.** The device refuses key agreement without a confirmation, so a secret shared with a Ledger holder cannot be opened by malware on their laptop while they are away from it — only by them, deliberately, with the device in hand. That is the *approval boundary* this project is built around, expressed in hardware rather than in prose.
+
+It also fixes a weakness this README states plainly elsewhere: for a software identity, losing the key file loses the secret. For a device identity, the device is the backup — and it is the kind people already own and already know how to keep.
+
+Full run in [`evidence/ledger-identity.log`](./evidence/ledger-identity.log); code in [`scripts/ledger.mjs`](./scripts/ledger.mjs). Four tooling findings, with reproductions, in [`FEEDBACK-LEDGER.md`](./FEEDBACK-LEDGER.md).
 
 ---
 
@@ -343,6 +376,7 @@ Sponsor qualification evidence is collected in [`evidence/`](./evidence) as it i
 | [`revocation.log`](./evidence/revocation.log) | Access withdrawn and the recipient locked out, with what revocation cannot undo |
 | [`expiry.log`](./evidence/expiry.log) | A name expiring in real time, read through the Universal Resolver until it stops answering |
 | [`release-loop.log`](./evidence/release-loop.log) | Proposal → decision → act, including the run where a stale verdict is refused |
+| [`ledger-identity.log`](./evidence/ledger-identity.log) | A recipient whose private key never leaves a Nano X, shared to with the ordinary command |
 
 Transaction hashes for the registry deployment, subname registration, role grants and
 the rejected write are in the tables above and in the logs.
@@ -360,8 +394,10 @@ This project is submitted to three partner prizes:
 | Sponsor | Track |
 |---|---|
 | ENS | Best Use of ENSv2 |
-| World | Selfie Check |
 | Chainlink | Best Confidential Workflow |
+| Ledger | AI Agents × Ledger |
+
+**On World.** Selfie Check is designed into the recovery flow and described below, but it is **not built**: Sandbox access was requested at the start of the event and has not arrived, and other teams report the same wait. ETHGlobal allows three partner prizes, so Ledger takes the third slot. If access arrives before submission we will choose the three strongest then — but nothing in this repository claims a World integration that exists.
 
 ---
 
@@ -373,6 +409,7 @@ This project is submitted to three partner prizes:
 - [`AI_USAGE.md`](./AI_USAGE.md) — AI tool usage disclosure
 - [`FEEDBACK-WORLD.md`](./FEEDBACK-WORLD.md) — developer experience feedback for World
 - [`FEEDBACK-ENS.md`](./FEEDBACK-ENS.md) — developer experience feedback for ENS
+- [`FEEDBACK-LEDGER.md`](./FEEDBACK-LEDGER.md) — developer experience feedback for Ledger
 - [`evidence/`](./evidence) — sponsor qualification evidence
 
 `docs/architecture.md` follows once the data model is settled.

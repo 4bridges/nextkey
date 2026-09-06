@@ -1,0 +1,86 @@
+# NextKey — a recipient whose key lives on a Ledger.
+# ENSv2 hackathon deployment on Sepolia · Nano X, Ethereum app 1.22.3.
+# Recorded 2026-09-06.
+#
+# The claim under test: a hardware-backed recipient changes nothing for the
+# sender. If that holds, device-backed security is a choice each recipient
+# makes alone, and nobody else has to know or care.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 1. Which wallet? The device holds several.
+# ─────────────────────────────────────────────────────────────────────────────
+
+PS> node scripts/nextkey.mjs ledger-accounts 6
+
+  --account 3   44'/60'/2'/0/0     0x340c3BB5992A491E5EcdB1B8960d8Ab7Cf5cE0c4
+
+# Ledger Live's "Account 3" is 44'/60'/2'/0/0 — the account index is the third
+# component, not the last. A mistake there derives a different, perfectly valid
+# key and fails only much later, so the arithmetic lives in exactly one place.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 2. An identity with no private key in it.
+# ─────────────────────────────────────────────────────────────────────────────
+
+PS> node scripts/nextkey.mjs keygen bob --ledger --account 3
+
+  identity    bob  (Ledger)
+  address     0x340c3BB5992A491E5EcdB1B8960d8Ab7Cf5cE0c4
+  stored in   .keys/bob.json — public key and path only,
+              because the private half exists nowhere but the device
+
+# .keys/bob.json is not a secret. Losing it costs nothing; copying it gains an
+# attacker nothing. Compare .keys/alice.json, which is the whole of Alice.
+
+PS> node --env-file=.env scripts/register-subname.mjs register bob
+PS> node --env-file=.env scripts/resolver.mjs         attach   bob 0x52A02f288AA5dde082206D85d4001880D64F4101
+PS> node --env-file=.env scripts/nextkey.mjs          publish  bob.nextkey.eth bob
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 3. The sender does not know, and does not need to.
+# ─────────────────────────────────────────────────────────────────────────────
+
+PS> node --env-file=.env scripts/nextkey.mjs share visa alice bob.nextkey.eth
+
+  sharing visa.nextkey.eth with bob.nextkey.eth
+  their public key comes from their own ENS record — they never registered with us
+  grant record  nextkey.grant.e19b4dcd6710232b
+  → 0xea187e10a5cd287601bdf79f22a4b0543e5e625b45c3cea2f181369fac57e50a success
+
+# Identical command, identical arguments, identical code path to sharing with
+# Anna — whose key is a file. Alice reads an ENS record and wraps to it. Where
+# the private half lives is the recipient's business, and the record is the
+# whole interface between them.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 4. Opening costs a button press. Every time.
+# ─────────────────────────────────────────────────────────────────────────────
+
+PS> node scripts/nextkey.mjs open visa bob
+
+  bob is a Ledger identity — approve on the device.
+  visa.nextkey.eth  opened as bob (Ledger)
+  witch collapse practice feed shame open despair creek road again ice least
+
+# The device performs the ECDH itself (EIP-1024) and refuses to do it without a
+# confirmation. So this secret cannot be opened by software running on Bob's
+# laptop while he is away from it — only by Bob, deliberately, with the device
+# in his hand.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# What this changed in the codebase
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# One line. `openGrant` used to compute the shared secret from a stored private
+# key; it now asks the identity for it:
+#
+#     const shared = await identity.sharedWith(ephPk)
+#
+# A software identity answers with X25519 locally. A Ledger identity asks the
+# device. Nothing else in the project branches on which kind it is — not the
+# sender, not the grant format, not the record addressing.
+#
+# That is not tidiness for its own sake. It is the reason the feature could be
+# added in an afternoon: the design already treated a recipient as "a published
+# public key plus some way to reach the matching secret", and a hardware wallet
+# is simply another way to reach it.

@@ -163,6 +163,31 @@ The refactor cost a regression check (`open visa anna` and `open visa alice`, bo
 **What is still not enforced, and the distinction is the point.** Nothing stops the owner from ignoring the verdict and calling `share` directly; they hold the key and the ENS role, which is the design. In production the DON's signed report would be delivered on chain and a contract would gate the write — the check would be the chain's rather than a file on a laptop. That step is not built. Saying "the loop is closed" without that sentence would be the kind of claim this project has spent a week not making.
 ---
 
+## 2026-09-06 (afternoon) — a Ledger is just a recipient
+
+**Ledger replaces World as the third partner slot.** World's Sandbox access was requested at the start of the event and has not arrived; other teams report the same wait. Waiting produced nothing for three days, so the slot went to something we could build. World is not deleted — it is marked in the README as designed and not built, and if access lands before submission we pick the three strongest then.
+
+**Ledger's track asks for exactly what this project already is.** *"Real user value with clear autonomous/approval boundaries. Practical demos showing why device-backed trust matters."* We had built the agent with one role and an on-chain rejected transaction before knowing anyone was asking for it.
+
+**The device is a recipient, not an integration.** This is the part worth recording. NextKey addresses a recipient by the X25519 public key in their ENS record; where the private half lives was never part of that interface. So the whole feature reduced to one line in `openGrant`:
+
+```js
+const shared = await identity.sharedWith(ephPk)
+```
+
+A software identity answers with X25519 locally; a Ledger identity asks the device. Nothing else in the project branches on which it is — not the sender, not the grant format, not the record addressing. `share visa alice bob.nextkey.eth` is byte-for-byte the same command whether Bob's key is a file or a Nano X.
+
+That it could be added in an afternoon is a property of the earlier design, not of this afternoon's work.
+
+**EIP-1024 was the deciding discovery.** `getEIP1024PublicEncryptionKey` and `getEIP1024SharedSecret` give a real X25519 public key and perform the ECDH on the device. We had expected to derive an encryption key from a deterministic signature — a known trick with a caveat we would then have had to defend. Found by listing `Eth.prototype`, not from documentation.
+
+**The device refusing without confirmation is a feature we did not design.** `boolDisplay: false` answers 0x6985, which the library renders as "denied by the user?" although nothing was shown. The behaviour is right: key agreement always needs a person present. So a secret shared with a Ledger holder cannot be opened by malware on their laptop — the approval boundary this project is about, expressed in hardware instead of prose.
+
+**Four tooling findings in the first hour**, all in `FEEDBACK-LEDGER.md` with reproductions: the ESM build cannot be imported by Node, npm's script gating silently skips node-hid's binary, the EIP-1024 encodings are hex and undocumented, and 0x6985's message misdirects. Ledger's criteria require tooling feedback; ours is the kind that can be acted on.
+
+**One thing I got wrong and fixed:** the first version took only a full derivation path, which is awkward to type in PowerShell and wrong for anyone with several wallets on one device. `--account 3` now matches Ledger Live's numbering, and `ledger-accounts` lists addresses so the right wallet is recognised rather than counted. Ledger Live's "Account 3" is `44'/60'/2'/0/0` — the index is the third component, and getting it wrong derives a different valid key that fails much later.
+---
+
 ## Template for further entries
 
 ```
