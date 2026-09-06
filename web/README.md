@@ -120,11 +120,19 @@ account and no testnet ether, so a judge with two minutes can finish the loop:
 write a secret, make or look up a recipient, encrypt and grant, open it as the
 recipient, watch a stranger fail, revoke, watch the recipient fail too.
 
-The sixth is optional and writes the two records to a name **the visitor owns**
-on the hackathon deployment, signed by their own wallet. Not to a name of ours —
-a system demonstrated only on the author's own name has not been demonstrated.
-It simulates both writes before asking for a signature, so a refusal arrives as
-a reason rather than as a spent transaction.
+The sixth is optional and writes the two records to a name **the visitor already
+owns** on the hackathon deployment, signed by their own wallet. Not to a name of
+ours — a system demonstrated only on the author's own name has not been
+demonstrated. It simulates both writes before asking for a signature, so a
+refusal arrives as a reason rather than as a spent transaction.
+
+It does **not** offer to get them a name, and an earlier draft that did was
+wrong. On this deployment a `.eth` name is `approve` → `commit` → sixty seconds
+→ `register`, paid in mock USDC, and the manager app has been unreliable through
+the hackathon; a subname in NextKey's own registry needs the registrar role,
+which a stranger does not have and which no static site could lend them. So the
+page says plainly that step 6 needs a name you already hold, and that stopping
+at step 5 costs you nothing but the chain.
 
 **The refusal.** A box on a web page asking for a recovery phrase is the oldest
 theft in this industry, and building one to demonstrate a product that exists

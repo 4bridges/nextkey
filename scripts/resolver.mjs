@@ -10,8 +10,9 @@
  * readable, and no resolver changes that. See the note on resolverAbi below —
  * it corrects an assumption we carried for a while.
  *
- *   node --env-file=.env scripts/resolver.mjs deploy
+ *   node --env-file=.env scripts/resolver.mjs deploy       [name.eth]
  *   node --env-file=.env scripts/resolver.mjs attach       visa 0xResolver
+ *   node --env-file=.env scripts/resolver.mjs attach-eth   nextkeydemo
  *   node --env-file=.env scripts/resolver.mjs set-text     visa nextkey.notify <value>
  *   node --env-file=.env scripts/resolver.mjs grant-setter agent 0xAgent nextkey.request
  *   node          scripts/resolver.mjs show-roles      agent 0xAgent
@@ -169,13 +170,27 @@ console.log('─'.repeat(72))
 console.log(`  mode        ${walletClient ? 'signing' : 'print-only'}`)
 
 if (command === 'deploy') {
-  // Our own salt scheme, so the resolver cannot collide with the registry.
-  // Deterministic, so the address stays recomputable; bump the version if a
-  // redeploy is ever needed.
+  /**
+   * A resolver per name, not one resolver forever.
+   *
+   * The salt is deterministic so the address stays recomputable, and it now
+   * includes the name the resolver is for. The first version hardcoded
+   * nextkey.eth, which meant a second `deploy` recomputed the same CREATE2
+   * address, found it occupied, and reverted with no reason at all — a
+   * five-hundred-line stack trace whose only content was "that address is
+   * taken". One argument removes the whole class of problem, and each name
+   * getting its own resolver is the right shape anyway: the roles on a
+   * resolver are the name's, not ours.
+   *
+   *   node --env-file=.env scripts/resolver.mjs deploy                 # nextkey.eth
+   *   node --env-file=.env scripts/resolver.mjs deploy nextkeydemo.eth
+   */
+  const forName = label ?? PARENT
   const salt = BigInt(keccak256(encodeAbiParameters(
     [{ type: 'bytes32' }, { type: 'bytes32' }, { type: 'uint256' }],
-    [keccak256(stringToHex('NextKeyResolver')), namehash(PARENT), 0n],
+    [keccak256(stringToHex('NextKeyResolver')), namehash(forName), 0n],
   )))
+  console.log(`  for         ${forName}`)
   const initData = encodeFunctionData({
     abi: resolverInitAbi,
     functionName: 'initialize',
@@ -195,7 +210,14 @@ if (command === 'deploy') {
     fromBlock: latest - 50n, toBlock: latest,
   })
   const ours = logs.find((l) => l.args.salt === salt)
-  if (ours) console.log(`\n  resolver    ${ours.args.proxyAddress}\n`)
+  if (ours) {
+    console.log(`\n  resolver    ${ours.args.proxyAddress}`)
+    console.log(`\n  Attach it:  resolver.mjs attach-eth ${forName.replace(/\.eth$/, '')} ${ours.args.proxyAddress}`)
+    console.log(`  Then check: probe-name.mjs ${forName}\n`)
+  } else {
+    console.log(`\n  Deployed, but no ProxyDeployed event in the last 50 blocks —
+  read the address off the transaction receipt instead.\n`)
+  }
 }
 
 else if (command === 'attach') {
@@ -211,6 +233,45 @@ else if (command === 'attach') {
     to: NEXTKEY_REGISTRY, abi: registryAbi, functionName: 'setResolver',
     args: [labelId, resolver],
   })
+}
+
+else if (command === 'attach-eth') {
+  /**
+   * Give a second-level .eth name a resolver.
+   *
+   * `attach` above writes to NextKey's own registry, which knows only subnames
+   * of nextkey.eth. A name like nextkeydemo.eth lives one level up, in the .eth
+   * registry, and the two are different contracts with the same interface —
+   * which is exactly the sort of similarity that gets a transaction sent to the
+   * wrong address. Hence a separate command rather than a flag.
+   *
+   * The default resolver is the deployment's publicResolverV2: the one an
+   * ordinary user would end up with, and therefore the one worth testing
+   * against. It speaks setText(bytes32 node, ...) rather than the Permissioned
+   * Resolver's setText(bytes name, ...) — read off its bytecode with
+   * probe-abi.mjs, after assuming otherwise for most of a day.
+   */
+  const resolver = a ?? D.publicResolverV2
+  const labelId = await publicClient.readContract({
+    address: D.ethRegistry, abi: registryAbi, functionName: 'findTokenId', args: [label],
+  })
+  console.log(`  name        ${label}.eth`)
+  console.log(`  registry    ${D.ethRegistry}  (.eth, not ours)`)
+  console.log(`  tokenId     ${labelId}`)
+  console.log(`  resolver    ${resolver}${a ? '' : '  (publicResolverV2)'}`)
+  await send({
+    to: D.ethRegistry, abi: registryAbi, functionName: 'setResolver',
+    args: [labelId, resolver],
+  })
+  console.log(`\n  Verify:  node scripts/resolver.mjs read-eth ${label}\n`)
+}
+
+else if (command === 'read-eth') {
+  const resolver = await publicClient.readContract({
+    address: D.ethRegistry, abi: registryAbi, functionName: 'getResolver', args: [label],
+  })
+  console.log(`\n  ${label}.eth`)
+  console.log(`  resolver    ${resolver === zeroAddress ? '\u2717 none — run attach-eth first' : resolver}\n`)
 }
 
 else if (command === 'set-text') {
@@ -407,6 +468,6 @@ else if (command === 'read-text') {
 }
 
 else {
-  console.error(`\n  Usage: resolver.mjs <deploy|attach|set-text|grant-setter|read-text> [label] [arg] [value]\n`)
+  console.error(`\n  Usage: resolver.mjs <deploy|attach|attach-eth|read-eth|set-text|grant-setter|read-text> [label] [arg] [value]\n`)
   process.exit(1)
 }

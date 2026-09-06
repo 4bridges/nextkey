@@ -366,13 +366,18 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     <div class="n">6</div>
     <h2 data-i18n="t.s6.h">Optional — put it on chain</h2>
     <p data-i18n="t.s6.p">Everything above was arithmetic in your browser. This writes the two records
-      to a name you own on the hackathon ENS deployment, signed by your wallet.
-      Register one at the ENS app first if you have none.</p>
+      to a name you already own on the hackathon ENS deployment, signed by your wallet.
+      Any name you hold there will do.</p>
+
+    <p class="state" data-i18n="t.s6.noname">No name on this deployment? Then stop at step 5 — you have already seen the
+      whole mechanism, and this last step only moves it onto a chain. Getting a name
+      is four transactions, a sixty-second commit–reveal wait and mock USDC, which is
+      the registrar's design and not something to do out of curiosity.
+      scripts/register-name.mjs in the repository walks through it and prints each
+      call, so it can be executed from a block explorer with your own wallet.</p>
 
     <div class="row">
       <button class="act ghost" id="connect" type="button" data-i18n="t.s6.connect.btn">Connect a wallet</button>
-      <a href="https://hackathon-deployment-manager-app-v4.ens-cf.workers.dev/" rel="noopener"
-         data-i18n="t.s6.register">Register a name</a>
     </div>
     <div class="out" id="wallet-out" hidden></div>
 

@@ -27,6 +27,7 @@
  *   store   visa alice "seed words…"     encrypt into visa.nextkey.eth
  *   share   visa alice anna.eth          wrap the content key for anna.eth
  *   open    visa anna                    decrypt, as anna
+ *   open    other.eth anna               …from any name, not just ours
  *   revoke  visa anna.eth                clear that one grant
  *   clear   visa nextkey.grant.abc123    empty one record outright
  */
@@ -48,6 +49,22 @@ import {
 // ─── Commands ──────────────────────────────────────────────────────────────
 const [cmd, ...rest] = process.argv.slice(2)
 
+/**
+ * A label means a subname of ours; anything containing a dot is a name in its
+ * own right.
+ *
+ * Reading was never restricted to our own names — a grant is found by key
+ * fingerprint on whatever name holds it, and that is the whole point of the
+ * scheme. The restriction was an accident of spelling: every read said
+ * `${label}.${PARENT}`, so a secret written to a name outside nextkey.eth was
+ * unreachable by the tool that is supposed to open it. try.html can write to
+ * any name the visitor owns; this is what lets the command line read it back.
+ *
+ * Writing keeps the old rule, because writing needs the setter role and our
+ * registry is the only place we hold one.
+ */
+const fqdn = (label) => (label.includes('.') ? label : `${label}.${PARENT}`)
+
 const usage = () => {
   console.log(`
   nextkey.mjs keygen  <identity> [--ledger [--account <n> | --path <p>]]
@@ -55,7 +72,7 @@ const usage = () => {
   nextkey.mjs publish <ens-name> <identity>
   nextkey.mjs store   <label> <identity> "<secret>"
   nextkey.mjs share   <label> <identity> <recipient.eth>
-  nextkey.mjs open    <label> <identity>
+  nextkey.mjs open    <label|full.name.eth> <identity>
   nextkey.mjs revoke  <label> <recipient.eth>
   nextkey.mjs clear   <label> <record key>
 `)
@@ -165,20 +182,21 @@ else if (cmd === 'share') {
 else if (cmd === 'open') {
   const [label, identity] = rest
   const id = loadIdentity(identity)
+  const name = fqdn(label)
   const [sealedJson, grantJson] = await Promise.all([
-    readRecord(`${label}.${PARENT}`, RECORD_SECRET),
-    readRecord(`${label}.${PARENT}`, grantKey(id.pk)),
+    readRecord(name, RECORD_SECRET),
+    readRecord(name, grantKey(id.pk)),
   ])
-  if (!sealedJson) throw new Error(`${label}.${PARENT} holds no secret`)
+  if (!sealedJson) throw new Error(`${name} holds no secret`)
   if (!grantJson) throw new Error(
-    `no grant at ${grantKey(id.pk)} for "${identity}" — access was never given, or was revoked`)
+    `no grant at ${name} · ${grantKey(id.pk)} for "${identity}" — access was never given, or was revoked`)
 
   if (id.device === 'ledger') {
     console.log(`\n  ${identity} is a Ledger identity — approve on the device.`)
   }
   const contentKey = await openGrant(grantJson, id)
   const plaintext = await unseal(contentKey, JSON.parse(sealedJson))
-  console.log(`\n  ${label}.${PARENT}  opened as ${identity}${id.device ? ' (Ledger)' : ''}`)
+  console.log(`\n  ${name}  opened as ${identity}${id.device ? ' (Ledger)' : ''}`)
   console.log(`  ${plaintext}\n`)
   if (id.device === 'ledger') (await import('./ledger.mjs')).disconnect()
 }

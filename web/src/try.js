@@ -25,7 +25,7 @@
  * system that only works on the author's own name has not been shown to work.
  */
 
-import { createPublicClient, createWalletClient, custom, http, toHex } from 'viem'
+import { createPublicClient, createWalletClient, custom, http, toHex, namehash } from 'viem'
 import { packetToBytes } from 'viem/ens'
 import { sepolia } from 'viem/chains'
 import { generateMnemonic, english } from 'viem/accounts'
@@ -58,11 +58,37 @@ const reader = createPublicClient({
   transport: http(RPC, { retryCount: 1, retryDelay: 400, timeout: 10_000 }),
 })
 
-const resolverAbi = [{
-  name: 'setText', type: 'function', stateMutability: 'nonpayable',
-  inputs: [{ name: 'name', type: 'bytes' }, { name: 'key', type: 'string' }, { name: 'value', type: 'string' }],
-  outputs: [],
-}]
+/**
+ * Two resolvers, two setText signatures, and no way to tell from the address.
+ *
+ * The deployment's Permissioned Resolver takes the DNS-encoded name:
+ *   setText(bytes name, string key, string value)
+ * Its publicResolverV2 takes the namehash, as classic ENS resolvers always
+ * have:
+ *   setText(bytes32 node, string key, string value)
+ *
+ * A visitor's name may carry either. Guessing wrong does not produce a clear
+ * error — a proxy delegating into a function that does not exist reverts with
+ * *empty* data, which reads exactly like "you are not allowed to do that". So
+ * the page does not guess: it simulates the real write in each shape and uses
+ * whichever the resolver actually accepts. Both simulations are free.
+ */
+const SHAPES = [
+  {
+    id: 'name',
+    abi: [{ name: 'setText', type: 'function', stateMutability: 'nonpayable',
+      inputs: [{ name: 'name', type: 'bytes' }, { name: 'key', type: 'string' },
+               { name: 'value', type: 'string' }], outputs: [] }],
+    arg: (name) => toHex(packetToBytes(name)),
+  },
+  {
+    id: 'node',
+    abi: [{ name: 'setText', type: 'function', stateMutability: 'nonpayable',
+      inputs: [{ name: 'node', type: 'bytes32' }, { name: 'key', type: 'string' },
+               { name: 'value', type: 'string' }], outputs: [] }],
+    arg: (name) => namehash(name),
+  },
+]
 
 // ─── Language ──────────────────────────────────────────────────────────────
 // Strings built after a button is pressed cannot be tagged in the HTML, so
@@ -357,30 +383,50 @@ $('publish').addEventListener('click', async () => {
   try {
     say(out, 'busy', `<p>${t('t.s6.finding', 'Finding the resolver for that name…')}</p>`)
     const resolver = await reader.getEnsResolver({ name })
-    const dns = toHex(packetToBytes(name))
 
-    // Simulate before signing. A revert costs nothing here and arrives with a
-    // reason; the same revert after signing costs gas and arrives as a hash.
-    say(out, 'busy', `<p>${t('t.s6.simulating', 'Checking the write would succeed, before asking you to sign…')}</p>`)
-    for (const [key, value] of [
+    const records = [
       [RECORD_SECRET, JSON.stringify(S.sealed)],
       [S.grantKey, JSON.stringify(S.grant)],
-    ]) {
-      await reader.simulateContract({
-        address: resolver, abi: resolverAbi, functionName: 'setText',
-        args: [dns, key, value], account,
-      })
+    ]
+
+    // Which dialect does this resolver speak? Ask it, by simulating the first
+    // real write in each shape. A refusal for lack of permission and a refusal
+    // for a missing function look alike, so both failures are kept: if neither
+    // shape works, the visitor sees both reasons rather than the last one.
+    say(out, 'busy', `<p>${t('t.s6.simulating', 'Checking the write would succeed, before asking you to sign…')}</p>`)
+    let shape = null
+    const refusals = []
+    for (const candidate of SHAPES) {
+      try {
+        await reader.simulateContract({
+          address: resolver, abi: candidate.abi, functionName: 'setText',
+          args: [candidate.arg(name), ...records[0]], account,
+        })
+        shape = candidate
+        break
+      } catch (e) { refusals.push(`setText(${candidate.id}): ${plain(e)}`) }
     }
+    if (!shape) {
+      const err = new Error(refusals.join('  ·  '))
+      err.bothShapesRefused = true
+      throw err
+    }
+    const node = shape.arg(name)
+
+    // The second record too, before any signature is asked for. Writing the
+    // ciphertext and then failing on the grant would leave a secret on chain
+    // that nobody can open.
+    await reader.simulateContract({
+      address: resolver, abi: shape.abi, functionName: 'setText',
+      args: [node, ...records[1]], account,
+    })
 
     const hashes = []
-    for (const [key, value] of [
-      [RECORD_SECRET, JSON.stringify(S.sealed)],
-      [S.grantKey, JSON.stringify(S.grant)],
-    ]) {
+    for (const [key, value] of records) {
       say(out, 'busy', `<p>${t('t.s6.signing', 'Approve in your wallet —')} <span class="mono">${esc(key)}</span></p>`)
       const hash = await wallet.writeContract({
-        address: resolver, abi: resolverAbi, functionName: 'setText',
-        args: [dns, key, value], chain: sepolia,
+        address: resolver, abi: shape.abi, functionName: 'setText',
+        args: [node, key, value], chain: sepolia,
       })
       hashes.push([key, hash])
       await reader.waitForTransactionReceipt({ hash })
@@ -388,7 +434,9 @@ $('publish').addEventListener('click', async () => {
 
     say(out, 'ok', `
       <p class="found">✓ ${t('t.s6.done', 'Written. Those records are now on Sepolia, under your name, owned by you.')}</p>
-      <dl>${hashes.map(([k, h]) => `
+      <dl>
+        <dt>${t('t.s6.resolver', 'resolver')}</dt><dd class="mono break">${esc(resolver)}</dd>
+        ${hashes.map(([k, h]) => `
         <dt class="mono">${esc(k)}</dt>
         <dd class="mono break"><a href="https://sepolia.etherscan.io/tx/${esc(h)}" rel="noopener">${esc(clip(h, 26))}</a></dd>`).join('')}
       </dl>
@@ -400,7 +448,9 @@ $('publish').addEventListener('click', async () => {
     say(out, 'bad', `
       <p>${t('t.s6.fail', 'That did not go through.')}</p>
       <p class="note mono">${esc(plain(e))}</p>
-      <p class="note">${t('t.s6.failnote', 'The usual causes, in order: the name is not yours, so the resolver refuses the write; the name has no resolver attached yet; or the wallet has no Sepolia ether for gas. The first is the system working.')}</p>`)
+      <p class="note">${e.bothShapesRefused
+        ? t('t.s6.failboth', 'Both setText signatures were refused, and the two reasons are above. If the name is not yours, that is the system working. If it is yours, its resolver may be one this page does not know how to write to — tell us which resolver, and it can be added.')
+        : t('t.s6.failnote', 'The usual causes, in order: the name is not yours, so the resolver refuses the write; the name has no resolver attached yet; or the wallet has no Sepolia ether for gas. The first is the system working.')}</p>`)
   }
 })
 

@@ -166,6 +166,71 @@ tell a user they have no permissions while they are in fact fully privileged.
 
 ---
 
+---
+
+## 9. `publicResolverV2` refuses the owner of a name on this deployment
+
+Registering `nextkeydemo.eth` directly against the registrar worked. Attaching
+the deployment's own `publicResolverV2` (`0xf9de4979…33f6`) worked. Writing a
+text record to it did not, and there was nothing in the failure to say why.
+
+```
+name owner  0x9780aFE81EF5b58333c83e05d5C07797BD81dd0B   ← us
+may write   false
+setText(bytes32 node, string, string)   reverted, revert data: empty
+```
+
+`canModifyName(namehash, owner)` returns `false` for the address the `.eth`
+registry names as the owner. `setText` then reverts with no data at all, which
+is indistinguishable from calling a function that does not exist — and its
+selector `0x10f13a8c` **is** in the bytecode, so that is not the explanation.
+
+`ensV2Resolver` (`0xb1b2d8c4…fae4`) behaves the same way, except that
+`canModifyName` itself reverts.
+
+Our reading, offered as a guess rather than a finding: both resolvers address
+records by `bytes32 node`, the classic namehash, while ENSv2 resolves by
+traversing registries per label — which is presumably why the Permissioned
+Resolver takes the DNS-encoded name instead. If these two are v1-compatibility
+resolvers rather than general-purpose ones for this deployment, that is
+reasonable; it just is not written anywhere near their addresses.
+
+Deploying a Permissioned Resolver for the name and attaching that works on the
+first attempt.
+
+**What it cost.** Most of an afternoon, and two transactions spent attaching a
+resolver that could never have worked. The deployment table lists three
+resolvers with no note about which are usable for names registered on it, and
+the failure mode gives a developer nothing: an owner is told, silently, that
+they may not write to their own name.
+
+**Suggestions.** Mark in the deployments table which resolvers accept writes
+for ENSv2 names. Give `setText` a named error for the authorisation failure —
+finding 8 above is the argument for why that pays for itself. And if these
+resolvers are v1-only, say so beside the address rather than in a design
+discussion elsewhere.
+
+---
+
+## 10. The VerifiableFactory reverts without a reason on a used salt
+
+`deployProxy(implementation, salt, data)` reverts with empty data when a proxy
+already exists at the CREATE2 address for that salt. That is correct
+behaviour and completely opaque: what arrives at the developer is a
+five-hundred-line viem stack trace whose entire content is *execution
+reverted*.
+
+Our salt was derived deterministically from a fixed string, so a second
+deployment recomputed the same address. Obvious in hindsight; it looked exactly
+like the malformed-initializer failure from finding 3, which is where we spent
+the first twenty minutes.
+
+**Suggestion.** `revert ProxyAlreadyDeployed(address proxy)`. One custom error
+turns a debugging session into a sentence — and it would hand the caller the
+address it was probably looking for anyway.
+
+---
+
 ## What worked well
 
 The Universal Resolver override is documented clearly and the ready-made viem snippet is on the same page as the addresses, which is exactly where it is needed. We wired it first and never had a resolution problem — and we would have, since forgetting it fails silently by resolving against production.
