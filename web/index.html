@@ -9,7 +9,7 @@
 <link rel="manifest" href="./brand/site.webmanifest">
 <meta name="theme-color" content="#9a5218">
 <title>NextKey — hand over secrets by ENS name</title>
-<meta name="description" content="Share a seed phrase or credential with someone by their ENS name. Access ends when you say. Recovery proves a living human, not a backup file.">
+<meta name="description" content="Share a seed phrase or credential with someone by their ENS name. Access ends when you say, and the recipient's key can live on a Ledger.">
 <link rel="canonical" href="https://nextkey.li/">
 <link rel="alternate" hreflang="en" href="https://nextkey.li/">
 <link rel="alternate" hreflang="de" href="https://nextkey.li/?lang=de">
@@ -24,7 +24,7 @@
 <link rel="alternate" hreflang="x-default" href="https://nextkey.li/">
 <meta property="og:type" content="website">
 <meta property="og:title" content="NextKey — hand over secrets by ENS name">
-<meta property="og:description" content="Share a seed phrase or credential with someone by their ENS name. Access ends when you say. Recovery proves a living human, not a backup file.">
+<meta property="og:description" content="Share a seed phrase or credential with someone by their ENS name. Access ends when you say, and the recipient's key can live on a Ledger.">
 <meta property="og:url" content="https://nextkey.li/">
 <meta property="og:image" content="https://nextkey.li/brand/og-image.png">
 <meta property="og:image:width" content="1200">
@@ -415,8 +415,9 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
       </li>
       <li>
         <h3 data-i18n="how.4h">If she loses everything, she gets back in</h3>
-        <p data-i18n="how.4p">Her guardians confirm, and a liveness check proves a unique, living person is
-           asking. No backup file required.</p>
+        <p data-i18n="how.4p">Her guardians confirm, and a liveness proof establishes that a unique, living
+           person is asking. The guardian rule runs today; the liveness proof is designed and
+           not yet built.</p>
       </li>
       <li>
         <h3 data-i18n="how.5h">Some releases happen without you</h3>
@@ -440,7 +441,8 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
         <h3 data-i18n="diff.2h">We cannot read your secrets, and that is a property of the code</h3>
         <p data-i18n="diff.2p">The owner is a recipient like any other — no master key, no owner-only path.
            The honest cost is stated rather than hidden: lose your key file and the secret
-           is gone, because there is nobody who could recover it for you.</p>
+           is gone, because there is nobody who could recover it for you. Keep the key on a
+           Ledger and the device is the backup.</p>
       </div>
       <div class="card">
         <h3 data-i18n="diff.3h">The agent proposes. It cannot decide</h3>
@@ -469,9 +471,11 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
            hash of the public request so anyone can check which request it judged.</p>
       </div>
       <div class="card">
-        <h3>World ID</h3>
-        <p data-i18n="hood.3p">Selfie Check as a risk signal during recovery, not as a login. It answers
-           whether a unique, living person is asking. The image never leaves the device.</p>
+        <h3>Ledger</h3>
+        <p data-i18n="hood.3p">A recipient can keep their key on a Ledger instead of in a file. The device
+           performs the key agreement itself and refuses without a confirmation, so a secret
+           cannot be opened by software while nobody is watching. Senders never know the
+           difference — what they read is a public key in an ENS record.</p>
       </div>
     </div>
   </section>
@@ -592,7 +596,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   "name": "NextKey",
   "applicationCategory": "SecurityApplication",
   "operatingSystem": "Web",
-  "description": "Share a seed phrase or credential with someone by their ENS name. Access ends when you say. Recovery proves a living human, not a backup file.",
+  "description": "Share a seed phrase or credential with someone by their ENS name. Access ends when you say, and the recipient's key can live on a Ledger.",
   "license": "https://opensource.org/licenses/MIT",
   "codeRepository": "https://github.com/4bridges/nextkey",
   "url": "https://nextkey.li/"
