@@ -29,5 +29,8 @@
   },
   "allowScripts": {
     "node-hid@2.1.2": true
+  },
+  "devDependencies": {
+    "playwright": "^1.63.0"
   }
 }
