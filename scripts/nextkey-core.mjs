@@ -13,7 +13,7 @@
 
 import { readFileSync, existsSync } from 'node:fs'
 import { webcrypto as wc } from 'node:crypto'
-import { createPublicClient, createWalletClient, http, toHex, zeroAddress } from 'viem'
+import { createPublicClient, createWalletClient, http, toHex, hexToBytes, zeroAddress } from 'viem'
 import { packetToBytes } from 'viem/ens'
 import { privateKeyToAccount } from 'viem/accounts'
 import { sepolia } from 'viem/chains'
@@ -29,6 +29,18 @@ export const RECORD_SECRET = 'nextkey.secret'
 export const RECORD_PUBKEY = 'nextkey.pubkey'
 export const RECORD_REQUEST = 'nextkey.request'
 export const AGENT_NAME = `agent.${PARENT}`
+
+/**
+ * v2 · One ephemeral public key for the whole name, written once.
+ *
+ * Every grant on the name is wrapped from this one key. That is safe because
+ * each recipient's ECDH lands somewhere else, and it is what makes a grant
+ * unfindable: the record it lives under is derived from the shared secret, so
+ * only the two parties who can compute it know where to look.
+ */
+export const RECORD_EPH = 'nextkey.eph'
+/** The name's ephemeral private key, wrapped to the owner's own identity. */
+export const RECORD_EPH_SEALED = 'nextkey.eph.sealed'
 
 const REGISTRY = process.env.NEXTKEY_REGISTRY ?? '0x612034AB34Ec262d5417EA3163718E7455157908'
 const RPC = process.env.SEPOLIA_RPC_URL ?? 'https://ethereum-sepolia-rpc.publicnode.com'
@@ -75,6 +87,19 @@ export const resolverFor = async (label) => {
     address: REGISTRY, abi: registryAbi, functionName: 'getResolver', args: [label] })
   if (r === zeroAddress) throw new Error(`${label}.${PARENT} has no resolver — run resolver.mjs attach first`)
   return r
+}
+
+/**
+ * Sign as the owner of our names.
+ *
+ * The same account that writes records is the one whose signature derives a
+ * name's ephemeral key, which is the property that makes the derivation a
+ * fallback worth having: whoever can write to the name can also recover the
+ * key that addresses its grants, with nothing kept on disk.
+ */
+export const signAsOwner = (message) => {
+  if (!writer) throw new Error('REGISTRAR_PRIVATE_KEY not set — nothing to sign with')
+  return writer.signMessage({ message })
 }
 
 /** Read the way a client reads: through the Universal Resolver. */
@@ -200,4 +225,193 @@ export const shareSecret = async ({ label, identity, recipient, log = () => {} }
   log(key)
   await setRecord(label, key, await grantFor(contentKey, un64(theirPub), recipient))
   return key
+}
+
+// ═══ v2 ════════════════════════════════════════════════════════════════════
+//
+// What changes, and why.
+//
+// In v1 a grant lives at `nextkey.grant.<first 16 hex of sha256(recipient's
+// public key)>`. That address is a pure function of a public value, so anyone
+// holding anna.eth's published key can check any name in the world for a grant
+// to her and get a yes or no. The ciphertext was never the leak. The *record
+// name* was: it published the guest list of every secret.
+//
+// v2 addresses a grant by the ECDH result instead. One ephemeral keypair is
+// generated per *name* — not per recipient, because one pair already yields a
+// different shared secret with every recipient — and its public half is written
+// once to `nextkey.eph`. Both the wrapping key and the record name are then
+// derived from that shared secret by HKDF under different info strings, so:
+//
+//   · a stranger cannot compute the record name, having neither private half;
+//   · the recipient computes it with one ECDH, the same one that unwraps the
+//     content key, so a hardware wallet is asked to approve once, not twice;
+//   · the owner computes every recipient's, because the ephemeral private key
+//     is theirs — which is what keeps `revoke` working without an index.
+//
+// The salt binds both derivations to this exact pairing (`ephPub || recipient`),
+// so a shared secret cannot be replayed into a different one. The info strings
+// separate the two derivations from each other, so publishing the tag on-chain
+// says nothing about the wrapping key.
+//
+// The `for` label of v1 is gone. It named the recipient in plain text next to
+// the grant, which would have handed back exactly what the tag is here to
+// withhold. The owner does not need it — they can recompute any recipient's tag
+// from that recipient's published key. The cost is an explorer view that no
+// longer reads as a guest list, which is the point rather than a regression.
+//
+// `nextkey.eph` is written once and never replaced. Replacing it moves every
+// grant on the name to a new address at once, and the old records, unreadable
+// and unfindable, stay behind as litter. Both writers check before writing.
+
+const INFO_EPH = 'nextkey/v2/eph'
+const INFO_WRAP = 'nextkey/v2/wrap'
+const INFO_TAG = 'nextkey/v2/tag'
+const INFO_SEAL = 'nextkey/v2/eph-seal'
+const utf8 = (s) => new TextEncoder().encode(s)
+const hex = (u8) => Buffer.from(u8).toString('hex')
+
+/** The salt both derivations share: this ephemeral key, this recipient. */
+const pairing = (ephPub, recipientPub) => new Uint8Array([...ephPub, ...recipientPub])
+
+export const wrapKeyV2 = (shared, ephPub, recipientPub) =>
+  hkdf(sha256, shared, pairing(ephPub, recipientPub), utf8(INFO_WRAP), 32)
+
+/** Sixteen bytes, not eight: the tag is the only thing standing between an
+ *  observer and the fact that a grant exists, so it may as well be wide. */
+export const tagFor = (shared, ephPub, recipientPub) =>
+  hex(hkdf(sha256, shared, pairing(ephPub, recipientPub), utf8(INFO_TAG), 16))
+
+export const grantKeyV2 = (shared, ephPub, recipientPub) =>
+  `nextkey.g2.${tagFor(shared, ephPub, recipientPub)}`
+
+/**
+ * The message the owner signs to derive this name's ephemeral key.
+ *
+ * Deterministic signing (RFC 6979) is what makes this a key rather than a
+ * coincidence: the same wallet over the same message returns the same bytes
+ * forever, on any machine, with nothing stored. It is a fallback, not the
+ * primary path — see ephSecretFor — because a wallet that ever signs
+ * non-deterministically would silently produce a different key, and the
+ * consistency check below is what catches that.
+ *
+ * The wording matters. Anyone who can make an owner sign this owns every grant
+ * on the name, so the message says what it does and where it is safe to sign.
+ */
+export const ephMessage = (name) => [
+  'NextKey — derive the ephemeral key for a name',
+  '',
+  `name: ${name}`,
+  'version: 2',
+  '',
+  'This signature is not a transaction. It moves nothing and approves nothing.',
+  'It derives the key that addresses every grant on this name, so treat it as',
+  'you would the key itself: sign it only on a NextKey page you opened',
+  'yourself, and never because someone asked you to.',
+].join('\n')
+
+/** 32 bytes from the signature. X25519 clamps the scalar itself, so any 32
+ *  bytes are a usable secret key. */
+export const ephSecretFromSignature = (signature, name) =>
+  hkdf(sha256, hexToBytes(signature), utf8(INFO_EPH), utf8(name), 32)
+
+/**
+ * Wrap the name's ephemeral private key to the owner's own identity key.
+ *
+ * This needs its own ephemeral pair — wrapping a key to itself would be
+ * circular — so the record carries `epk` the way a v1 grant does. Its info
+ * string is separate, so this ciphertext and a grant ciphertext can never be
+ * confused for one another even under the same pairing.
+ */
+export const sealEphSecret = async (ephSk, ownerPub) => {
+  const wSk = randomX25519Secret()
+  const wPk = x25519.getPublicKey(wSk)
+  const kek = hkdf(sha256, x25519.getSharedSecret(wSk, ownerPub),
+    pairing(wPk, ownerPub), utf8(INFO_SEAL), 32)
+  const { iv, ct } = await seal(kek, b64(ephSk))
+  return JSON.stringify({ v: 2, epk: b64(wPk), iv, ct })
+}
+
+export const openEphSecret = async (json, identity) => {
+  const s = JSON.parse(json)
+  const wPk = un64(s.epk)
+  const kek = hkdf(sha256, await identity.sharedWith(wPk),
+    pairing(wPk, identity.pk), utf8(INFO_SEAL), 32)
+  return un64(await unseal(kek, s))
+}
+
+/**
+ * Recover this name's ephemeral private key, by whichever route is open.
+ *
+ * Two roots of trust, deliberately: the sealed record needs only the owner's
+ * identity key, the derivation needs only their wallet. Losing either one alone
+ * costs nothing. When both are available they are compared, because a mismatch
+ * means one of the two assumptions this design rests on has quietly failed —
+ * a wallet that signs non-deterministically, or a sealed record written under a
+ * different key — and finding that out at revocation time would be far worse.
+ *
+ * Whatever the route, the result is checked against the published `nextkey.eph`
+ * before it is returned. That check costs one scalar multiplication and makes
+ * every failure mode above loud instead of silent.
+ */
+export const ephSecretFor = async ({ name, identity, sign, published }) => {
+  const wanted = published ?? await readRecord(name, RECORD_EPH)
+  if (!wanted) throw new Error(`${name} publishes no ${RECORD_EPH} — it is a v1 name`)
+
+  // The sealed record is only a route if an identity is on hand to open it.
+  // Commands that need the ephemeral key but not the content key — `revoke` is
+  // the one — can pass a signer alone and skip it.
+  const sealedJson = identity ? await readRecord(name, RECORD_EPH_SEALED) : undefined
+  const fromSeal = sealedJson ? await openEphSecret(sealedJson, identity) : undefined
+  const fromSig = sign ? ephSecretFromSignature(await sign(ephMessage(name)), name) : undefined
+
+  if (fromSeal && fromSig && b64(fromSeal) !== b64(fromSig)) {
+    throw new Error(
+      `${name}: the sealed ephemeral key and the one derived from your signature disagree.\n` +
+      `  One of them is wrong and this tool cannot tell which. Do not write to this\n` +
+      `  name until you know why — a wrong key writes grants nobody can find.`)
+  }
+
+  const sk = fromSeal ?? fromSig
+  if (!sk) throw new Error(
+    `${name}: no ${RECORD_EPH_SEALED} record and no signer — the ephemeral key cannot be recovered`)
+
+  if (b64(x25519.getPublicKey(sk)) !== wanted) throw new Error(
+    `${name}: the recovered ephemeral key does not match the published ${RECORD_EPH}.\n` +
+    `  Either the record was replaced, or this is not the owner's key.`)
+
+  return { sk, source: fromSeal ? 'sealed' : 'signature' }
+}
+
+/** One grant, v2. Returns the record it belongs in as well as its value,
+ *  because in v2 the two are computed together and neither is derivable from
+ *  the other. */
+export const grantForV2 = async (contentKey, ephSk, recipientPub) => {
+  const ephPk = x25519.getPublicKey(ephSk)
+  const shared = x25519.getSharedSecret(ephSk, recipientPub)
+  const { iv, ct } = await seal(wrapKeyV2(shared, ephPk, recipientPub), b64(contentKey))
+  return { key: grantKeyV2(shared, ephPk, recipientPub), value: JSON.stringify({ v: 2, iv, ct }) }
+}
+
+/**
+ * Find and open one's own grant on a name — the recipient's whole side of v2.
+ *
+ * Returns null when the name publishes no `nextkey.eph`, which is how a caller
+ * knows to fall back to v1 rather than concluding that access was refused.
+ * `sharedWith` is called exactly once: a Ledger asks its owner to approve
+ * finding the record and opening it as one act, because it is one ECDH.
+ */
+export const openOwnGrantV2 = async (name, identity) => {
+  const ephB64 = await readRecord(name, RECORD_EPH)
+  if (!ephB64) return null
+
+  const ephPk = un64(ephB64)
+  const shared = await identity.sharedWith(ephPk)
+  const key = grantKeyV2(shared, ephPk, identity.pk)
+  const grantJson = await readRecord(name, key)
+  if (!grantJson) throw new Error(
+    `no grant for "${identity.name}" at ${name} — access was never given, or was revoked.\n` +
+    `  (looked at ${key}, which only you and the owner can compute)`)
+
+  return { contentKey: un64(await unseal(wrapKeyV2(shared, ephPk, identity.pk), JSON.parse(grantJson))), key }
 }
