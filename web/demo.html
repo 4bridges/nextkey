@@ -118,6 +118,15 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   dt{color:var(--muted);white-space:nowrap}
   dd{margin:0;min-width:0;overflow-wrap:anywhere}
   .break{overflow-wrap:anywhere}
+  /* A two-column definition list assumes the label is short, which is true in
+     English and false in Russian: "опубликованный ключ" with nowrap is wider
+     than a narrow phone and pushes the whole page sideways. Below 30rem the
+     list stacks instead, which costs a line and saves the layout. */
+  @media (max-width:30rem){
+    dl{grid-template-columns:1fr;gap:.15rem}
+    dt{white-space:normal}
+    dd{margin-bottom:.45rem}
+  }
   pre{
     background:var(--code);border-radius:7px;padding:.8rem .9rem;margin:0 0 .9rem;
     font-size:.87rem;line-height:1.55;overflow-x:auto;white-space:pre-wrap;overflow-wrap:anywhere
@@ -253,6 +262,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   <p data-i18n="d.foot">Prototype · ENSv2 beta on Sepolia testnet · not audited. The seed phrase behind this
      ciphertext was generated for the demonstration and guards nothing.</p>
   <p>
+    <a href="./try.html" data-i18n="d.try">Try it yourself</a>
     <a href="./index.html" data-i18n="d.about">About NextKey</a>
     <a href="https://github.com/4bridges/nextkey" data-i18n="d.source">Source</a>
     <a href="https://hackathon-deployment-portal-app.ens-cf.workers.dev/">ENS explorer</a>

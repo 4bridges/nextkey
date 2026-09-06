@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="./brand/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="./brand/favicon.ico" sizes="16x16 32x32 48x48">
+<link rel="apple-touch-icon" href="./brand/apple-touch-icon.png">
+<link rel="manifest" href="./brand/site.webmanifest">
+<meta name="theme-color" content="#9a5218">
+<title>NextKey — try it yourself</title>
+<meta name="description" content="Encrypt a passphrase, grant it to an ENS name, open it, revoke it — the whole loop in your browser, no wallet required.">
+<meta name="robots" content="noindex">
+<script>
+(function(){try{var t=localStorage.getItem('nextkey.theme')
+if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)}catch(e){}})()
+</script>
+<style>
+  :root{
+    color-scheme: light;
+    --bg:#faf9f7; --surface:#fff; --ink:#1a1a19; --muted:#6b6862;
+    --line:#e5e2dc; --accent:#9a5218; --accent-ink:#fff; --code:#f3f1ec;
+    --ok:#1f6f43; --bad:#9c2b2b; --warnbg:#fdf3e3; --warnline:#e0b877;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
+      --bg:#131311; --surface:#1b1b18; --ink:#eceae6; --muted:#9a968d;
+      --line:#2c2c27; --accent:#e2954a; --accent-ink:#131311; --code:#201f1c;
+      --ok:#6fbf8e; --bad:#e08585; --warnbg:#2a2013; --warnline:#7a5b28;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --bg:#131311; --surface:#1b1b18; --ink:#eceae6; --muted:#9a968d;
+    --line:#2c2c27; --accent:#e2954a; --accent-ink:#131311; --code:#201f1c;
+    --ok:#6fbf8e; --bad:#e08585; --warnbg:#2a2013; --warnline:#7a5b28;
+  }
+  .bar{position:sticky;top:0;z-index:30;background:var(--bg);border-bottom:1px solid var(--line)}
+  .barin{display:flex;align-items:center;justify-content:space-between;gap:1rem;
+    padding-top:.7rem;padding-bottom:.7rem}
+  .brand{display:flex;align-items:center;gap:.6rem;text-decoration:none;color:var(--ink)}
+  .brand svg{width:2rem;height:2rem;flex:none;color:var(--accent)}
+  .brand b{font-size:1.18rem;font-weight:640;letter-spacing:-.015em}
+  .iconbtn{font:inherit;color:var(--ink);background:var(--surface);
+    border:1px solid var(--line);border-radius:6px;
+    width:2.15rem;height:2.15rem;padding:0;cursor:pointer;display:grid;place-items:center}
+  .iconbtn:hover{border-color:var(--muted)}
+  .iconbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .iconbtn svg{width:1.15rem;height:1.15rem}
+  .barctl{display:flex;align-items:center;gap:.5rem}
+  .langpick{position:relative}
+  .langbtn{
+    font:inherit;font-size:.9rem;font-weight:640;letter-spacing:.03em;
+    color:var(--ink);background:var(--surface);
+    border:1px solid var(--line);border-radius:6px;
+    padding:0 .55rem;height:2.15rem;cursor:pointer;
+    display:inline-flex;align-items:center;gap:.4rem
+  }
+  .langbtn:hover{border-color:var(--muted)}
+  .langbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .langbtn .caret{width:0;height:0;border:4px solid transparent;border-top-color:currentColor;
+    translate:0 2px;opacity:.65}
+  .langbtn[aria-expanded="true"] .caret{rotate:180deg;translate:0 -2px}
+  .langmenu{
+    position:absolute;top:calc(100% + .4rem);inset-inline-end:0;z-index:40;
+    background:var(--surface);border:1px solid var(--line);border-radius:8px;
+    padding:.3rem;width:max-content;
+    display:flex;flex-direction:column;gap:.1rem;
+    max-height:min(20rem,60vh);overflow-y:auto;overscroll-behavior:contain;
+    box-shadow:0 6px 24px rgba(0,0,0,.13)
+  }
+  .langmenu[hidden]{display:none}
+  .langmenu button{
+    font:inherit;font-size:.92rem;font-weight:640;letter-spacing:.03em;
+    color:var(--ink);background:none;border:0;border-radius:5px;
+    padding:.42rem 1.1rem;cursor:pointer;text-align:center
+  }
+  .langmenu button:hover{background:var(--code)}
+  .langmenu button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+  .langmenu button[aria-current="true"]{background:var(--accent);color:var(--accent-ink)}
+  :root[data-theme="dark"] .i-moon{display:none}
+  :root:not([data-theme="dark"]) .i-sun{display:none}
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]):not([data-theme="dark"]) .i-moon{display:none}
+    :root:not([data-theme="light"]):not([data-theme="dark"]) .i-sun{display:block}
+  }
+  [dir="rtl"] footer a{margin-right:0;margin-left:1.1rem}
+  [dir="rtl"] .step{padding-left:0;padding-right:3.4rem}
+  [dir="rtl"] .step .n{left:auto;right:0}
+
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.6 ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  .mono,pre,code,input,textarea{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace}
+  a{color:var(--accent)}
+  .wrap{max-width:52rem;margin:0 auto;padding:0 1.5rem}
+  .eyebrow{font-size:.9rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:640;margin:0 0 .9rem}
+  h1{font-size:clamp(1.6rem,5.4vw,2.5rem);font-weight:640;letter-spacing:-.015em;
+     /* 26ch keeps the English heading on two lines rather than three; balance
+        then splits them evenly, and the longer translations fall to three on a
+        phone, which is where three lines are fine. */
+     margin:0 0 .8rem;max-width:26ch;text-wrap:balance;
+     font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .lead{color:var(--muted);max-width:42rem;margin:0 0 1rem;font-size:1.05rem;text-wrap:pretty}
+
+  /* ── The warning that does not scroll away ── */
+  .warn{
+    border:1px solid var(--warnline);background:var(--warnbg);border-radius:9px;
+    padding:1rem 1.2rem;margin:1.6rem 0;font-size:.98rem
+  }
+  .warn p{margin:0}
+  .warn p + p{margin-top:.5rem}
+  .warn strong{font-weight:660}
+
+  /* ── Steps ── */
+  .step{position:relative;padding-left:3.4rem;padding-top:2.4rem;padding-bottom:.4rem}
+  .step .n{
+    position:absolute;left:0;top:2.4rem;width:2.3rem;height:2.3rem;border-radius:50%;
+    display:grid;place-items:center;font-weight:660;font-size:1rem;
+    background:var(--accent);color:var(--accent-ink);
+    font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif
+  }
+  .step h2{font-size:1.25rem;font-weight:640;margin:.15rem 0 .3rem;letter-spacing:-.01em;
+    font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .step > p{color:var(--muted);margin:0 0 1rem;max-width:40rem;
+    font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .step[hidden]{display:none}
+  @media (max-width:34rem){
+    .step{padding-left:0;padding-top:2.2rem}
+    [dir="rtl"] .step{padding-right:0}
+    .step .n{position:static;margin-bottom:.6rem}
+  }
+
+  textarea,input[type=text]{
+    width:100%;font-size:1rem;line-height:1.55;color:var(--ink);
+    background:var(--surface);border:1px solid var(--line);border-radius:8px;
+    padding:.75rem .85rem
+  }
+  textarea{min-height:5.5rem;resize:vertical}
+  textarea:focus,input[type=text]:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:var(--accent)}
+  .row{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;margin:.8rem 0}
+  button.act{
+    font:inherit;font-weight:620;font-size:.97rem;
+    font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--accent);color:var(--accent-ink);border:1px solid var(--accent);
+    border-radius:7px;padding:.6rem 1.1rem;cursor:pointer
+  }
+  button.act.ghost{background:var(--surface);color:var(--ink);border-color:var(--line)}
+  button.act.ghost:hover{border-color:var(--muted)}
+  button.act:disabled{opacity:.45;cursor:not-allowed}
+  button.act:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .choice{display:flex;flex-wrap:wrap;gap:1.2rem;margin:.4rem 0 1rem;
+    font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .choice label{display:flex;align-items:center;gap:.45rem;cursor:pointer;font-size:.98rem}
+  .check{display:flex;gap:.55rem;align-items:flex-start;margin:.9rem 0;font-size:.96rem;
+    font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .check input{margin-top:.3rem;flex:none}
+  .state{font-size:.92rem;color:var(--muted);margin:.4rem 0 0;
+    font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+
+  .out{border:1px solid var(--line);border-radius:9px;background:var(--surface);
+    padding:1rem 1.2rem;margin:1rem 0 0;min-width:0}
+  .out[hidden]{display:none}
+  .out.ok{border-color:var(--ok)}
+  .out.bad{border-color:var(--bad)}
+  .out.busy{border-style:dashed}
+  .out p{margin:0 0 .5rem;font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .out p:last-child{margin-bottom:0}
+  .found{color:var(--ok);font-weight:620}
+  .out.bad > p:first-child{color:var(--bad);font-weight:600}
+  .note{font-size:.93rem;color:var(--muted);margin-top:.6rem}
+  .reclabel{font-size:.92rem;color:var(--muted);margin-top:.9rem}
+  dl{display:grid;grid-template-columns:auto 1fr;gap:.35rem .9rem;margin:0 0 .6rem;font-size:.94rem}
+  dt{color:var(--muted);white-space:nowrap;
+    font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  dd{margin:0;min-width:0;overflow-wrap:anywhere}
+  .break{overflow-wrap:anywhere}
+  /* A two-column definition list assumes the label is short, which is true in
+     English and false in Russian: "опубликованный ключ" with nowrap is wider
+     than a narrow phone and pushes the whole page sideways. Below 30rem the
+     list stacks instead, which costs a line and saves the layout. */
+  @media (max-width:30rem){
+    dl{grid-template-columns:1fr;gap:.15rem}
+    dt{white-space:normal}
+    dd{margin-bottom:.45rem}
+  }
+  pre{background:var(--code);border-radius:7px;padding:.8rem .9rem;margin:0 0 .4rem;
+    font-size:.87rem;line-height:1.55;overflow-x:auto;white-space:pre-wrap;overflow-wrap:anywhere}
+  pre.reveal{font-size:1rem;line-height:1.7;border:1px solid var(--ok)}
+  .fallback{border:1px solid var(--accent);border-radius:9px;padding:1.2rem 1.4rem;
+    margin:2.6rem 0 1rem;background:var(--surface)}
+  .fallback p{margin:0 0 .6rem}
+  .fallback p:last-child{margin:0}
+  footer{border-top:1px solid var(--line);padding:2rem 0 3rem;color:var(--muted);font-size:.94rem;margin-top:2.5rem}
+  footer p{max-width:44rem}
+  footer a{margin-right:1.1rem}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="wrap barin">
+    <a class="brand" href="./index.html" aria-label="NextKey"><svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M32 4.5 54.8 17.75v26.5L32 57.5 9.2 44.25v-26.5z" stroke="currentColor" stroke-width="5.5" stroke-linejoin="round"/><circle cx="32" cy="27" r="7" stroke="currentColor" stroke-width="5"/><path d="M32 34v13" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg><b>NextKey</b></a>
+    <div class="barctl">
+      <button class="iconbtn" id="themebtn" type="button"
+              aria-label="Switch to dark theme" title="Switch theme">
+        <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a6.8 6.8 0 0 0 11 11z"/>
+        </svg>
+        <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4.2"/>
+          <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.2 5.2l1.4 1.4M17.4 17.4l1.4 1.4M18.8 5.2l-1.4 1.4M6.6 17.4l-1.4 1.4"/>
+        </svg>
+      </button>
+      <span class="lbl" id="lang-label" data-i18n="ui.lang" hidden>Language</span>
+      <div class="langpick">
+        <button class="langbtn" id="langbtn" type="button"
+                aria-haspopup="listbox" aria-expanded="false"
+                aria-labelledby="lang-label langbtn">EN<span class="caret"></span></button>
+        <div class="langmenu" id="langmenu" role="listbox" aria-labelledby="lang-label" hidden>
+          <button type="button" role="option" data-code="en">EN</button>
+          <button type="button" role="option" data-code="de">DE</button>
+          <button type="button" role="option" data-code="fr">FR</button>
+          <button type="button" role="option" data-code="it">IT</button>
+          <button type="button" role="option" data-code="es">ES</button>
+          <button type="button" role="option" data-code="pt">PT</button>
+          <button type="button" role="option" data-code="cn">CN</button>
+          <button type="button" role="option" data-code="ua">UA</button>
+          <button type="button" role="option" data-code="ru">RU</button>
+          <button type="button" role="option" data-code="fa">FA</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap" style="padding-top:2.6rem">
+  <p class="eyebrow" data-i18n="t.eyebrow">Try it yourself</p>
+  <h1 data-i18n="t.h1">Hand over a passphrase, then take it back</h1>
+  <p class="lead" data-i18n="t.lead">
+    The whole NextKey loop, running in this tab: encrypt a passphrase, grant it to a
+    recipient, open it as them, watch a stranger fail, then revoke. No wallet, no
+    account, no ether. The last step is optional and puts it on Sepolia under a name
+    you own.
+  </p>
+
+  <div class="warn">
+    <p data-i18n-html="t.warn1"><strong>Never type a seed phrase that guards anything — here or anywhere else.</strong></p>
+    <p data-i18n="t.warn2">A box on a web page asking for your recovery phrase is the oldest theft in
+      this industry, and NextKey exists because of it. Use the generator below. It
+      makes a real twelve-word phrase that has never held a coin and never will.</p>
+  </div>
+
+  <noscript>
+    <div class="fallback">
+      <p data-i18n-html="t.nojs"><strong>This page does its work in JavaScript, which is switched off.</strong>
+        Nothing here is sent anywhere, so there is no server-rendered version to fall back to.
+        <a href="./demo.html">The live view</a> and
+        <a href="https://github.com/4bridges/nextkey#readme">the README</a> explain the same
+        loop without running anything.</p>
+    </div>
+  </noscript>
+</div>
+
+<main class="wrap">
+
+  <!-- 1 ─────────────────────────────────────────────────────────────────── -->
+  <section class="step">
+    <div class="n">1</div>
+    <h2 data-i18n="t.s1.h">The secret</h2>
+    <p data-i18n="t.s1.p">Anything at all — a passphrase, a note, a throwaway seed phrase. It stays in
+      this tab until you choose otherwise.</p>
+    <textarea id="phrase" spellcheck="false" autocomplete="off"
+      aria-label="The secret to protect"
+      data-i18n-ph="t.s1.ph" placeholder="twelve words, or anything else you would rather not email"></textarea>
+    <div class="row">
+      <button class="act ghost" id="gen" type="button" data-i18n="t.s1.gen.btn">Generate a throwaway phrase</button>
+    </div>
+    <p class="state" id="step1-state"></p>
+    <div class="out bad" id="own-phrase-warn" hidden>
+      <p data-i18n="t.s1.risk">That looks like a real recovery phrase, and it was not generated here.</p>
+      <p class="note" data-i18n="t.s1.risknote">If it protects anything, clear the box now and press the button instead.
+        Steps 1 to 5 never leave this tab — but step 6 writes to a public chain, and
+        a chain does not forget.</p>
+    </div>
+  </section>
+
+  <!-- 2 ─────────────────────────────────────────────────────────────────── -->
+  <section class="step">
+    <div class="n">2</div>
+    <h2 data-i18n="t.s2.h">Who it is for</h2>
+    <p data-i18n="t.s2.p">A recipient is a public key. It can be one made here so you can finish the
+      loop, or a real one read off a name on the hackathon ENS deployment.</p>
+    <div class="choice">
+      <label><input type="radio" name="rmode" value="local" checked>
+        <span data-i18n="t.s2.opt1">Someone made here</span></label>
+      <label><input type="radio" name="rmode" value="ens">
+        <span data-i18n="t.s2.opt2">A name on chain</span></label>
+    </div>
+
+    <div id="r-local">
+      <div class="row">
+        <button class="act ghost" id="gen-recipient" type="button" data-i18n="t.s2.gen.btn">Make a recipient</button>
+      </div>
+      <div class="out" id="r-local-out" hidden></div>
+    </div>
+
+    <div id="r-ens" hidden>
+      <div class="row">
+        <input type="text" id="ens-name" value="anna.nextkey.eth" spellcheck="false"
+               autocomplete="off" aria-label="An ENS name on the hackathon deployment"
+               style="flex:1 1 16rem;min-width:0">
+        <button class="act ghost" id="lookup" type="button" data-i18n="t.s2.look.btn">Read their key</button>
+      </div>
+      <div class="out" id="r-ens-out" hidden></div>
+    </div>
+  </section>
+
+  <!-- 3 ─────────────────────────────────────────────────────────────────── -->
+  <section class="step">
+    <div class="n">3</div>
+    <h2 data-i18n="t.s3.h">Encrypt it, and grant it</h2>
+    <p data-i18n="t.s3.p">One AES-256-GCM key for the secret, then that key wrapped to the recipient
+      with X25519 and HKDF-SHA256. Identical to what the command-line tool does —
+      a grant made here opens there.</p>
+    <div class="row">
+      <button class="act" id="go-store" type="button" disabled data-i18n="t.s3.btn">Encrypt and grant</button>
+    </div>
+    <div class="out" id="store-out" hidden></div>
+  </section>
+
+  <!-- 4 ─────────────────────────────────────────────────────────────────── -->
+  <section class="step" id="step4" hidden>
+    <div class="n">4</div>
+    <h2 data-i18n="t.s4.h">Open it</h2>
+    <p data-i18n="t.s4.p">Once as the recipient, who holds the key. Once as somebody who does not.</p>
+    <div class="row">
+      <button class="act" id="open-as" type="button" data-i18n="t.s4.btn1">Open as the recipient</button>
+      <button class="act ghost" id="open-other" type="button" data-i18n="t.s4.btn2">Try it as a stranger</button>
+    </div>
+    <p class="state" id="open-remote-note" hidden data-i18n="t.s4.remote">You granted it to a name on chain, and their private key is on their machine,
+      not in this browser. So this page cannot open it — and that is the property the
+      whole thing rests on. They would run: nextkey.mjs open &lt;label&gt; &lt;their identity&gt;</p>
+    <div class="out" id="open-out" hidden></div>
+  </section>
+
+  <!-- 5 ─────────────────────────────────────────────────────────────────── -->
+  <section class="step" id="step5" hidden>
+    <div class="n">5</div>
+    <h2 data-i18n="t.s5.h">Take it back</h2>
+    <p data-i18n="t.s5.p">Revoking clears the grant record and leaves the ciphertext alone. Then try
+      opening it again.</p>
+    <div class="row">
+      <button class="act ghost" id="revoke" type="button" data-i18n="t.s5.btn">Revoke the grant</button>
+    </div>
+    <div class="out" id="revoke-out" hidden></div>
+  </section>
+
+  <!-- 6 ─────────────────────────────────────────────────────────────────── -->
+  <section class="step" id="step6" hidden>
+    <div class="n">6</div>
+    <h2 data-i18n="t.s6.h">Optional — put it on chain</h2>
+    <p data-i18n="t.s6.p">Everything above was arithmetic in your browser. This writes the two records
+      to a name you own on the hackathon ENS deployment, signed by your wallet.
+      Register one at the ENS app first if you have none.</p>
+
+    <div class="row">
+      <button class="act ghost" id="connect" type="button" data-i18n="t.s6.connect.btn">Connect a wallet</button>
+      <a href="https://hackathon-deployment-manager-app-v4.ens-cf.workers.dev/" rel="noopener"
+         data-i18n="t.s6.register">Register a name</a>
+    </div>
+    <div class="out" id="wallet-out" hidden></div>
+
+    <div class="row">
+      <input type="text" id="own-name" spellcheck="false" autocomplete="off"
+             aria-label="A name you own"
+             data-i18n-ph="t.s6.ph" placeholder="the name you own, e.g. yourname.eth"
+             style="flex:1 1 18rem;min-width:0">
+    </div>
+
+    <label class="check">
+      <input type="checkbox" id="confirm-fake">
+      <span data-i18n="t.s6.confirm">I confirm this phrase guards nothing. It is a throwaway, and I understand
+        that what I write to a public chain stays there.</span>
+    </label>
+
+    <div class="row">
+      <button class="act" id="publish" type="button" disabled data-i18n="t.s6.btn">Write both records</button>
+    </div>
+    <div class="out" id="publish-out" hidden></div>
+  </section>
+
+  <div class="fallback">
+    <p data-i18n-html="t.after1"><strong>What just happened, and what it proves.</strong></p>
+    <p data-i18n="t.after2">The ciphertext and the grant were both public from the moment they existed.
+      Anyone could read them; nobody could use them. What separated the recipient from
+      everyone else was a private key that was never published, never uploaded and
+      never held by us — so there is no server here to subpoena, breach or shut down,
+      and no version of NextKey that could read your secret if it wanted to.</p>
+    <p data-i18n="t.after3">The stranger's failure is the part worth dwelling on. It was not a permission
+      check that a different build could skip. A different key derives a different
+      wrapping key, and AES-GCM refuses. Access control that is arithmetic cannot be
+      configured away.</p>
+    <p data-i18n="t.after4">Revocation is where the chain earns its place. On this page it was a variable
+      set to null. On chain it is a write to a name, and who may perform that write is
+      decided by ENS roles rather than by us — which is the difference between a
+      promise and a rule.</p>
+  </div>
+</main>
+
+<footer class="wrap">
+  <p data-i18n="t.foot">Prototype · ENSv2 beta on Sepolia testnet · not audited · nothing on this page is
+    sent to a server. Do not put a phrase here that guards real funds.</p>
+  <p>
+    <a href="./index.html" data-i18n="t.about">About NextKey</a>
+    <a href="./demo.html" data-i18n="t.live">The live view</a>
+    <a href="https://github.com/4bridges/nextkey" data-i18n="t.source">Source</a>
+  </p>
+</footer>
+
+<script src="./i18n.js"></script>
+<script>
+/**
+ * The same overlay as the other two pages, same storage keys, so a language or
+ * theme chosen anywhere on the site is already chosen here.
+ *
+ * One addition over demo.html: `data-i18n-ph` translates a placeholder. A
+ * placeholder is the only text on this page a reader meets before doing
+ * anything, so leaving it in English would greet nine of ten visitors wrongly.
+ */
+(function () {
+  var CODES = ['en','de','fr','it','es','pt','cn','ua','ru','fa']
+  var TAGS  = { en:'en', de:'de', fr:'fr', it:'it', es:'es', pt:'pt',
+                cn:'zh-Hans', ua:'uk', ru:'ru', fa:'fa' }
+  var RTL   = { fa: true }
+
+  var nodes = document.querySelectorAll('[data-i18n], [data-i18n-html], [data-i18n-ph]')
+  var base = {}
+  nodes.forEach(function (el) {
+    if (el.hasAttribute('data-i18n-ph')) {
+      base[el.getAttribute('data-i18n-ph')] = el.getAttribute('placeholder')
+    }
+    var html = el.hasAttribute('data-i18n-html')
+    var key = el.getAttribute(html ? 'data-i18n-html' : 'data-i18n')
+    if (!key) return
+    base[key] = (html ? el.innerHTML : el.textContent).replace(/\s+/g, ' ').trim()
+  })
+  var META = document.querySelector('meta[name="description"]')
+  base['t.meta.title'] = document.title
+  base['t.meta.desc'] = META ? META.getAttribute('content') : ''
+
+  function store(k, v) { try { localStorage.setItem(k, v) } catch (e) {} }
+  function recall(k) { try { return localStorage.getItem(k) } catch (e) { return null } }
+
+  function apply(code) {
+    var dict = code === 'en' ? {} : (window.I18N && window.I18N[code]) || {}
+    var pick = function (k) {
+      return Object.prototype.hasOwnProperty.call(dict, k) ? dict[k] : base[k]
+    }
+    nodes.forEach(function (el) {
+      if (el.hasAttribute('data-i18n-ph')) {
+        var pv = pick(el.getAttribute('data-i18n-ph'))
+        if (pv != null) el.setAttribute('placeholder', pv)
+      }
+      var html = el.hasAttribute('data-i18n-html')
+      var key = el.getAttribute(html ? 'data-i18n-html' : 'data-i18n')
+      if (!key) return
+      var v = pick(key)
+      if (v == null) return
+      if (html) el.innerHTML = v; else el.textContent = v
+    })
+    document.title = pick('t.meta.title')
+    if (META) META.setAttribute('content', pick('t.meta.desc'))
+
+    var root = document.documentElement
+    root.setAttribute('lang', TAGS[code] || 'en')
+    root.dataset.i18nLang = code
+    if (RTL[code]) root.setAttribute('dir', 'rtl'); else root.removeAttribute('dir')
+    if (window.__nextkeyRerender) window.__nextkeyRerender()
+  }
+
+  function normalise(v) {
+    if (!v) return null
+    v = String(v).toLowerCase()
+    if (CODES.indexOf(v) !== -1) return v
+    var m = { zh:'cn', 'zh-cn':'cn', 'zh-hans':'cn', uk:'ua', fa:'fa', 'pt-br':'pt', 'pt-pt':'pt' }
+    if (m[v]) return m[v]
+    var short = v.split('-')[0]
+    return CODES.indexOf(short) !== -1 ? short : (m[short] || null)
+  }
+
+  var url = new URLSearchParams(location.search)
+  var chosen = normalise(url.get('lang')) || normalise(recall('nextkey.lang'))
+            || normalise(navigator.language) || 'en'
+
+  var btn = document.getElementById('langbtn')
+  var menu = document.getElementById('langmenu')
+  var opts = Array.prototype.slice.call(menu.querySelectorAll('[data-code]'))
+
+  function mark(code) {
+    btn.firstChild.nodeValue = code.toUpperCase()
+    opts.forEach(function (o) {
+      var on = o.dataset.code === code
+      o.setAttribute('aria-current', on ? 'true' : 'false')
+      o.setAttribute('aria-selected', on ? 'true' : 'false')
+    })
+  }
+  function open() {
+    menu.hidden = false
+    btn.setAttribute('aria-expanded', 'true')
+    var cur = opts.filter(function (o) { return o.getAttribute('aria-current') === 'true' })[0]
+    ;(cur || opts[0]).focus()
+    ;(cur || opts[0]).scrollIntoView({ block: 'nearest' })
+  }
+  function close(refocus) {
+    menu.hidden = true
+    btn.setAttribute('aria-expanded', 'false')
+    if (refocus) btn.focus()
+  }
+  function choose(code) {
+    apply(code); mark(code); store('nextkey.lang', code)
+    var q = new URLSearchParams(location.search)
+    if (code === 'en') q.delete('lang'); else q.set('lang', code)
+    var qs = q.toString()
+    history.replaceState(null, '', location.pathname + (qs ? '?' + qs : ''))
+    close(true)
+  }
+
+  btn.addEventListener('click', function () { menu.hidden ? open() : close(false) })
+  opts.forEach(function (o, i) {
+    o.addEventListener('click', function () { choose(o.dataset.code) })
+    o.addEventListener('keydown', function (e) {
+      var step = { ArrowDown: 1, ArrowUp: -1, ArrowRight: 1, ArrowLeft: -1 }[e.key]
+      if (step) {
+        e.preventDefault()
+        var n = (i + step + opts.length) % opts.length
+        opts[n].focus(); opts[n].scrollIntoView({ block: 'nearest' })
+      } else if (e.key === 'Escape') { e.preventDefault(); close(true) }
+      else if (e.key === 'Home') { e.preventDefault(); opts[0].focus() }
+      else if (e.key === 'End') { e.preventDefault(); opts[opts.length - 1].focus() }
+    })
+  })
+  btn.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); open() }
+    else if (e.key === 'Escape') close(false)
+  })
+  document.addEventListener('click', function (e) {
+    if (!menu.hidden && !menu.contains(e.target) && e.target !== btn) close(false)
+  })
+
+  apply(chosen); mark(chosen)
+
+  var tbtn = document.getElementById('themebtn')
+  var root = document.documentElement
+  var dark = window.matchMedia('(prefers-color-scheme: dark)')
+  function isDark(){ var t=root.getAttribute('data-theme'); return t ? t==='dark' : dark.matches }
+  function label(){ tbtn.setAttribute('aria-label', isDark() ? 'Switch to light theme' : 'Switch to dark theme') }
+  tbtn.addEventListener('click', function () {
+    var next = isDark() ? 'light' : 'dark'
+    root.setAttribute('data-theme', next)
+    store('nextkey.theme', next)
+    label()
+  })
+  dark.addEventListener('change', function(){ if(!root.getAttribute('data-theme')) label() })
+  label()
+})()
+</script>
+<script type="module" src="./try.js"></script>
+</body>
+</html>

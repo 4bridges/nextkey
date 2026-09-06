@@ -4,6 +4,11 @@
 
 NextKey hands secrets over to the people who should get them — under rules nobody can bypass, not even us.
 
+**Try it without installing anything: [nextkey.li/try.html](https://nextkey.li/try.html).** Encrypt a
+passphrase, grant it to an ENS name, open it, watch a stranger fail, revoke it — the whole loop in your
+browser, no wallet and no testnet ether. If you have a wallet and a name of your own on the hackathon
+deployment, the last step writes the result on chain under *your* name.
+
 > **Repository note.** This repository was initialized on 3 September 2026 with scaffolding only (README stub, `.gitignore`, MIT license). All project work begins at the official ETHOnline 2026 kickoff on 4 September 2026 — see the commit history. No code, designs or assets predate the kickoff.
 
 > **Status: prototype.** Built during ETHGlobal ETHOnline 2026, running against the ENSv2 beta on **Sepolia testnet**. Not audited. Do not put a seed phrase you actually rely on into it.
@@ -295,6 +300,7 @@ The same state in a browser, which is what the demo link opens:
 
 ```bash
 npx serve web -l 8080     # then http://localhost:8080/demo.html
+                          #  and http://localhost:8080/try.html
 ```
 
 Open `web/` over `http://`, not by double-clicking the file — ES modules are blocked
@@ -358,8 +364,21 @@ resets periodically; if a name has vanished, re-register it.
 
 ## Demo
 
-- Live demo: https://nextkey.li
+- **Try it yourself:** https://nextkey.li/try.html — the full loop in the browser, no wallet needed
+- Live view (this deployment's real records, read from Sepolia): https://nextkey.li/demo.html
+- About: https://nextkey.li
 - Demo video: <!-- TODO -->
+
+The playground runs the same X25519 + HKDF-SHA256 + AES-256-GCM construction the command-line tool
+uses, not a stand-in for it. `node web/test/interop.mjs` proves it: it generates a grant with the Node
+code, opens it in a headless browser with the browser code, does it the other way round, and checks
+both halves refuse a stranger's key.
+
+It will not accept a real seed phrase into the on-chain step. There is a generator for a throwaway
+BIP-39 phrase, a warning that stays on screen when twelve words appear that the page did not generate,
+and a confirmation the visitor has to give before anything is written to a public chain. A box on a
+web page asking for a recovery phrase is the theft NextKey exists to answer; building one to
+demonstrate the answer would have been an odd choice.
 
 ---
 

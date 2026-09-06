@@ -239,3 +239,79 @@ The gap it closes is specific. An enclave's inputs are invisible by design, so "
 **What this changes for the Chainlink slot.** The substantive criterion is that the workflow is a meaningful part of the product rather than an isolated example. Until tonight our honest answer was *not yet*: the rule was tested, the simulation ran, but it judged invented data. It now judges a request an independent agent filed on chain under a scoped ENS role, and its verdict is checkable against that request. Qualified became earned.
 
 **Still deliberately out of scope.** Delivering the signed report to a contract via `evmClient.writeReport` — so a RELEASE would write the grant itself. The decision path is complete; the actuation path is one step short, and saying so is better than implying otherwise.
+---
+
+## 2026-09-06 — the demo becomes something you can use
+
+**Until today the site let a judge watch. Now it lets them do it.**
+
+`demo.html` reads a secret that already exists — real records, read live, and a
+good answer to "is this actually on chain". It is a bad answer to "does this
+work for *me*", which is the question a prize is decided on. So there is a third
+page, `try.html`, and it runs the whole loop: write a secret, make or look up a
+recipient, encrypt and grant, open it as the recipient, watch a stranger fail,
+revoke, watch the recipient fail too.
+
+**No wallet for the first five steps.** That was the constraint everything else
+followed from. A judge with two minutes and no Sepolia ether has to be able to
+finish, or the page is a gate rather than a demonstration. So steps 1 to 5 are
+arithmetic in the browser: no account, no gas, no server, nothing to install.
+
+**The sixth step writes to a name the visitor owns, not to one of ours.** It
+would have been easier to grant strangers a setter role on a subname of
+`nextkey.eth` and let them write there. It would also have proved less: a system
+demonstrated only on the author's own name has not been demonstrated. They
+register at the ENS app, connect a wallet, and NextKey writes two text records to
+their name — which is the actual claim, that this is a pattern on ENS and not a
+service we host.
+
+Both writes are simulated before a signature is asked for. A revert then arrives
+as a reason rather than as a transaction hash and a shrug, and the three likely
+causes — not your name, no resolver attached, no gas — are named in the failure
+message, because "execution reverted" tells a visitor nothing about which.
+
+**The refusal we designed in.** A box on a web page asking for a recovery phrase
+is the oldest theft in this industry, and it is the theft NextKey exists to
+answer. Building one to demonstrate the answer would have been an odd week's
+work. So: a generator for a real throwaway BIP-39 phrase, a warning that appears
+and stays whenever twelve words show up that the page did not generate, and a
+confirmation the visitor must give before step 6 writes anything. Steps 1 to 5
+are safe whatever is typed, because nothing leaves the tab. Step 6 writes to a
+public chain, and a chain does not forget.
+
+The phrase the generator makes is a *valid* mnemonic. An invalid one would let a
+sceptic dismiss the whole thing as a toy — and no address is derived from it
+anywhere in the page, so it stays worth nothing.
+
+**The one thing the page will not do, and says so.** Grant to a real ENS name and
+it encrypts to the key that name publishes and then reports that it cannot open
+the result. That is not a missing feature. The recipient's private key is on the
+recipient's machine; if a web page could open the grant, the product would not
+work. Hiding that would have been the lie, so it is stated in the interface.
+
+**`src/nk-crypto.js` exists because of a bug we already had.** The wrapping rule
+now has two implementations — `scripts/nextkey-core.mjs` for Node,
+`src/nk-crypto.js` for the browser — and if they drift the failure is not a
+crash. It is a grant that writes cleanly, reads cleanly and refuses to open,
+discovered three steps downstream of its cause. That has happened once in this
+project already.
+
+Pasting the crypto into `try.js` would have been shorter and would have tested
+nothing. Keeping it in its own module makes it reachable: `node
+web/test/interop.mjs` bundles that file alone into a headless Chromium,
+generates a grant with the Node construction and opens it with the browser one,
+does it the other way round, and checks both halves refuse a stranger's key.
+Five checks, and they pass.
+
+**What is still unverified.** Step 6 has never touched the chain. This container
+cannot reach the Sepolia RPC, so the whole write path — resolver discovery, the
+simulation, the two `setText` calls — is written and reviewed but not executed.
+Everything else on the page is tested in a real browser in all ten languages. The
+line between the two is worth keeping visible rather than rounding up.
+
+**A defect found on the way.** A two-column definition list with `white-space:
+nowrap` on the term assumes the label is short. It is in English. It is not in
+Russian: *опубликованный ключ* pushed the page eight pixels sideways on a
+320-pixel screen. The list stacks below 30rem now, on `demo.html` too, where the
+same latent bug was waiting.
+
