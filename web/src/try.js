@@ -377,8 +377,14 @@ $('publish').addEventListener('click', async () => {
   if (!$('confirm-fake').checked) return say(out, 'bad', `
     <p>${t('t.s6.needconfirm', 'Confirm first that the phrase guards nothing.')}</p>`)
   if (!name) return say(out, 'bad', `<p>${t('t.s6.needname', 'Enter a name you own.')}</p>`)
-  if (!S.sealed || !S.grant) return say(out, 'bad', `
+  // Two different situations that a single check would report as one. Revoking
+  // in step 5 clears the grant, and telling somebody who has just done that to
+  // "do steps 1 to 3 first" is both wrong and confusing — they did.
+  if (!S.sealed) return say(out, 'bad', `
     <p>${t('t.s6.needsecret', 'Do steps 1 to 3 first — there is nothing to write yet.')}</p>`)
+  if (!S.grant) return say(out, 'bad', `
+    <p>${t('t.s6.revoked', 'You revoked the grant in step 5, so there is nothing left to write but a ciphertext nobody can open.')}</p>
+    <p class="note">${t('t.s6.revokednote', 'Press "Encrypt and grant" in step 3 again to make a fresh one. Writing the ciphertext alone would be a working demonstration of losing a secret.')}</p>`)
 
   try {
     say(out, 'busy', `<p>${t('t.s6.finding', 'Finding the resolver for that name…')}</p>`)
