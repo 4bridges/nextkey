@@ -5,9 +5,11 @@
 NextKey hands secrets over to the people who should get them — under rules nobody can bypass, not even us.
 
 **Try it without installing anything: [nextkey.li/try.html](https://nextkey.li/try.html).** Encrypt a
-passphrase, grant it to an ENS name, open it, watch a stranger fail, revoke it — the whole loop in your
-browser, no wallet and no testnet ether. If you have a wallet and a name of your own on the hackathon
-deployment, the last step writes the result on chain under *your* name.
+passphrase, grant it to an ENS name, put it on Sepolia, open it back off the chain, watch a stranger
+fail, revoke it. The whole loop, including the on-chain half — no wallet, no extension, no testnet
+ether, on a phone if you like: we lend you a name and pay the gas. If you hold a name on the hackathon
+deployment yourself, the same step writes it under *your* name with *your* wallet, which is the real
+product.
 
 > **Repository note.** This repository was initialized on 3 September 2026 with scaffolding only (README stub, `.gitignore`, MIT license). All project work begins at the official ETHOnline 2026 kickoff on 4 September 2026 — see the commit history. No code, designs or assets predate the kickoff.
 
@@ -51,16 +53,52 @@ So NextKey splits the two concerns rather than conflating them. **Confidentialit
 
 | What the user does | What happens in the protocol |
 |---|---|
-| Share a secret with `anna.eth` | A key blob wrapped to Anna's `nextkey.pubkey` record is written into the subname. Anna can decrypt it; anyone can see that something was shared |
+| Share a secret with `anna.eth` | A key blob wrapped to Anna's `nextkey.pubkey` record, written at a record name only she and the owner can compute. Anyone can see the subname holds *something*; nobody can see for whom |
 | Limit access to seven days | The subname's `expiry`. Resolution stops once `block.timestamp >= expiry` — enforced by the registry, not by us. [Watched happen](./evidence/expiry.log): readable at 18s remaining, empty at 2s past, no grace period |
-| Revoke access | Clear the grant record. Only accounts holding the setter role can, so revocation is as strong as the role model. [Executed](./evidence/revocation.log): Anna opens, the owner revokes, Anna cannot |
+| Revoke access | Clear the grant record. Only accounts holding the setter role can, so revocation is as strong as the role model. [Executed](./evidence/revocation.log): Anna opens, the owner revokes, Anna cannot. Afterwards she reaches an address that holds nothing, and cannot tell a withdrawn grant from one that never existed |
 | Delegate writing to the release agent | `grantSetterRoles()` for one setter, one key, one name. The agent may propose; it holds no key material and cannot decrypt anything |
 | Keep control while delegating | Roles and their admins are separate. The delegate's bitmap has no admin half, so it can act and cannot pass the right on |
 | Give the agent an identity | Its own namespace holding that single role — ENS's own bonus criterion for this hackathon: *agents as namespaces, each with their own identity and permissions* |
+| Try it with no wallet at all | A pool of set-aside subnames on a resolver of their own, where a published throwaway key holds root roles. It can write records on those names and nowhere else. [Why not per-record delegation](./FEEDBACK-ENS.md) |
 
 Each user's **notification channel** is a text record too, which is why step 3 above works for people who have never heard of NextKey.
 
-A grant is stored under the recipient's **key fingerprint**, not their name — `nextkey.grant.<first 16 hex of sha256(publicKey)>` — with the name carried inside the value for readability. Names move; the key that opens a grant does not. See [`docs/decisions.md`](./docs/decisions.md) for the bug that taught us this.
+### Where a grant lives is itself a secret
+
+Our first design stored a grant under the recipient's key fingerprint — `nextkey.grant.<first 16 hex of sha256(publicKey)>` — with their name inside the value, for readability. Addressing by key rather than by name was right: names move, and the key that opens a grant does not.
+
+The address was the mistake. It is a pure function of a **public** value. Anyone holding `anna.eth`'s published key can compute it and check any name on the deployment for a grant to her, and get a yes or no without asking anybody. The ciphertext was never the leak. The record name was, and it published the guest list of every secret in the system.
+
+So a name now carries one ephemeral public key at `nextkey.eph`, written once and never replaced, and both the wrapping key and the record name are derived from the ECDH between it and the recipient's key, under different HKDF info strings:
+
+| | v1 | v2 |
+|---|---|---|
+| Record name | `sha256(recipientPub)` | `HKDF(ECDH, salt = ephPub ‖ recipientPub, info = "nextkey/v2/tag")` |
+| Who can compute it | anyone holding a public key | the recipient, and the name's owner |
+| Value | `{v, for, epk, iv, ct}` | `{v, iv, ct}` |
+| Recipient named in the clear | yes, in `for` | nowhere |
+
+One ephemeral pair serves the whole name rather than one per recipient, because each recipient's ECDH lands somewhere else — a second grant shares no key material with the first. The recipient needs one scalar multiplication to find *and* open her grant, which is why a Ledger is asked to approve once rather than twice. The owner can recompute any recipient's address from that recipient's published key, which is why revocation still needs no index record.
+
+**What an observer gets.** A name with an ephemeral key, a ciphertext, and some records whose names are 32 hex characters. Not who has access, not how many recipients there are in any meaningful sense, and no way to test a guess. That property is not free: a v2 name in the explorer no longer reads as anything, and a working one looks identical to a broken one — which is why `nextkey.mjs eph <name>` exists to answer the two questions the explorer cannot.
+
+**v1 names still open.** `open` consults `nextkey.eph` first and falls back to the fingerprint scheme when there is none. The order is not politeness: a v2 grant lives at an address that cannot be guessed, so "no record here" is indistinguishable from "wrong scheme" unless the ephemeral key is read first.
+
+**The ephemeral private key must outlive the machine that made it**, or a name is frozen after one session and no second recipient can ever be added. Two independent routes back, so that losing either alone costs nothing: `nextkey.eph.sealed`, wrapped to the owner's own identity key; and derivation from a signature over a fixed message, which needs nothing stored at all. Whichever is used, the result is checked against the published `nextkey.eph` before anything is written, and when both are available they are compared with each other. Deterministic signing is what makes the second route a key rather than a coincidence — [measured, not assumed](./scripts/probe-signing.mjs), and confirmed on chain where the two routes agreed.
+
+### Where the role model stopped, and what we did
+
+This is the part worth reading if you maintain the deployment.
+
+The playground lends a visitor one of our names so that somebody with no wallet and no Sepolia ether can still write real records. The natural arrangement is delegation — we keep the names and their roles, and grant a throwaway account the right to call `setText` on each. That is precisely what per-record setter roles are for, and it cannot work here.
+
+A visitor's secret occupies three records. Two have fixed keys. The third is `nextkey.g2.<tag>`, and the tag is computed in the visitor's browser from a keypair that did not exist when we prepared the names. There is no role to grant, because there is no key to name. Confirmed rather than inferred: an account granted `setText(nextkey.secret)` and then asked to write `nextkey.probe` on the same name is refused with `EACUnauthorizedAccountRoles` (`0x4b27a133`).
+
+What we did instead was deploy a second Permissioned Resolver with root roles for that account, and point only the lent names at it. Root authority descends to every name the resolver serves, so the account may write any key there — and nothing anywhere else, because our other names use other resolvers. The blast radius follows from which resolver a name uses rather than from an enumeration of grants.
+
+It is a coarser boundary than we wanted, and the gap is real: the fine primitive covers keys known in advance, and the escape hatch is all keys on all names of one resolver, with nothing in between. Written up as [finding 11](./FEEDBACK-ENS.md) with a suggestion.
+
+**The key that signs those writes is published in the page.** It owns nothing, holds a few cents of testnet ether, and its only power is writing records on names set aside for exactly that. Disclosed rather than hidden, because a demo of a security product that relies on nobody looking is not a demo of anything.
 
 **Verified end to end** on the hackathon deployment, twice over. The resolution path — `nextkey.eth` → our UserRegistry → `visa.nextkey.eth` → its Permissioned Resolver → a text record read back through the **Universal Resolver**, the path any client takes (`scripts/resolver.mjs`). And the product path on top of it (`scripts/nextkey.mjs`): a seed phrase encrypted into `nextkey.secret`, shared with `anna.nextkey.eth`, and opened by Anna with her own key.
 
@@ -73,6 +111,21 @@ A grant is stored under the recipient's **key fingerprint**, not their name — 
 
 Terminal output in [`evidence/encryption-loop.log`](./evidence/encryption-loop.log).
 
+**And again under v2**, on `vault.nextkey.eth`. Note the fourth row: the record name is not derived from anything public, and the value names nobody.
+
+| Step | Transaction |
+|---|---|
+| `nextkey.eph` — the name's ephemeral key, written once | [`0x9d1057f9…a58859`](https://sepolia.etherscan.io/tx/0x9d1057f9c77c8c77d12c96c42ce5ab05a52be51466502aa32dfb811cb3a58859) |
+| `nextkey.eph.sealed` — that key, wrapped to the owner | [`0xcbec899a…bf573c`](https://sepolia.etherscan.io/tx/0xcbec899aac3421eaaa0e58926730624cca2406f0876483766faf2f38c8bf573c) |
+| Ciphertext into `nextkey.secret` | [`0xce9d8ea4…f1f8e5`](https://sepolia.etherscan.io/tx/0xce9d8ea43da7cb220e33832c832068685a15cdcaca0958d5a39b245d70f1f8e5) |
+| Grant to the owner, at `nextkey.g2.4315cf86db9a2391…` | [`0x622a6361…c15231`](https://sepolia.etherscan.io/tx/0x622a636105e46f2cbefd732257a69b95d287c0964fbd4872a1e81b8774c15231) |
+| Grant to `anna.nextkey.eth`, at `nextkey.g2.eb1914a579630175…` | [`0x7c685dab…6c0ff5`](https://sepolia.etherscan.io/tx/0x7c685dab0c612065d95c43ae7a6c96edaf22c3c9e2010b1f220947de136c0ff5) |
+| Revoke Anna's grant | [`0x8f655d6b…d7fddf`](https://sepolia.etherscan.io/tx/0x8f655d6bd3b74e50c2ec696ab503f1843c54aba78465e336c68380ec1bd7fddf) |
+
+Afterwards `open vault anna` is refused and `open vault alice` still works — one identity lost access and the other did not, which is the whole claim and needs both halves. `eph vault alice` reports *both routes were available and agree*: the sealed record and the signature derivation, independent of one another, produced the same 32 bytes on a real name.
+
+**The same loop from a phone**, written by the page itself with no wallet, no extension and no ether, on `hero06.nextkey.eth` — three records and then a revocation, one minute apart. Both runs, with the transaction data and a section on what they do *not* show, are in [`evidence/v2-onchain.log`](./evidence/v2-onchain.log).
+
 **The owner is a recipient like any other.** There is no master key and no owner-only branch in the code — keeping one would make "we cannot read your secrets" a lie. The honest cost: lose your local key file and the secret is gone. We would rather state that than hold a key we promise not to use — and a recipient who would rather not carry that risk can put their key on a Ledger instead, which is the section further down.
 
 **Where each row lives in the code.** Named by function rather than by line number: the crypto moved into a shared module when `release.mjs` needed the same key wrapping, and a pinned line would have gone on describing a layout that no longer exists.
@@ -80,11 +133,17 @@ Terminal output in [`evidence/encryption-loop.log`](./evidence/encryption-loop.l
 | Row above | Code |
 |---|---|
 | Share a secret with a name | [`nextkey-core.mjs` · `shareSecret`](https://github.com/4bridges/nextkey/blob/main/scripts/nextkey-core.mjs) — reads the recipient's key from *their* record, then `grantFor` wraps the content key to it |
-| How a grant is addressed | [`nextkey-core.mjs` · `grantKey`](https://github.com/4bridges/nextkey/blob/main/scripts/nextkey-core.mjs) — SHA-256 over the recipient's public key, first 16 hex |
-| Key wrapping | [`nextkey-core.mjs` · `wrapKey`](https://github.com/4bridges/nextkey/blob/main/scripts/nextkey-core.mjs) — X25519 ECDH, HKDF-SHA256 salted with both public keys |
+| How a grant is addressed | [`nextkey-core.mjs` · `grantKeyV2` and `tagFor`](https://github.com/4bridges/nextkey/blob/main/scripts/nextkey-core.mjs) — HKDF over the ECDH result, sixteen bytes, under `nextkey/v2/tag`. `grantKey` beside it is the v1 scheme, kept so v1 names still open |
+| Key wrapping | [`nextkey-core.mjs` · `wrapKeyV2`](https://github.com/4bridges/nextkey/blob/main/scripts/nextkey-core.mjs) — same ECDH, same salt, different info string, so publishing the address says nothing about the key |
+| Finding your own grant | [`nextkey-core.mjs` · `openOwnGrantV2`](https://github.com/4bridges/nextkey/blob/main/scripts/nextkey-core.mjs) — one `sharedWith` call yields both the address and the unwrapping key, which is why a Ledger approves once |
+| Recovering a name's ephemeral key | [`nextkey-core.mjs` · `ephSecretFor`](https://github.com/4bridges/nextkey/blob/main/scripts/nextkey-core.mjs) — two independent routes, compared against each other and against the published record |
+| Is deterministic signing real? | [`probe-signing.mjs`](https://github.com/4bridges/nextkey/blob/main/scripts/probe-signing.mjs) — measured on the wallet in hand, because the fallback rests on it |
+| The same construction in a browser | [`web/src/nk-crypto.mjs`](https://github.com/4bridges/nextkey/blob/main/web/src/nk-crypto.mjs) — checked byte for byte against the Node one by [`web/test/interop.mjs`](https://github.com/4bridges/nextkey/blob/main/web/test/interop.mjs), including the signed message |
+| Lending a name to a stranger | [`demo-wallet.mjs` · `resolver` and `prepare`](https://github.com/4bridges/nextkey/blob/main/scripts/demo-wallet.mjs) — and the comment explaining why delegation could not do it |
 | Limit access to seven days | [`register-subname.mjs` · `register`](https://github.com/4bridges/nextkey/blob/main/scripts/register-subname.mjs) — the subname's `expiry`; demonstrated by [`demo-expiry.mjs`](https://github.com/4bridges/nextkey/blob/main/scripts/demo-expiry.mjs) |
 | The owner's roles on a subname | [`register-subname.mjs` · `OWNER_ROLES`](https://github.com/4bridges/nextkey/blob/main/scripts/register-subname.mjs) — deliberately without `ROLE_REGISTRAR`: a secret is a leaf |
-| Revoke access | [`nextkey.mjs` · `revoke`](https://github.com/4bridges/nextkey/blob/main/scripts/nextkey.mjs) — clears the grant, and says plainly what revocation cannot undo |
+| Revoke access | [`nextkey.mjs` · `revoke`](https://github.com/4bridges/nextkey/blob/main/scripts/nextkey.mjs) — recomputes the recipient's address from their published key, clears it, and says plainly what revocation cannot undo |
+| Which scheme is a name on? | [`nextkey.mjs` · `eph`](https://github.com/4bridges/nextkey/blob/main/scripts/nextkey.mjs) — both questions the explorer cannot answer: v1 or v2, and is the ephemeral key still recoverable |
 | Delegate one setter to the agent | [`resolver.mjs` · `grant-setter`](https://github.com/4bridges/nextkey/blob/main/scripts/resolver.mjs) — and why the first argument is calldata, not a name |
 | Read the resulting roles | [`resolver.mjs` · `show-roles`](https://github.com/4bridges/nextkey/blob/main/scripts/resolver.mjs) — resource id recovered from the contract's own refusal |
 | Give the agent an identity | [`agent.mjs` · `propose` and `prove-boundary`](https://github.com/4bridges/nextkey/blob/main/scripts/agent.mjs) |
@@ -117,8 +176,10 @@ This project builds against the dedicated ENSv2 hackathon deployment on Sepolia,
 | NextKey UserRegistry | [`0x612034AB34Ec262d5417EA3163718E7455157908`](https://sepolia.etherscan.io/address/0x612034AB34Ec262d5417EA3163718E7455157908) |
 | Registry deployment tx | [`0xb6b94e4f…924749`](https://sepolia.etherscan.io/tx/0xb6b94e4f5675cb8273960482e3926ee6523d3f4baa1e03b266d6f6a699924749) |
 | Registry implementation | `0x47B442d0CF617c41CAbAFf5f02f44DD1e5f72546` |
-| Permissioned Resolver (serves every subname) | [`0x52A02f288AA5dde082206D85d4001880D64F4101`](https://sepolia.etherscan.io/address/0x52A02f288AA5dde082206D85d4001880D64F4101) |
+| Permissioned Resolver (serves the subnames) | [`0x52A02f288AA5dde082206D85d4001880D64F4101`](https://sepolia.etherscan.io/address/0x52A02f288AA5dde082206D85d4001880D64F4101) |
+| Permissioned Resolver for the lent names only | [`0x04B2DB6567Cc68d059c061215Adf9a99adD1cA65`](https://sepolia.etherscan.io/address/0x04B2DB6567Cc68d059c061215Adf9a99adD1cA65) |
 | Release agent | `0xABCf3893FBe9802343f9b444575250Aa979Fb59c` |
+| The key the playground publishes | `0x45f0b8e270245e356A1760456ea84eDB8712C62b` — root roles on the resolver above, and on nothing else |
 
 The registry proxy address is deterministic: its salt is `keccak256(keccak256("UserRegistry"), namehash("nextkey.eth"), version)` with version `0`. Redeploying requires bumping the version, or the CREATE2 address collides.
 
@@ -371,8 +432,15 @@ resets periodically; if a name has vanished, re-register it.
 
 The playground runs the same X25519 + HKDF-SHA256 + AES-256-GCM construction the command-line tool
 uses, not a stand-in for it. `node web/test/interop.mjs` proves it: it generates a grant with the Node
-code, opens it in a headless browser with the browser code, does it the other way round, and checks
-both halves refuse a stranger's key.
+code, opens it in a headless browser with the browser code, does it the other way round, checks both
+halves refuse a stranger's key, and compares the message the two sides sign character for character —
+that message is an input to a key derivation, so one stray line break there would derive a different
+key and write grants at an address the other side never reads.
+
+`node web/test/playground.mjs` drives the page itself in a real browser, in two languages, which is
+the only test that can notice a renamed element or a handler that throws. What it cannot reach is the
+writing, opening and revoking, because those need a chain — those are evidenced by an actual run
+instead, in [`evidence/v2-onchain.log`](./evidence/v2-onchain.log).
 
 It will not accept a real seed phrase into the on-chain step. There is a generator for a throwaway
 BIP-39 phrase, a warning that stays on screen when twelve words appear that the page did not generate,
