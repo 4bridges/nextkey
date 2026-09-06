@@ -1,0 +1,153 @@
+NextKey v2 — the full loop on Sepolia
+=====================================
+Run on 2026-09-06, evening (Europe/Zurich), against the ENSv2 hackathon
+deployment. Every line below is from one uninterrupted session; nothing is
+reconstructed and nothing is edited except the removal of blank lines.
+
+What this run demonstrates: a secret stored under a scheme where the *record
+name* of each grant is derived from an ECDH result rather than from the
+recipient's public key. Sharing, opening as two different identities,
+revocation, and the asymmetry that revocation is supposed to produce — one
+identity loses access, the other does not.
+
+
+The name
+--------
+  vault.nextkey.eth
+  registry    0x612034AB34Ec262d5417EA3163718E7455157908
+  owner       0x9780aFE81EF5b58333c83e05d5C07797BD81dd0B
+  resolver    0x52A02f288AA5dde082206D85d4001880D64F4101
+  labelhash   0x23c14fceac7676b670aa56866076586ea1ce15ddcf19208ec6346cf748dffbee
+  expiry      1820260404  (2027-09-06)
+  roles       SET_SUBREGISTRY + admin, SET_RESOLVER + admin
+              deliberately without ROLE_REGISTRAR: a secret is a leaf
+
+  register    0x85153573ed1dea94deaf62b35366c386c40940811da86dd2f3427af41a7cec00
+
+
+1 · store — four records, one signature before them
+---------------------------------------------------
+  node --env-file=.env scripts/nextkey.mjs store vault alice "correct horse battery staple vault demo"
+
+The ephemeral key is derived from a signature over a fixed message before
+anything is written. It is not a transaction and approves nothing; it exists so
+that the key can be reproduced later on any machine, from the wallet alone.
+
+  nextkey.eph          k12R8orEcikSL06YdF1yp594ukFx7V/RVZS9XzmT3VM=
+                       0x9d1057f9c77c8c77d12c96c42ce5ab05a52be51466502aa32dfb811cb3a58859
+  nextkey.eph.sealed   wrapped to alice, so no signature is needed to open
+                       0xcbec899aac3421eaaa0e58926730624cca2406f0876483766faf2f38c8bf573c
+  nextkey.secret       39 characters, AES-256-GCM under a fresh key
+                       0xce9d8ea43da7cb220e33832c832068685a15cdcaca0958d5a39b245d70f1f8e5
+  nextkey.g2.4315cf86db9a23915248e0fd2c12b14d   the owner's own grant
+                       0x622a636105e46f2cbefd732257a69b95d287c0964fbd4872a1e81b8774c15231
+
+Note the fourth record's name. Under v1 it would have read
+`nextkey.grant.<sha256 of alice's public key>` — computable by anyone holding
+that public key, and therefore a public statement that alice has access. The
+name above is derived from the shared secret between the ephemeral key and
+alice's, so it says nothing to anyone who lacks one of the two private halves.
+
+
+2 · eph — both recovery routes, compared against each other
+------------------------------------------------------------
+  node --env-file=.env scripts/nextkey.mjs eph vault alice
+
+  scheme      v2
+  nextkey.eph  k12R8orEcikSL06YdF1yp594ukFx7V/RVZS9XzmT3VM=
+  nextkey.eph.sealed  172 characters
+  recovery    ✓ via the sealed record
+              both routes were available and agree
+
+This is the line worth reading twice. The sealed record and the signature
+derivation are independent of one another — one needs an identity key file, the
+other a wallet — and they produced the same 32 bytes. Deterministic signing is
+therefore not an assumption in this design; it is a measurement, taken here on a
+real name and separately in scripts/probe-signing.mjs.
+
+
+3 · open, as the owner
+-----------------------
+  node --env-file=.env scripts/nextkey.mjs open vault alice
+
+  vault.nextkey.eth  opened as alice · v2
+  correct horse battery staple vault demo
+
+
+4 · share — a recipient who never registered with us
+-----------------------------------------------------
+  node --env-file=.env scripts/nextkey.mjs share vault alice anna.nextkey.eth
+
+  their public key comes from their own ENS record
+  ephemeral key recovered from nextkey.eph.sealed
+  grant record  nextkey.g2.eb1914a579630175820344417822511f
+                0x7c685dab0c612065d95c43ae7a6c96edaf22c3c9e2010b1f220947de136c0ff5
+
+Two grants now sit on this name. Their record names share no visible structure
+and neither can be derived from the other, from the ciphertext, or from any
+public key. An observer sees two records with unrelated hexadecimal names.
+
+  node --env-file=.env scripts/nextkey.mjs open vault anna
+  vault.nextkey.eth  opened as anna · v2
+  correct horse battery staple vault demo
+
+
+5 · revoke — and the asymmetry it must produce
+------------------------------------------------
+  node --env-file=.env scripts/nextkey.mjs revoke vault anna.nextkey.eth alice
+
+  ephemeral key recovered from nextkey.eph.sealed
+  grant record  nextkey.g2.eb1914a579630175820344417822511f
+  the ciphertext stays; the wrapped key is cleared
+                0x8f655d6bd3b74e50c2ec696ab503f1843c54aba78465e336c68380ec1bd7fddf
+
+The owner recomputed anna's record from anna's published key. No index of
+outstanding grants exists or is needed: the same asymmetry that hides the
+address from strangers hands it to the owner.
+
+  node --env-file=.env scripts/nextkey.mjs open vault anna
+  ✗  no grant for "anna" at vault.nextkey.eth — access was never given, or was revoked.
+     (looked at nextkey.g2.eb1914a579630175820344417822511f, which only you and
+     the owner can compute)
+
+  node --env-file=.env scripts/nextkey.mjs open vault alice
+  vault.nextkey.eth  opened as alice · v2
+  correct horse battery staple vault demo
+
+One identity lost access; the other did not. That is the whole claim, and both
+halves of it are needed — a revocation that took everyone's access with it would
+be a different and much easier thing to build.
+
+
+What this run does NOT show
+---------------------------
+Kept explicitly, because a log that only reports successes invites the reader to
+assume the rest.
+
+· **The browser half was not exercised here.** Every command above is the
+  command-line tool. try.html writing v2 records to a visitor-owned name is
+  tested in a real browser (web/test/playground.mjs, 27 checks, two languages)
+  but has not been run against the chain under v2 as of this log. The v1
+  equivalent was, and is recorded in evidence/playground-onchain.log.
+
+· **No hardware wallet took part.** alice and anna are software identities. A
+  Ledger recipient contributes the same X25519 shared secret through the device;
+  under v2 it is asked to approve once rather than twice, because locating the
+  record and unwrapping the key are the same ECDH. That property is implemented
+  and unit-tested, not demonstrated on a device in this run.
+
+· **Unlinkability is argued, not measured.** Nothing here proves an observer
+  cannot correlate the two grants; what it shows is that their addresses are not
+  functions of any public value. The supporting checks — that an adversary
+  holding the name's ephemeral key *and* the recipient's public key reaches
+  neither the address nor the plaintext — are in web/test/v2.mjs, and they are
+  checks against our own construction, not a proof.
+
+· **Revocation clears a record; it does not retract knowledge.** anna decrypted
+  the secret in step 4. She still knows it. What ended is future access, and who
+  may end it is enforced by the setter role on the name rather than by any
+  server of ours.
+
+· **This name is a subname of nextkey.eth**, inside our own registry. A
+  second-level name outside it was exercised under v1 (nextkeydemo.eth) and is
+  planned for v2.

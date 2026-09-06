@@ -315,3 +315,112 @@ Russian: *опубликованный ключ* pushed the page eight pixels si
 320-pixel screen. The list stacks below 30rem now, on `demo.html` too, where the
 same latent bug was waiting.
 
+
+---
+
+## 2026-09-06 (later) — v2: the record name was the leak
+
+**A grant is no longer addressed by the recipient's fingerprint.**
+Until today a grant lived at `nextkey.grant.<first 16 hex of sha256(recipient's
+public key)>`. That address is a pure function of a public value: anyone holding
+`anna.eth`'s published key could compute it and check any name in the world for
+a grant to her, getting a yes or a no without asking anybody. The ciphertext was
+never the leak. The record name was, and it published the guest list of every
+secret in the system.
+
+v2 derives the address from the ECDH result instead. Both the wrapping key and
+the record name come out of `HKDF(shared, salt = ephPub ‖ recipientPub)` under
+different info strings — `nextkey/v2/wrap` and `nextkey/v2/tag` — so an observer
+holding every public value in the system cannot compute the address, cannot test
+a guess, and learns nothing from the fact that a name carries five unnamed
+records rather than two.
+
+**One ephemeral keypair per name, not per recipient.**
+One pair suffices for any number of recipients, because each recipient's ECDH
+lands somewhere different. Its public half goes to `nextkey.eph`, written once
+and never replaced — replacing it would move every grant on the name to a new
+address simultaneously and strand the old records, unreadable and unfindable.
+Both writers refuse to overwrite a `nextkey.eph` that disagrees with the key
+they hold, rather than treating it as a stale value.
+
+**Rejected: a fresh ephemeral pair per grant**, which is what v1 did and what the
+textbook construction does. It is not wrong, but it puts the ephemeral public
+key *inside* each grant, so the recipient cannot compute the address until she
+has already found the record — which is circular. One pair on the name breaks
+the circle, and the pairing salt keeps the grants independent anyway.
+
+**The `for` label is gone.** v1 wrote the recipient's name in plain text beside
+the grant, as a courtesy to whoever read the record in an explorer. It would
+have handed back precisely what the new address withholds. The owner does not
+need it: they hold the ephemeral private key and can recompute any recipient's
+address from that recipient's published key, which is also why revocation still
+works without an index record.
+
+The cost is real and is not being talked around: a v2 name in the ENS explorer
+no longer reads as anything. That is the design working, and it is
+indistinguishable from the design broken — so `nextkey.mjs eph <name>` exists to
+answer both questions the explorer cannot.
+
+**The ephemeral private key must outlive the machine that made it.**
+Otherwise a name is frozen after the first session: no second recipient can ever
+be added, because nobody can compute where their grant belongs. Two independent
+routes back, deliberately, so that losing either alone costs nothing:
+
+  · `nextkey.eph.sealed` — the key wrapped to the owner's own identity key,
+    under its own info string. Needs no wallet.
+  · Derivation from a signature over a fixed message. Needs no stored file.
+
+Whichever route is used, the result is checked against the published
+`nextkey.eph` before anything is written; when both are available they are also
+compared with each other, and a mismatch is a hard error rather than a warning.
+A silent disagreement here would mean writing grants to addresses nobody will
+ever look at again.
+
+**The derivation rests on deterministic signing, so it was measured, not assumed.**
+RFC 6979 says ECDSA as Ethereum uses it derives its nonce from the key and the
+message, which makes a signature reproducible. `scripts/probe-signing.mjs` checks
+that the wallet in hand actually behaves that way: three signatures over the same
+message, byte-compared, plus a check that a different name derives a different
+key. Verified today on `0x9780…dd0B`. If it had failed, the fallback would have
+been removed rather than documented as a caveat.
+
+**The browser derives, but does not seal.**
+`try.html` steps 1 to 5 run without a wallet — that is the strongest claim the
+page makes — so the ephemeral pair there is random and lives in a JS variable.
+Step 6, which already asks for a wallet, derives a real one from a signature and
+recomputes both records before requesting the first transaction signature. It
+then says that the grant address moved, and shows both values, because writing
+something other than what step 3 displayed would be a small lie in the one place
+the page is being inspected.
+
+It writes no `nextkey.eph.sealed`: sealing needs an identity key file, a browser
+has none, and inventing a key nobody could reproduce would be worse than
+offering no second route. Recovery in the browser means signing the same message
+again.
+
+**Rejected: asking for the wallet in step 3** so that display and construction
+would agree throughout. It would have cost the sentence that makes the page
+worth visiting — that the first five steps need no wallet, no account and no
+ether.
+
+**Three test files now, each testing something the others cannot.**
+`web/test/v2.mjs` checks the construction against the file the command line
+actually runs, including the case that matters: an adversary holding the name's
+ephemeral key *and* the recipient's public key still reaches neither the address
+nor the grant. `web/test/interop.mjs` checks that two independent
+implementations agree — and now compares the signing message character for
+character, because it is an input to a key derivation and one stray line break
+would derive a different key. `web/test/playground.mjs` drives try.html in a
+real browser, which is the only one of the three that can notice a renamed
+element or a handler that throws.
+
+26 interop checks (13 in Node, the same 13 in Chromium), 13 construction checks,
+13 playground checks.
+
+**v1 names still open.** `open` consults `nextkey.eph` first and falls back to
+the fingerprint scheme when there is none. The order is not politeness, it is the
+only way to tell the two apart: a v2 grant lives at an address that cannot be
+guessed, so "no record here" is indistinguishable from "wrong scheme" unless the
+ephemeral key is consulted first. And `visa.nextkey.eth` and `nextkeydemo.eth`
+are v1 — they are the names `evidence/playground-onchain.log` points at, and a
+demo that cannot open its own evidence is worse than no demo.
