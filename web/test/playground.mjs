@@ -5,7 +5,7 @@
  * see try.html at all — a renamed element, a handler that throws, a panel that
  * quietly stops being rendered, and every check there still passes while the
  * page is broken for the one judge who tries it. This drives the page instead:
- * steps 1 to 5, in a real browser, with no wallet, exactly as a visitor would.
+ * steps 1 to 4, in a real browser, with no wallet, exactly as a visitor would.
  *
  *   npx esbuild web/src/try.js --bundle --format=esm --minify --target=es2022 --outfile=web/try.js
  *   node web/test/playground.mjs
@@ -15,9 +15,14 @@
  *
  * Playwright is required here, unlike in interop.mjs, because there is nothing
  * to test without a browser. If it is missing the file says so and stops rather
- * than reporting a pass it did not earn. Step 6 is not covered: it needs a
- * wallet, a signature and Sepolia ether, and a test that mocked those would be
- * testing the mock.
+ * than reporting a pass it did not earn.
+ *
+ * Steps 4 to 6 are covered only as far as a browser with no wallet and no chain
+ * can reach: that the chain step appears, that it offers both lanes, and that
+ * the wallet lane behaves when there is no wallet. Writing, opening from the
+ * chain and revoking need Sepolia and either a funded wallet or the lent-name
+ * key, and a test that mocked those would be testing the mock. They are
+ * evidenced instead by an actual run, in evidence/v2-onchain.log.
  *
  * The page is served over HTTP rather than opened as a file, because try.html
  * loads its bundle as an ES module and browsers refuse those from file:// —
@@ -105,7 +110,7 @@ try {
   const panel = (id) => page.locator(`#${id}`).innerText()
 
   for (const lang of LANGS) {
-    console.log(`\n  A visitor, steps 1 to 5 · ?lang=${lang}\n`)
+    console.log(`\n  A visitor, steps 1 to 4 · ?lang=${lang}\n`)
     await page.goto(`http://127.0.0.1:${PORT}/try.html?lang=${lang}`)
     check(`the page renders in ${lang}`,
       (await page.getAttribute('html', 'data-i18n-lang')) === lang)
@@ -132,30 +137,46 @@ try {
     check('the grant is addressed under nextkey.g2.', !!address)
     check('and no v1 grant record is written', !/nextkey\.grant\./.test(s3))
 
-    await page.click('#open-as')
-    await page.waitForSelector('#open-out:not([hidden])')
-    const s4 = await panel('open-out')
-    check('the recipient opens the secret', s4.includes(phrase))
-    check('having derived the same address the owner wrote to',
-      !!address && s4.includes(address))
+    // Step 4 appears, and offers both ways in. Opening and revoking are no
+    // longer reachable here: they read the records back off the chain, so they
+    // stay hidden until something has been written.
+    check('the chain step opens after encrypting',
+      !(await page.locator('#step-chain').isHidden()))
+    check('and opening stays out of reach until something is on chain',
+      await page.locator('#step-open').isHidden())
+    check('both lanes are offered', !(await page.locator('#lane-demo').isHidden()) &&
+      !(await page.locator('#lane-own').isHidden()))
+    // The one hard gate on this page. Neither lane may write until the visitor
+    // has said the phrase guards nothing.
+    check('neither lane can write before the confirmation',
+      await page.locator('#write-demo').isDisabled() &&
+      await page.locator('#publish').isDisabled())
+    await page.check('#confirm-fake')
+    check('confirming enables the lane that needs no wallet',
+      !(await page.locator('#write-demo').isDisabled()))
+    // Feedback has to appear under the button that was pressed. The first
+    // version put every message — including "this takes fifteen seconds" — in
+    // one panel below both lanes, which on a phone is off screen: pressing the
+    // button looked like it did nothing, and the obvious response was to press
+    // it again, spending a second name.
+    check('the lent-name lane has a panel of its own, under its button',
+      await page.locator('#lane-demo #demo-out').count() === 1)
 
-    await page.click('#open-other')
-    const s4b = await panel('open-out')
-    const seen = s4b.match(G2_ALL) ?? []
-    // The panel reports a refusal by its class, not by a word — `ok` here means
-    // "the refusal happened as it should", which is why the assertion looks
-    // inverted.
-    check('a stranger is refused', /\bok\b/.test(await outcome(page, 'open-out')))
-    // The newer failure, and the more interesting one: she does not reach a
-    // decryption she is denied — she reaches the wrong record entirely.
-    check('and arrived at a different record than the grant',
-      seen.length >= 2 && seen[0] !== seen[1])
-    check('the phrase never appears in her panel', !s4b.includes(phrase))
-
-    await page.click('#revoke')
-    await page.click('#open-as')
-    check('after revocation the secret no longer opens',
-      !(await panel('open-out')).includes(phrase))
+    // Headless Chromium has no wallet, which is exactly the situation of every
+    // visitor on a phone — mobile browsers carry no wallet and no extensions.
+    // "No wallet found" would be true and useless; the page must offer the way
+    // through instead.
+    await page.click('#connect')
+    const w = await panel('wallet-out')
+    const links = await page.locator('#wallet-out a[href]').evaluateAll(
+      (as) => as.map((a) => a.href))
+    check('with no wallet, the page offers to reopen itself inside one',
+      links.length >= 3)
+    check('and the links carry this page, in this language',
+      links.every((h) => h.includes('try.html') || h.includes(encodeURIComponent('try.html'))) &&
+      links.some((h) => h.includes(`lang%3D${lang}`) || h.includes(`lang=${lang}`)))
+    check('and names an address to paste into any other wallet',
+      w.includes('try.html'))
   }
 
   console.log()

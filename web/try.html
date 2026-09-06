@@ -158,6 +158,17 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   .check{display:flex;gap:.55rem;align-items:flex-start;margin:.9rem 0;font-size:.96rem;
     font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
   .check input{margin-top:.3rem;flex:none}
+  .lane{border:1px solid var(--line);border-radius:9px;background:var(--surface);
+    padding:1rem 1.2rem;margin:1rem 0 0}
+  .lane h3{font-size:1rem;font-weight:640;margin:0 0 .35rem;letter-spacing:-.005em;
+    font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .lane > p{color:var(--muted);margin:0;font-size:.96rem;max-width:38rem;
+    font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .lane[hidden]{display:none}
+  .lane .row{margin-bottom:.2rem}
+  .or{font-size:.9rem;color:var(--muted);text-align:center;margin:.9rem 0 0;
+    font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+
   .state{font-size:.92rem;color:var(--muted);margin:.4rem 0 0;
     font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 
@@ -335,10 +346,67 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   </section>
 
   <!-- 4 ─────────────────────────────────────────────────────────────────── -->
-  <section class="step" id="step4" hidden>
+  <section class="step" id="step-chain" hidden>
     <div class="n">4</div>
+    <h2 data-i18n="t.chain.h">Put it on the chain</h2>
+    <p data-i18n="t.chain.p">So far this was arithmetic inside a tab. Writing it to ENS is what makes it
+      real: three public records on Sepolia that anybody can read, and only your recipient can open.</p>
+
+    <label class="check">
+      <input type="checkbox" id="confirm-fake">
+      <span data-i18n="t.s6.confirm">I confirm this phrase guards nothing. It is a throwaway, and I understand
+        that what I write to a public chain stays there.</span>
+    </label>
+
+    <div class="lane" id="lane-demo">
+      <h3 data-i18n="t.chain.demo.h">Without a wallet</h3>
+      <p data-i18n="t.chain.demo.p">We lend you one of our names and pay the gas. The key that signs this is
+        published in this page — it owns nothing and may write only to these names, which is why we can
+        hand it to strangers. Works on a phone.</p>
+      <div class="row">
+        <button class="act" id="write-demo" type="button" disabled
+                data-i18n="t.chain.demo.btn">Write it for me</button>
+      </div>
+      <p class="state" id="demo-state"></p>
+      <div class="out" id="demo-out" hidden></div>
+    </div>
+
+    <p class="or" data-i18n="t.chain.or">or, if you hold a name on this deployment yourself</p>
+
+    <div class="lane" id="lane-own">
+      <h3 data-i18n="t.chain.own.h">With your own wallet, to your own name</h3>
+      <p data-i18n="t.chain.own.p">The real product: your name, your wallet, your gas. Nothing of ours is
+        involved except the arithmetic.</p>
+      <div class="row">
+        <button class="act ghost" id="connect" type="button"
+                data-i18n="t.s6.connect.btn">Connect a wallet</button>
+      </div>
+      <div class="out" id="wallet-out" hidden></div>
+      <div class="row">
+        <input type="text" id="own-name" spellcheck="false" autocomplete="off"
+               aria-label="A name you own"
+               data-i18n-ph="t.s6.ph" placeholder="the name you own, e.g. yourname.eth"
+               style="flex:1 1 18rem;min-width:0">
+      </div>
+      <div class="row">
+        <button class="act" id="publish" type="button" disabled
+                data-i18n="t.chain.own.btn">Write to my name</button>
+      </div>
+      <p class="state" data-i18n="t.s6.noname">No name on this deployment? Use the lane above — it needs nothing from you.
+        Getting a name of your own is four transactions, a sixty-second commit–reveal wait and mock USDC,
+        which is the registrar's design and not something to do out of curiosity.
+        scripts/register-name.mjs in the repository walks through it and prints each call.</p>
+    </div>
+
+    <div class="out" id="publish-out" hidden></div>
+  </section>
+
+  <!-- 5 ─────────────────────────────────────────────────────────────────── -->
+  <section class="step" id="step-open" hidden>
+    <div class="n">5</div>
     <h2 data-i18n="t.s4.h">Open it</h2>
-    <p data-i18n="t.s4.p">Once as the recipient, who holds the key. Once as somebody who does not.</p>
+    <p data-i18n="t.chain.open.p">Now from the chain, not from this tab’s memory. Once as the recipient,
+      who holds the key. Once as somebody who does not.</p>
     <div class="row">
       <button class="act" id="open-as" type="button" data-i18n="t.s4.btn1">Open as the recipient</button>
       <button class="act ghost" id="open-other" type="button" data-i18n="t.s4.btn2">Try it as a stranger</button>
@@ -349,55 +417,16 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     <div class="out" id="open-out" hidden></div>
   </section>
 
-  <!-- 5 ─────────────────────────────────────────────────────────────────── -->
-  <section class="step" id="step5" hidden>
-    <div class="n">5</div>
+  <!-- 6 ─────────────────────────────────────────────────────────────────── -->
+  <section class="step" id="step-revoke" hidden>
+    <div class="n">6</div>
     <h2 data-i18n="t.s5.h">Take it back</h2>
-    <p data-i18n="t.s5.p">Revoking clears the grant record and leaves the ciphertext alone. Then try
-      opening it again.</p>
+    <p data-i18n="t.chain.revoke.p">A second transaction empties the grant record and leaves the ciphertext
+      untouched. Then try opening it again.</p>
     <div class="row">
       <button class="act ghost" id="revoke" type="button" data-i18n="t.s5.btn">Revoke the grant</button>
     </div>
     <div class="out" id="revoke-out" hidden></div>
-  </section>
-
-  <!-- 6 ─────────────────────────────────────────────────────────────────── -->
-  <section class="step" id="step6" hidden>
-    <div class="n">6</div>
-    <h2 data-i18n="t.s6.h">Optional — put it on chain</h2>
-    <p data-i18n="t.s6.p">Everything above was arithmetic in your browser. This writes the two records
-      to a name you already own on the hackathon ENS deployment, signed by your wallet.
-      Any name you hold there will do.</p>
-
-    <p class="state" data-i18n="t.s6.noname">No name on this deployment? Then stop at step 5 — you have already seen the
-      whole mechanism, and this last step only moves it onto a chain. Getting a name
-      is four transactions, a sixty-second commit–reveal wait and mock USDC, which is
-      the registrar's design and not something to do out of curiosity.
-      scripts/register-name.mjs in the repository walks through it and prints each
-      call, so it can be executed from a block explorer with your own wallet.</p>
-
-    <div class="row">
-      <button class="act ghost" id="connect" type="button" data-i18n="t.s6.connect.btn">Connect a wallet</button>
-    </div>
-    <div class="out" id="wallet-out" hidden></div>
-
-    <div class="row">
-      <input type="text" id="own-name" spellcheck="false" autocomplete="off"
-             aria-label="A name you own"
-             data-i18n-ph="t.s6.ph" placeholder="the name you own, e.g. yourname.eth"
-             style="flex:1 1 18rem;min-width:0">
-    </div>
-
-    <label class="check">
-      <input type="checkbox" id="confirm-fake">
-      <span data-i18n="t.s6.confirm">I confirm this phrase guards nothing. It is a throwaway, and I understand
-        that what I write to a public chain stays there.</span>
-    </label>
-
-    <div class="row">
-      <button class="act" id="publish" type="button" disabled data-i18n="t.s6.btn">Write both records</button>
-    </div>
-    <div class="out" id="publish-out" hidden></div>
   </section>
 
   <div class="fallback">
