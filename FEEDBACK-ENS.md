@@ -231,6 +231,62 @@ address it was probably looking for anyway.
 
 ---
 
+## 11. Per-record roles cannot authorise a record key that does not exist yet
+
+This follows from finding 7 rather than repeating it. There we established that
+`grantSetterRoles` binds a role to *(setter, name, key)* — per-record, not
+per-name — and called it a genuinely strong primitive. It is. It also has a
+consequence we did not see until we tried to build on it, and that consequence
+is a design limit rather than a documentation gap.
+
+Our playground lends visitors a set-aside name so that someone with no wallet
+and no Sepolia ether can still write real records. The obvious arrangement is
+delegation: we keep the names and their roles, and grant one throwaway account
+the right to call `setText` on each. That is exactly what per-record roles are
+for, and it fails.
+
+A visitor's secret occupies three records. Two have fixed keys — `nextkey.eph`
+and `nextkey.secret`. The third does not. Its key is
+`nextkey.g2.<sixteen bytes of HKDF over an ECDH result>`, computed in the
+visitor's browser from a keypair that did not exist when we prepared the pool.
+There is no role to grant, because there is no key to name.
+
+We confirmed the mechanism rather than inferring it. An account granted
+`setText(nextkey.secret)` on `try01.nextkey.eth`, then asked to write
+`nextkey.probe` on the same name:
+
+```
+EACUnauthorizedAccountRoles(uint256,uint256,address)   0x4b27a133
+```
+
+Correct, well-named, and carrying a resource id, the required bitmap and the
+account — the errors here really are load-bearing, as we said under "what
+worked well".
+
+**What we did instead.** We deployed a second Permissioned Resolver, initialised
+with root roles for both the registrar and the throwaway account, and pointed
+only the pool names at it. Root authority descends to every name that resolver
+serves, so the account may now write any key on any of them — and on nothing
+else, because our other names use other resolvers. The blast radius comes from
+which resolver a name uses rather than from an enumeration of grants, which is
+a defensible boundary and a much coarser one than we wanted.
+
+The trade is worth stating plainly, because a team reading the docs will meet
+it: the fine-grained primitive covers keys known in advance, and the escape
+hatch for everything else is *all keys on all names of one resolver*. There is
+nothing between those two.
+
+**Suggestion.** A grant keyed on the profile and the name, with the record key
+left open — `grantProfileRoles(bytes4 selector, bytes name, address account)`,
+meaning "may call `setText` on this name, whatever the key". Any schema whose
+record keys are derived at run time needs it, and derived keys are not exotic:
+they are how you stop a record name from leaking who a record is for. Failing
+that, a sentence in the docs saying that per-record roles require the key up
+front would have saved us the experiment — we assumed, from finding 7's own
+wording, that the key in the calldata was as incidental as the value.
+
+---
+
 ## What worked well
 
 The Universal Resolver override is documented clearly and the ready-made viem snippet is on the same page as the addresses, which is exactly where it is needed. We wired it first and never had a resolution problem — and we would have, since forgetting it fails silently by resolving against production.
