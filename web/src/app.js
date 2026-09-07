@@ -28,6 +28,17 @@ const RECIPIENT_NAME = `anna.${PARENT}`
 const DEVICE_NAME = `bob.${PARENT}`
 const AGENT_NAME = `agent.${PARENT}`
 
+/**
+ * A name on the second scheme, for the panel that shows what changed.
+ *
+ * Everything above reads visa.nextkey.eth, which addresses its grants the way
+ * the first version did: `nextkey.grant.<sha256 of the recipient's public
+ * key>`. This one does not, and the panel demonstrates that by running the
+ * identical code against it and coming up empty.
+ */
+const V2_NAME = `vault.${PARENT}`
+const RECORD_EPH = 'nextkey.eph'
+
 /** The owner's grant. Their public key is not published, so unlike Anna's this
  *  fingerprint cannot be derived in the browser and is named directly. */
 const OWNER_GRANT_KEY = 'nextkey.grant.ec3732779f96c87e'
@@ -240,12 +251,65 @@ async function renderAgent() {
   } catch (e) { fail(el, e) }
 }
 
+/**
+ * The same public key, the same arithmetic, and nothing at the end of it.
+ *
+ * The recipient panel above is a small feat: it takes Anna's key from her own
+ * name, hashes it here in the browser, and finds her grant at that address. No
+ * directory, no lookup service. It also has a property nobody asked for — it
+ * works for *anyone*. Give it a public key and a name and it answers whether
+ * that key has access, which means the first version of this scheme published
+ * the guest list of every secret it stored.
+ *
+ * So this panel runs exactly that procedure against a name on the second
+ * scheme, and arrives nowhere. Not because the grant is missing — Anna has one
+ * here — but because its address is no longer a function of anything public.
+ *
+ * The precise claim, since the imprecise one would be easy to make and wrong:
+ * the record itself is not hidden. Text records are enumerable from their
+ * events, so an indexer can list every `nextkey.g2.…` on this name and count
+ * them. What it cannot do is say which one is Anna's, or whether any of them
+ * is. Under v1 that took one SHA-256.
+ */
+async function renderV2() {
+  const el = $('p-v2')
+  try {
+    const [eph, annaKey] = await Promise.all([
+      readText(V2_NAME, RECORD_EPH),
+      readText(RECIPIENT_NAME, 'nextkey.pubkey'),
+    ])
+    if (!eph) throw new Error(`${V2_NAME} publishes no ${RECORD_EPH}`)
+    if (!annaKey) throw new Error(`${RECIPIENT_NAME} publishes no key`)
+
+    // The v1 address, computed here exactly as the panel above computes it.
+    const fp = await fingerprint(b64ToBytes(annaKey))
+    const v1Address = `nextkey.grant.${fp}`
+    const whatIsThere = await readText(V2_NAME, v1Address)
+
+    setState(el, whatIsThere ? 'error' : 'ok', `
+      <dl>
+        <dt>${t('d.v2.eph', 'the name publishes')}</dt>
+        <dd class="mono break">${esc(RECORD_EPH)} · ${esc(truncate(eph, 44))}</dd>
+        <dt>${t('d.v2.same', 'her key, same as above')}</dt>
+        <dd class="mono break">${esc(truncate(annaKey, 44))}</dd>
+        <dt>${t('d.v2.tried', 'so this browser looked at')}</dt>
+        <dd class="mono break">${esc(v1Address)}</dd>
+      </dl>
+      ${whatIsThere
+        ? `<p class="err">${t('d.v2.unexpected', 'Something is there. That should not happen on a v2 name — please tell us.')}</p>`
+        : `<p class="found">✓ ${t('d.v2.nothing', 'Nothing. The address that works one panel up leads nowhere here.')}</p>`}
+      <p class="note">${t('d.v2.note1', 'Anna does have a grant on this name. Its address comes out of an ECDH between the ephemeral key above and her private one — so she can compute it, the owner can compute it, and this page cannot, because it holds neither private half.')}</p>
+      <p class="note">${t('d.v2.note2', 'To be exact about what is hidden: the record is not. Text records can be listed from their events, so an indexer can count how many grants this name carries. What nobody can do is say which one is hers, or whether any of them is. One panel up, that took a single SHA-256.')}</p>`)
+  } catch (e) { fail(el, e) }
+}
+
 // ─── Go ────────────────────────────────────────────────────────────────────
 const started = new Date()
 $('read-at').textContent = started.toLocaleString()
 
 const renderAll = () =>
-  Promise.allSettled([renderSecret(), renderRecipient(), renderDevice(), renderOwner(), renderAgent()])
+  Promise.allSettled([renderSecret(), renderRecipient(), renderV2(),
+                      renderDevice(), renderOwner(), renderAgent()])
 
 // The picker calls this after switching. Reads are cached, so this re-labels
 // values already in hand rather than asking the chain again.

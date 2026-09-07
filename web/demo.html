@@ -226,6 +226,12 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     </section>
 
     <section class="panel">
+      <h2 data-i18n="d.v2h">The same recipient, under v2</h2>
+      <p class="what"><span class="mono">vault.nextkey.eth</span> · <span data-i18n="d.v2w">where the panel above stops working</span></p>
+      <div class="body" id="p-v2" data-state="loading"></div>
+    </section>
+
+    <section class="panel">
       <h2 data-i18n="d.p5h">A recipient on hardware</h2>
       <p class="what"><span class="mono">bob.nextkey.eth</span> · <span data-i18n="d.p5w">his key lives on a Ledger</span></p>
       <div class="body" id="p-device" data-state="loading"></div>
@@ -269,7 +275,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   </p>
 </footer>
 
-<script src="./i18n.js"></script>
+<script src="./i18n.js?v=64baceb8"></script>
 <script>
 /**
  * Same overlay as the landing page, same storage keys, so a language or theme
@@ -409,6 +415,6 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   label()
 })()
 </script>
-<script type="module" src="./app.js"></script>
+<script type="module" src="./app.js?v=60b1f702"></script>
 </body>
 </html>
