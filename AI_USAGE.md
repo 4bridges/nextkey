@@ -15,9 +15,13 @@ ETHGlobal permits AI tools to assist development but not to create the entire pr
 
 | Tool | Used for |
 |---|---|
-| Claude (Anthropic) | Rules research, sponsor track analysis, positioning, architecture discussion, documentation drafting, code assistance |
+| Claude (Anthropic), in the Claude desktop app | Rules research, sponsor track analysis, positioning, architecture discussion, documentation drafting |
+| Claude Code (Anthropic) | Code assistance in the repository: drafting scripts and page code, writing tests, drafting the site copy and its nine translations, editing files under review |
 
-<!-- TODO: add editor-integrated assistants, code completion, or any other AI tool actually used, and say what each was used for -->
+No editor-integrated completion was used — there is no Copilot, Cursor or
+Codeium in this project. Commits carrying substantial assistance keep a
+`Co-Authored-By` line, so which parts of the history had help is a question
+`git log` answers rather than this table.
 
 ## How it was used
 
@@ -31,8 +35,44 @@ ETHGlobal permits AI tools to assist development but not to create the entire pr
 
 ## What is not AI-generated
 
-<!-- TODO: keep this specific as the project grows. Name the parts you wrote yourself,
-     the integrations you wired by hand, and the bugs you found and fixed. -->
+**The construction.** The v2 derivation is the author's. v1 addressed a grant at
+a record name derived from the recipient's *published* key, which made the record
+name itself the leak: anyone holding that key could test every name for grants to
+it. v2 derives the wrapping key and the record name from the same ECDH secret,
+separated by HKDF info strings and salted with `ephPub ‖ recipientPub`, from one
+ephemeral keypair per name. Recognising that the leak was the address rather than
+the ciphertext, and choosing one scalar multiplication so a Ledger is asked to
+sign once instead of twice, was not assistant output.
+
+**Every integration, and every transaction.** The ENSv2 role model — which key
+may write which record on which name, and why a Permissioned Resolver is needed
+for the lent-name pool — was worked out against the deployment itself. Every
+on-chain run in `evidence/` was executed and read back by the author: the grant
+written from a phone with no wallet, the one written in a browser on a name
+outside our registry and opened from a command line, and the recovery in which
+MetaMask and viem reconstructed the same 32 bytes.
+
+**The bugs, and what they taught.** Four are worth naming because each changed
+the code around it. `grantSetterRoles` binds to the record *key*, so a v2 grant
+whose tag is only computed in the visitor's browser cannot be delegated — found
+by reproducing it down to the revert selector `0x4b27a133`, and written up as
+Finding 11 in `FEEDBACK-ENS.md`. A simulation cannot protect a setter with no
+return value: `eth_call` against an address with no code returns nothing, and so
+does a successful `setText`, which is why `try.js` now checks for the zero
+address and for bytecode explicitly. `toFunctionSelector('error X(...)')` hashes
+the word "error" along with the signature and yields the wrong selector. And a
+page and its bundle, cached separately on a static host, drift — the symptom was
+`Cannot set properties of null` on a page about cryptography, and the answer was
+`stamp-assets.mjs`.
+
+**The feedback documents.** `FEEDBACK-ENS.md`, `FEEDBACK-LEDGER.md` and
+`FEEDBACK-WORLD.md` report what the author hit while building against these
+SDKs. An assistant can draft a sentence; it cannot have the experience the
+sentence is about.
+
+What did have substantial assistance: prose and documentation throughout, the
+nine translations, much of the test scaffolding, and boilerplate in the scripts
+and page code. Those commits say so in their trailers.
 
 ## Statement
 
