@@ -424,3 +424,44 @@ guessed, so "no record here" is indistinguishable from "wrong scheme" unless the
 ephemeral key is consulted first. And `visa.nextkey.eth` and `nextkeydemo.eth`
 are v1 — they are the names `evidence/playground-onchain.log` points at, and a
 demo that cannot open its own evidence is worse than no demo.
+
+---
+
+## 2026-09-07 — The guard that failed by working correctly
+
+**A write was aimed at the zero address, and our own safety check approved it.**
+The playground's bring-your-own-name lane resolves the name, then simulates the
+write before asking for a signature. A visitor entered a name with no resolver
+on this deployment; `getEnsResolver` returned the zero address, and the code
+carried on. The simulation — the step whose entire purpose is to catch this —
+passed.
+
+It passed because it was working. `setText` returns nothing, so an `eth_call`
+against an address with no code comes back empty, and for a function with no
+outputs empty *is* the valid answer. There is no way for a simulation to
+distinguish "this contract accepted the call" from "there is no contract here"
+when the correct response to both is silence. That is a property of the ABI, not
+a bug in viem, and it applies to every setter without a return value.
+
+What actually caught it was MetaMask, whose burn-address warning stood between a
+judge and a transaction that would have cost gas and changed nothing. Worth
+recording plainly: on this one, the wallet's paranoia outperformed ours.
+
+**The fix is two explicit checks rather than a better simulation.** The resolver
+must not be the zero address, and `getBytecode` must return something. Both run
+before any signature is requested, and both fail with a sentence rather than a
+revert — including the case a visitor is most likely to hit, which is holding a
+name on *production* ENS and not on the hackathon deployment.
+
+**A second thing came out of the same report.** The lane asks for a name and
+offers no help finding one, which is backwards: the address is only evidence
+that you may write to a name, so the name is the thing being connected. The page
+now reverse-resolves the connected account and fills the field in. Enumerating
+every name an address owns needs an indexer, which a page served from static
+files does not have — so when no primary name is set, it says that instead of
+leaving an empty box and an error.
+
+**Rejected: letting the page register a name.** Four transactions, a
+sixty-second commit–reveal wait and mock USDC the visitor has to obtain
+somewhere. Building that into a playground means building a registrar, and the
+lent-name lane beside it already solves the problem the visitor actually has.
