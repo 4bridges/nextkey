@@ -229,6 +229,13 @@ The check in the last box is not decoration. It fired on a real name:
 registrar's wallet derives something else — and the tool refuses rather than
 writing grants at addresses nobody will ever read.
 
+It has also passed where it should. `nextkeyv2.eth` carries no sealed record, so
+its ephemeral key can only come from the derivation — and the signature viem
+produces matches the `nextkey.eph` that MetaMask's signature published. The same
+key through two entirely separate signer implementations, agreeing on the same
+32 bytes, verified against what the chain already held. That is the assumption
+this fallback rests on, measured rather than cited.
+
 ---
 
 ## Roles on the deployment

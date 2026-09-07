@@ -124,7 +124,13 @@ Terminal output in [`evidence/encryption-loop.log`](./evidence/encryption-loop.l
 
 Afterwards `open vault anna` is refused and `open vault alice` still works — one identity lost access and the other did not, which is the whole claim and needs both halves. `eph vault alice` reports *both routes were available and agree*: the sealed record and the signature derivation, independent of one another, produced the same 32 bytes on a real name.
 
-**The same loop from a phone**, written by the page itself with no wallet, no extension and no ether, on `hero06.nextkey.eth` — three records and then a revocation, one minute apart. Both runs, with the transaction data and a section on what they do *not* show, are in [`evidence/v2-onchain.log`](./evidence/v2-onchain.log).
+**The same loop from a phone**, written by the page itself with no wallet, no extension and no ether, on `hero06.nextkey.eth` — three records and then a revocation, one minute apart.
+
+**And outside our own registry**, on `nextkeyv2.eth`: a second-level `.eth` name registered against the hackathon registrar, with a Permissioned Resolver of its own attached through the `.eth` registry. There the authority to write comes from owning the name rather than from a role we granted ourselves. A browser wrote the three records to it with the owner's wallet; the command line then opened them as `anna.nextkey.eth`, whose key it read from her own name. Two implementations, two registries, no shared state.
+
+That run also settles the assumption the recovery fallback rests on. `nextkeyv2.eth` carries no `nextkey.eph.sealed`, so its ephemeral key could only be recovered by derivation — and the signature viem produced matched the `nextkey.eph` that **MetaMask's** signature had published minutes earlier. Same key, two entirely separate signer implementations, the same 32 bytes, checked against what the chain already held.
+
+All three runs, with the transaction data and a section on what they do *not* show, are in [`evidence/v2-onchain.log`](./evidence/v2-onchain.log).
 
 **The owner is a recipient like any other.** There is no master key and no owner-only branch in the code — keeping one would make "we cannot read your secrets" a lie. The honest cost: lose your local key file and the secret is gone. We would rather state that than hold a key we promise not to use — and a recipient who would rather not carry that risk can put their key on a Ledger instead, which is the section further down.
 
@@ -180,6 +186,7 @@ This project builds against the dedicated ENSv2 hackathon deployment on Sepolia,
 | Permissioned Resolver for the lent names only | [`0x04B2DB6567Cc68d059c061215Adf9a99adD1cA65`](https://sepolia.etherscan.io/address/0x04B2DB6567Cc68d059c061215Adf9a99adD1cA65) |
 | Release agent | `0xABCf3893FBe9802343f9b444575250Aa979Fb59c` |
 | The key the playground publishes | `0x45f0b8e270245e356A1760456ea84eDB8712C62b` — root roles on the resolver above, and on nothing else |
+| `nextkeyv2.eth` — v2 outside our registry | resolver [`0x8CC85C123aBC579378A51153aCE7001E00756771`](https://sepolia.etherscan.io/address/0x8CC85C123aBC579378A51153aCE7001E00756771), attached through the `.eth` registry |
 
 The registry proxy address is deterministic: its salt is `keccak256(keccak256("UserRegistry"), namehash("nextkey.eth"), version)` with version `0`. Redeploying requires bumping the version, or the CREATE2 address collides.
 
@@ -491,6 +498,7 @@ This project is submitted to three partner prizes:
 ## Documentation
 
 - [`docs/planning/`](./docs/planning) — planning artifacts written before the kickoff, dated
+- [`docs/architecture.md`](./docs/architecture.md) — where everything lives, what the boundaries are, and what an observer can and cannot determine
 - [`ai/PROMPT_LOG.md`](./ai/PROMPT_LOG.md) — prompts that shaped documents, decisions and code
 - [`docs/decisions.md`](./docs/decisions.md) — dated decision log kept during the build
 - [`AI_USAGE.md`](./AI_USAGE.md) — AI tool usage disclosure
@@ -498,8 +506,6 @@ This project is submitted to three partner prizes:
 - [`FEEDBACK-ENS.md`](./FEEDBACK-ENS.md) — developer experience feedback for ENS
 - [`FEEDBACK-LEDGER.md`](./FEEDBACK-LEDGER.md) — developer experience feedback for Ledger
 - [`evidence/`](./evidence) — sponsor qualification evidence
-
-`docs/architecture.md` follows once the data model is settled.
 
 ---
 

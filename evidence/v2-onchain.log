@@ -124,12 +124,6 @@ What this run does NOT show
 Kept explicitly, because a log that only reports successes invites the reader to
 assume the rest.
 
-· **The browser half was not exercised here.** Every command above is the
-  command-line tool. try.html writing v2 records to a visitor-owned name is
-  tested in a real browser (web/test/playground.mjs, 27 checks, two languages)
-  but has not been run against the chain under v2 as of this log. The v1
-  equivalent was, and is recorded in evidence/playground-onchain.log.
-
 · **No hardware wallet took part.** alice and anna are software identities. A
   Ledger recipient contributes the same X25519 shared secret through the device;
   under v2 it is asked to approve once rather than twice, because locating the
@@ -149,5 +143,184 @@ assume the rest.
   server of ours.
 
 · **This name is a subname of nextkey.eth**, inside our own registry. A
-  second-level name outside it was exercised under v1 (nextkeydemo.eth) and is
-  planned for v2.
+  second-level name outside it is exercised in the third section below.
+
+
+===========================================================================
+The same loop from a phone, written by the page
+===========================================================================
+Later the same evening, 22:10–22:11 UTC. No wallet, no extension, no ether:
+try.html on a mobile browser, using the key the page publishes and one of the
+names set aside for it.
+
+This is the half the section above listed as untested. It is tested now.
+
+  Name        hero06.nextkey.eth
+  Resolver    0x04B2DB6567Cc68d059c061215Adf9a99adD1cA65   (the pool's own)
+  Signer      0x45f0b8e270245e356A1760456ea84eDB8712C62b   (published in the bundle)
+  Block       11650043
+  Gas         142 046 at 1.053 gwei for the first write
+
+  nextkey.eph                                    0x60231891eb12a2d4…
+    janFrcx+CQS9pOHP11UYLWuMH6D0pRH5MUP+vKxaTUQ=
+  nextkey.secret                                 0xce52…d35c
+    {"v":1,"alg":"A256GCM","iv":"28e9ODeP72fxZ/FT","ct":"ukRa041iii1L5VMGabXxFBq63…"}
+  nextkey.g2.6409a5907c8396b8ac8b508561d51291    0xd8cc…857e
+    {"v":2,"iv":"uWg4V/R8qiNnX3Cv","ct":"DXFCZqsCaXJdgA7c3fZxKpyktfl+7RVhmV0PQqx4iDsjv4Dz…"}
+  nextkey.g2.6409a5907c8396b8ac8b508561d51291    0x0106…34cd
+    (empty — the revocation, one minute later)
+
+Two properties are visible in the explorer rather than asserted here:
+
+· **The grant names nobody.** Its value is `{"v":2,"iv":…,"ct":…}` and nothing
+  else. v1 carried a `for` field holding the recipient's name in plain text
+  beside the wrapped key, as a courtesy to whoever read the record — which
+  handed back exactly what the address is meant to withhold.
+
+· **The record name says nothing either.** `nextkey.g2.6409a590…` is an HKDF of
+  the ECDH between the name's ephemeral key and the recipient's. Under v1 the
+  same record would have been `nextkey.grant.<sha256 of the recipient's public
+  key>`, computable by anyone holding that public key. The ciphertext was never
+  the leak.
+
+The fourth transaction is the interesting one: the same record key, written
+again with an empty value. The ciphertext beside it is untouched. That is
+revocation as ENS performs it — a write that only an address holding the setter
+role may make.
+
+
+An expected failure, kept because it is the safety net working
+--------------------------------------------------------------
+  node --env-file=.env scripts/nextkey.mjs eph hero06
+
+  scheme      v2
+  nextkey.eph  janFrcx+CQS9pOHP11UYLWuMH6D0pRH5MUP+vKxaTUQ=
+  nextkey.eph.sealed  absent
+  recovery    ✗ the recovered ephemeral key does not match the published nextkey.eph
+
+This is correct, and it is worth more than a green tick. The ephemeral key of
+this name was derived from a signature by the *page's* key, not the registrar's,
+and the browser writes no `nextkey.eph.sealed` because it has no identity file
+to wrap one to. So the registrar derives a different key — and the check that
+compares any recovered key against the published record catches it and refuses,
+rather than going on to write grants at addresses nobody would ever read.
+
+The page itself can extend this name whenever it likes: the same wallet over the
+same message returns the same signature, hence the same key. That is the
+property `scripts/probe-signing.mjs` measured rather than assumed.
+
+
+Pool state after the evening
+-----------------------------
+  17 of 20 names still free; hero06, hero07 and hero09 spent.
+  Demo wallet balance 0.0181 ETH — roughly forty more runs.
+
+Two of those three went to a defect rather than a demonstration: the write
+button stayed enabled after a successful run, and on a phone every progress
+message rendered below the fold, so a visitor who saw nothing happen pressed
+again and spent a second name. Both are fixed — one press disables the button
+for good, and each lane reports into a panel directly beneath its own button.
+Recorded here because the pool is finite and the cost of that bug was two names.
+
+
+===========================================================================
+Outside our own registry — nextkeyv2.eth
+===========================================================================
+2026-09-07, shortly after midnight. A .eth name of the second level, registered
+directly against the hackathon ETHRegistrar, with a Permissioned Resolver of its
+own attached through the .eth registry rather than through ours.
+
+Why it matters that this one is different: for vault and the hero names the
+authority to write comes from OUR registry, where we hand out the roles. Here it
+comes from owning the name in the .eth registry and holding root roles on the
+resolver deployed for it. A different route to the same permission — and the
+demonstration that v2 does not depend on ground we control.
+
+  Name        nextkeyv2.eth
+  Registry    0x1d78834d97c1d7b1a38c1dedbd1a287cfed3971e   (.eth, not ours)
+  Owner       0x9780aFE81EF5b58333c83e05d5C07797BD81dd0B
+  Resolver    0x8CC85C123aBC579378A51153aCE7001E00756771   (its own)
+  Namehash    0x8fb84fb606558e934e8cb4c3efe7ad8be4a0008a01b7eaa2a2fc1974164ee103
+  Price       8.000021 MockUSDC for one year
+
+  approve            0x39495210b1bfe17ba8106681d27e21f770bcdba70c3d5fe8f04a453520ea13de
+  commit             0xf116ae45e8be371701ce933caf155ebff2aa1348f24235bb500e897b2490203a
+  register           0xc58bde727aedf38c2e8698345bfff1ee1ede48f3ed30701d354af656a2a2b76c
+  deploy resolver    0x7fbeb903a729601271d6e2070614f91e1478bf8d9c21c86d2e8629cb9e6007db
+  attach to .eth     0x1dbd436cf6a284da532a2e4ee2e2d7387a7c451d5159236fcdf289090867d91d
+
+
+Before writing: would it even be allowed?
+------------------------------------------
+  node --env-file=.env scripts/probe-name.mjs nextkeyv2.eth
+
+  found by UR 0x8CC85C123aBC579378A51153aCE7001E00756771
+  name owner  0x9780aFE81EF5b58333c83e05d5C07797BD81dd0B
+  may write   ✗ The contract function "canModifyName" reverted.
+  ✓ setText(bytes name, string, string)
+  ✗ setText(bytes32 node, string, string)
+      revert data empty  (usually: no such function on this contract)
+
+Two things worth reading here. The `canModifyName` refusal is finding 9 from
+FEEDBACK-ENS.md and is not the answer to anything — the function does not exist
+on this resolver, and asking it whether we may write tells us nothing. The
+answer is the simulation below it: one setText signature is accepted and the
+other reverts with *empty* data, which is what a proxy delegating into a missing
+function looks like and is indistinguishable from a permission failure. This is
+why the page simulates both shapes rather than guessing.
+
+
+The write, from a browser
+--------------------------
+try.html, right-hand lane: the visitor's own wallet writing to a name they own.
+Until now that lane had never touched the chain. The recipient was chosen as a
+name — anna.nextkey.eth — rather than a keypair made in the tab, so that the
+command line could open the result afterwards.
+
+  nextkey.eph      bTo5fr1jDBp1FKTanW1EcrMpBeC/lXJzrEpfqAhwKW0=
+  nextkey.secret   AES-256-GCM
+  nextkey.g2.<tag> the content key, wrapped to anna's published key
+
+Four signature prompts: one message, which is not a transaction and authorises
+nothing, and three writes.
+
+
+The command line opens what the browser wrote
+----------------------------------------------
+  node --env-file=.env scripts/nextkey.mjs open nextkeyv2.eth anna
+
+  nextkeyv2.eth  opened as anna · v2
+  prefer print goddess measure snap original jacket elbow unique roof fade manual
+
+Two implementations, two registries, no shared state, and no server of ours in
+the path. The browser read anna's public key off her own name and wrapped to it;
+the command line found the grant by deriving its address from her private key
+and opened it.
+
+
+And the determinism claim, measured across two signers
+-------------------------------------------------------
+  node --env-file=.env scripts/nextkey.mjs eph nextkeyv2.eth
+
+  scheme      v2
+  nextkey.eph  bTo5fr1jDBp1FKTanW1EcrMpBeC/lXJzrEpfqAhwKW0=
+  nextkey.eph.sealed  absent
+  recovery    ✓ via signature derivation
+
+This is the strongest single line in this file, and it is worth being precise
+about why.
+
+There is no sealed record on this name — the browser writes none, having no
+identity file to wrap one to. So the ephemeral key was recovered by derivation
+alone, from a signature produced *now*, by viem, over the fixed message. It
+matched the nextkey.eph that was published earlier from a signature produced by
+*MetaMask* over the same message.
+
+Same key, two entirely separate signer implementations, and the same 32 bytes.
+RFC 6979 says that must happen; scripts/probe-signing.mjs measured it within one
+implementation; this measured it across two, on a real name, with the result
+checked against what the chain already held.
+
+Had it disagreed, the check would have refused rather than writing grants at
+addresses nobody would ever read — which is what it did on hero06.nextkey.eth,
+where the key belongs to the page rather than to the registrar.
