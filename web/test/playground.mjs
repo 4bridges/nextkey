@@ -179,6 +179,40 @@ try {
       w.includes('try.html'))
   }
 
+  // ── A page one version behind its bundle ────────────────────────────────
+  // try.html and try.js are two files on a static host. They can be uploaded
+  // separately and cached separately, and when they drift the symptom was
+  // "Cannot set properties of null (setting 'hidden')" on a button press —
+  // accurate, useless, and indistinguishable from a broken cipher to whoever is
+  // watching. The bundle now checks at load and says so. This serves a
+  // deliberately stale page to prove it.
+  console.log(`\n  A page that does not match its bundle\n`)
+  {
+    const stale = await browser.newPage()
+    const raw = []
+    stale.on('pageerror', (e) => raw.push(e.message))
+    await stale.route('**/try.html*', async (route) => {
+      const res = await route.fetch()
+      const body = (await res.text()).replace('id="step-chain"', 'id="step4"')
+      await route.fulfill({ response: res, body })
+    })
+    await stale.goto(`http://127.0.0.1:${PORT}/try.html?lang=en`)
+    const banner = await stale.locator('body > div').first().innerText()
+
+    check('a mismatched page says so, in words', /version/i.test(banner))
+    check('and names what is missing', /step-chain/.test(banner))
+    // The remedy has to be something a visitor can do. "Clear your cache" is
+    // not, least of all in the MetaMask in-app browser.
+    const escape = await stale.locator('body > div a').first().getAttribute('href')
+    check('and offers a link with a fresh address', /[?&]v=/.test(escape ?? ''))
+    // The thrown error is deliberate — it stops the script rather than letting
+    // it run half-wired — but it must arrive after the banner, not instead of
+    // it, and it must not be the null-property one.
+    check('and does not fail with a null property',
+      raw.length > 0 && !raw.some((m) => /Cannot (set|read) propert/.test(m)))
+    await stale.close()
+  }
+
   console.log()
   check('the page raised no errors in any language', problems.length === 0)
   for (const p of problems) console.log(`        ${p}`)
