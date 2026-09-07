@@ -1,15 +1,15 @@
 # NextKey — cache rules for the static host.
 #
 # Written after a judge on a phone hit "Cannot set properties of null" in the
-# MetaMask in-app browser: try.html was cached from an earlier deploy while
-# try.js beside it was current, and the two disagreed about which elements the
+# MetaMask in-app browser: demo.html was cached from an earlier deploy while
+# demo.js beside it was current, and the two disagreed about which elements the
 # page has. Clearing the cache is not a real answer — MetaMask's iOS browser has
 # a long-standing bug where it does not reliably clear, and a visitor should not
 # have to know that anyway.
 #
 # `no-cache` is not `no-store`. It permits the browser to keep the file and
 # requires it to revalidate before use, so an unchanged bundle comes back as a
-# 304 with no body. The 650 kB of try.js is therefore downloaded once, not once
+# 304 with no body. The 650 kB of demo.js is therefore downloaded once, not once
 # per visit — while a deploy still takes effect immediately.
 <IfModule mod_headers.c>
 

@@ -1,7 +1,7 @@
 /**
  * The wallet the playground lends to visitors.
  *
- * A judge who opens try.html on a phone has no wallet extension, and if they do
+ * A judge who opens demo.html on a phone has no wallet extension, and if they do
  * connect one it holds no Sepolia ether. Both are dead ends at the only step
  * that touches the chain, and a page nobody can finish demonstrates nothing.
  *

@@ -4,7 +4,7 @@
 
 NextKey hands secrets over to the people who should get them — under rules nobody can bypass, not even us.
 
-**Try it without installing anything: [nextkey.li/try.html](https://nextkey.li/try.html).** Encrypt a
+**Try it without installing anything: [nextkey.li/demo.html](https://nextkey.li/demo.html).** Encrypt a
 passphrase, grant it to an ENS name, put it on Sepolia, open it back off the chain, watch a stranger
 fail, revoke it. The whole loop, including the on-chain half — no wallet, no extension, no testnet
 ether, on a phone if you like: we lend you a name and pay the gas. If you hold a name on the hackathon
@@ -392,8 +392,8 @@ exists at all.
 The same state in a browser, which is what the demo link opens:
 
 ```bash
-npx serve web -l 8080     # then http://localhost:8080/demo.html
-                          #  and http://localhost:8080/try.html
+npx serve web -l 8080     # then http://localhost:8080/poc.html
+                          #  and http://localhost:8080/demo.html
 ```
 
 Open `web/` over `http://`, not by double-clicking the file — ES modules are blocked
@@ -457,8 +457,8 @@ resets periodically; if a name has vanished, re-register it.
 
 ## Demo
 
-- **Try it yourself:** https://nextkey.li/try.html — the full loop in the browser, no wallet needed
-- Live view (this deployment's real records, read from Sepolia): https://nextkey.li/demo.html
+- **Try it yourself:** https://nextkey.li/demo.html — the full loop in the browser, no wallet needed
+- Live view (this deployment's real records, read from Sepolia): https://nextkey.li/poc.html
 - About: https://nextkey.li
 - Demo video: <!-- TODO -->
 

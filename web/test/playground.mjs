@@ -2,16 +2,16 @@
  * Does the playground still do what it says?
  *
  * interop.mjs proves the arithmetic agrees across implementations. It cannot
- * see try.html at all — a renamed element, a handler that throws, a panel that
+ * see demo.html at all — a renamed element, a handler that throws, a panel that
  * quietly stops being rendered, and every check there still passes while the
  * page is broken for the one judge who tries it. This drives the page instead:
  * steps 1 to 4, in a real browser, with no wallet, exactly as a visitor would.
  *
- *   npx esbuild web/src/try.js --bundle --format=esm --minify --target=es2022 --outfile=web/try.js
+ *   npx esbuild web/src/demo.js --bundle --format=esm --minify --target=es2022 --outfile=web/demo.js
  *   node web/test/playground.mjs
  *
- * The bundle must be current — this loads web/try.js, the file the site ships,
- * not web/src/try.js. Running it against a stale bundle tests the last build.
+ * The bundle must be current — this loads web/demo.js, the file the site ships,
+ * not web/src/demo.js. Running it against a stale bundle tests the last build.
  *
  * Playwright is required here, unlike in interop.mjs, because there is nothing
  * to test without a browser. If it is missing the file says so and stops rather
@@ -24,7 +24,7 @@
  * key, and a test that mocked those would be testing the mock. They are
  * evidenced instead by an actual run, in evidence/v2-onchain.log.
  *
- * The page is served over HTTP rather than opened as a file, because try.html
+ * The page is served over HTTP rather than opened as a file, because demo.html
  * loads its bundle as an ES module and browsers refuse those from file:// —
  * which fails as a CORS error and looks, misleadingly, like a broken build.
  */
@@ -111,7 +111,7 @@ try {
 
   for (const lang of LANGS) {
     console.log(`\n  A visitor, steps 1 to 4 · ?lang=${lang}\n`)
-    await page.goto(`http://127.0.0.1:${PORT}/try.html?lang=${lang}`)
+    await page.goto(`http://127.0.0.1:${PORT}/demo.html?lang=${lang}`)
     check(`the page renders in ${lang}`,
       (await page.getAttribute('html', 'data-i18n-lang')) === lang)
 
@@ -173,14 +173,14 @@ try {
     check('with no wallet, the page offers to reopen itself inside one',
       links.length >= 3)
     check('and the links carry this page, in this language',
-      links.every((h) => h.includes('try.html') || h.includes(encodeURIComponent('try.html'))) &&
+      links.every((h) => h.includes('demo.html') || h.includes(encodeURIComponent('demo.html'))) &&
       links.some((h) => h.includes(`lang%3D${lang}`) || h.includes(`lang=${lang}`)))
     check('and names an address to paste into any other wallet',
-      w.includes('try.html'))
+      w.includes('demo.html'))
   }
 
   // ── A page one version behind its bundle ────────────────────────────────
-  // try.html and try.js are two files on a static host. They can be uploaded
+  // demo.html and demo.js are two files on a static host. They can be uploaded
   // separately and cached separately, and when they drift the symptom was
   // "Cannot set properties of null (setting 'hidden')" on a button press —
   // accurate, useless, and indistinguishable from a broken cipher to whoever is
@@ -191,12 +191,12 @@ try {
     const stale = await browser.newPage()
     const raw = []
     stale.on('pageerror', (e) => raw.push(e.message))
-    await stale.route('**/try.html*', async (route) => {
+    await stale.route('**/demo.html*', async (route) => {
       const res = await route.fetch()
       const body = (await res.text()).replace('id="step-chain"', 'id="step4"')
       await route.fulfill({ response: res, body })
     })
-    await stale.goto(`http://127.0.0.1:${PORT}/try.html?lang=en`)
+    await stale.goto(`http://127.0.0.1:${PORT}/demo.html?lang=en`)
     const banner = await stale.locator('body > div').first().innerText()
 
     check('a mismatched page says so, in words', /version/i.test(banner))

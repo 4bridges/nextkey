@@ -98,6 +98,6 @@ if (dry) {
   Written. Now check nothing is missing and stamp the English:
     node scripts/i18n-check.mjs
     node scripts/i18n-check.mjs --stamp
-    npx esbuild web/src/try.js --bundle --format=esm --minify --target=es2022 --outfile=web/try.js
+    npx esbuild web/src/demo.js --bundle --format=esm --minify --target=es2022 --outfile=web/demo.js
 `)
 }

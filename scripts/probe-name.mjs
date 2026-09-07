@@ -1,5 +1,5 @@
 /**
- * Would try.html's step 6 succeed on this name?
+ * Would demo.html's step 6 succeed on this name?
  *
  * Step 6 does three things before it asks for a signature: find the resolver
  * through the Universal Resolver, work out which `setText` signature that
@@ -87,7 +87,7 @@ const revertSelector = (e) => {
   return null
 }
 
-/** The same two candidates try.js carries, in the same order. */
+/** The same two candidates demo.js carries, in the same order. */
 const SHAPES = [
   { id: 'setText(bytes name, string, string)',
     abi: [{ name: 'setText', type: 'function', stateMutability: 'nonpayable',
@@ -179,6 +179,6 @@ for (const shape of SHAPES) {
 console.log(ok
   ? `\n  Step 6 would work on this name, using the first accepted form above.\n`
   : `\n  Step 6 would fail. If the name is yours and has a resolver, that resolver
-  speaks a third signature and try.js needs to learn it — the two refusals
+  speaks a third signature and demo.js needs to learn it — the two refusals
   above are what to send.\n`)
 process.exit(ok ? 0 : 1)

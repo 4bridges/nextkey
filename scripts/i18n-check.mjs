@@ -1,7 +1,7 @@
 /**
  * Which translations are missing, and which have gone stale?
  *
- * The site carries 203 keys in nine languages. Adding a sentence to try.js adds
+ * The site carries 203 keys in nine languages. Adding a sentence to demo.js adds
  * nine obligations, and forgetting one costs a visitor exactly one sentence of
  * English in the middle of their own language — invisible from a desk where
  * everything is English anyway.
@@ -33,8 +33,8 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const WEB = join(ROOT, 'web')
 const STAMP = join(WEB, 'i18n.stamp.json')
 
-const PAGES = ['index.html', 'demo.html', 'try.html']
-const SOURCES = ['src/app.js', 'src/try.js']
+const PAGES = ['index.html', 'poc.html', 'demo.html']
+const SOURCES = ['src/app.js', 'src/demo.js']
 
 const digest = (s) => createHash('sha256').update(s).digest('hex').slice(0, 12)
 

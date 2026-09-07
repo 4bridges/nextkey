@@ -1,7 +1,7 @@
 /**
  * The playground — NextKey with your hands on it.
  *
- * demo.html shows a secret that already exists. This page lets a visitor make
+ * poc.html shows a secret that already exists. This page lets a visitor make
  * one. Everything below happens in the browser: the same X25519 + HKDF-SHA256 +
  * AES-256-GCM that scripts/nextkey-core.mjs performs on a laptop, executed here
  * so that the loop can be completed in thirty seconds by somebody who has
@@ -126,7 +126,7 @@ const say = (el, kind, html) => {
 /**
  * Does this page match this bundle?
  *
- * try.html and try.js are deployed as two files, and they can be uploaded
+ * demo.html and demo.js are deployed as two files, and they can be uploaded
  * separately, cached separately, and end up one version apart. When that
  * happened the symptom was `Cannot set properties of null (setting 'hidden')`
  * on pressing a button — technically accurate, useless to everybody, and
@@ -167,7 +167,7 @@ const REQUIRED_ELEMENTS = [
       ' — that link carries a fresh address, which every browser treats as a new page.</p>' +
       `<p style="margin:.5rem 0 0;font-family:ui-monospace,monospace;font-size:.85em">missing: ${missing.join(', ')}</p>`
     document.body.prepend(banner)
-    throw new Error(`try.html is out of step with try.js — missing: ${missing.join(', ')}`)
+    throw new Error(`demo.html is out of step with demo.js — missing: ${missing.join(', ')}`)
   }
 }
 

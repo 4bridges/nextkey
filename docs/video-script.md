@@ -45,7 +45,7 @@ evidence run revoked; take 5 needs something to take away.
 
 **Windows.** Focus Assist on. Slack, Discord, mail closed.
 
-**Pre-warm** `nextkey.li/demo.html`, the ENS explorer on `hero…`, and the
+**Pre-warm** `nextkey.li/poc.html`, the ENS explorer on `hero…`, and the
 terminal, so nothing loads on camera.
 
 **Record in seven takes**, in order, then cut them together. Do not attempt one
@@ -57,7 +57,7 @@ every transaction hash is in `evidence/`.
 
 ## Take 1 — a phone with no wallet (0:00–0:40)
 
-**On screen:** the phone. `nextkey.li/try.html`. Nothing installed, nothing
+**On screen:** the phone. `nextkey.li/demo.html`. Nothing installed, nothing
 signed in.
 
 > "This is a phone. No wallet extension, no browser extension, no testnet ether —
@@ -103,7 +103,7 @@ advertisement.
 
 **This is the take that carries the submission. Do not rush it.**
 
-**On screen:** `nextkey.li/demo.html`, scrolled to "The recipient".
+**On screen:** `nextkey.li/poc.html`, scrolled to "The recipient".
 
 > "This page reads Sepolia as it loads. Nothing cached, nothing replayed."
 

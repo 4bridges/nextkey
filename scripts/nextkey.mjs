@@ -90,7 +90,7 @@ const fail = (e) => {
  * fingerprint on whatever name holds it, and that is the whole point of the
  * scheme. The restriction was an accident of spelling: every read said
  * `${label}.${PARENT}`, so a secret written to a name outside nextkey.eth was
- * unreachable by the tool that is supposed to open it. try.html can write to
+ * unreachable by the tool that is supposed to open it. demo.html can write to
  * any name the visitor owns; this is what lets the command line read it back.
  *
  * Writing keeps the old rule, because writing needs the setter role and our

@@ -5,14 +5,14 @@ of this folder to the web root at Cyon and the site works.
 
 ```
 index.html         the landing page, in ten languages
-demo.html          the live view — a secret that already exists, read from chain
-try.html           the playground — make one yourself, no wallet required
+poc.html          the live view — a secret that already exists, read from chain
+demo.html           the playground — make one yourself, no wallet required
 i18n.js            the nine translations — English is not in here, see below
-app.js             bundled reader for demo.html   — built, do not edit
-try.js             bundled logic for try.html     — built, do not edit
+app.js             bundled reader for poc.html   — built, do not edit
+demo.js             bundled logic for demo.html     — built, do not edit
 brand/             the mark, icons, social card and manifest — see brand/README.md
 src/app.js         the source app.js is built from
-src/try.js         the source try.js is built from
+src/demo.js         the source demo.js is built from
 src/nk-crypto.mjs  the wrapping rule, shared — see below
 test/interop.mjs   proves it matches the command-line tool
 ```
@@ -20,11 +20,11 @@ test/interop.mjs   proves it matches the command-line tool
 ## Deploy
 
 Everything is a plain file with relative paths, so it also works from a
-subdirectory. Upload `index.html`, `demo.html`, `try.html`, `i18n.js`, `app.js`,
-`try.js` and the whole `brand/` folder. `src/`, `test/` and this README are not
+subdirectory. Upload `index.html`, `poc.html`, `demo.html`, `i18n.js`, `app.js`,
+`demo.js` and the whole `brand/` folder. `src/`, `test/` and this README are not
 needed on the server.
 
-`try.js` is about 200 KB gzipped, most of it viem and the BIP-39 word list. That
+`demo.js` is about 200 KB gzipped, most of it viem and the BIP-39 word list. That
 is heavy for a static site and the trade is deliberate: bundling means the page
 has no CDN to be blocked by and no third party to trust, on a page whose whole
 claim is that nothing leaves the browser. Check that Cyon serves `.js` gzipped —
@@ -47,8 +47,8 @@ Only needed after editing something under `src/`:
 ```bash
 npx esbuild web/src/app.js --bundle --format=esm --minify --target=es2022 \
   --outfile=web/app.js
-npx esbuild web/src/try.js --bundle --format=esm --minify --target=es2022 \
-  --outfile=web/try.js
+npx esbuild web/src/demo.js --bundle --format=esm --minify --target=es2022 \
+  --outfile=web/demo.js
 ```
 
 `viem` is bundled in rather than loaded from a CDN, so the page has no external
@@ -83,7 +83,7 @@ have. The selector serves readers well; it is not an SEO strategy.
 Choices persist in `localStorage` under `nextkey.lang`, wrapped in try/catch —
 a browser that refuses storage still switches, it just forgets.
 
-## What demo.html shows
+## What poc.html shows
 
 Four panels, all read from Sepolia at page load through the hackathon Universal
 Resolver (`0xd26f2040…faf142` — overriding viem's built-in address, which would
@@ -113,7 +113,7 @@ no "military grade". The testnet notice sits in the first screen rather than the
 footer, and the FAQ answers "is this ready for real funds?" with "no".
 
 
-## What try.html does, and the one thing it refuses to do
+## What demo.html does, and the one thing it refuses to do
 
 Six steps. The first five run entirely in the browser and need no wallet, no
 account and no testnet ether, so a judge with two minutes can finish the loop:

@@ -58,7 +58,7 @@ whose tag is only computed in the visitor's browser cannot be delegated — foun
 by reproducing it down to the revert selector `0x4b27a133`, and written up as
 Finding 11 in `FEEDBACK-ENS.md`. A simulation cannot protect a setter with no
 return value: `eth_call` against an address with no code returns nothing, and so
-does a successful `setText`, which is why `try.js` now checks for the zero
+does a successful `setText`, which is why `demo.js` now checks for the zero
 address and for bytecode explicitly. `toFunctionSelector('error X(...)')` hashes
 the word "error" along with the signature and yields the wrong selector. And a
 page and its bundle, cached separately on a static host, drift — the symptom was

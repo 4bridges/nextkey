@@ -245,10 +245,10 @@ The gap it closes is specific. An enclave's inputs are invisible by design, so "
 
 **Until today the site let a judge watch. Now it lets them do it.**
 
-`demo.html` reads a secret that already exists — real records, read live, and a
+`poc.html` reads a secret that already exists — real records, read live, and a
 good answer to "is this actually on chain". It is a bad answer to "does this
 work for *me*", which is the question a prize is decided on. So there is a third
-page, `try.html`, and it runs the whole loop: write a secret, make or look up a
+page, `demo.html`, and it runs the whole loop: write a secret, make or look up a
 recipient, encrypt and grant, open it as the recipient, watch a stranger fail,
 revoke, watch the recipient fail too.
 
@@ -296,7 +296,7 @@ crash. It is a grant that writes cleanly, reads cleanly and refuses to open,
 discovered three steps downstream of its cause. That has happened once in this
 project already.
 
-Pasting the crypto into `try.js` would have been shorter and would have tested
+Pasting the crypto into `demo.js` would have been shorter and would have tested
 nothing. Keeping it in its own module makes it reachable: `node
 web/test/interop.mjs` bundles that file alone into a headless Chromium,
 generates a grant with the Node construction and opens it with the browser one,
@@ -312,7 +312,7 @@ line between the two is worth keeping visible rather than rounding up.
 **A defect found on the way.** A two-column definition list with `white-space:
 nowrap` on the term assumes the label is short. It is in English. It is not in
 Russian: *опубликованный ключ* pushed the page eight pixels sideways on a
-320-pixel screen. The list stacks below 30rem now, on `demo.html` too, where the
+320-pixel screen. The list stacks below 30rem now, on `poc.html` too, where the
 same latent bug was waiting.
 
 
@@ -385,7 +385,7 @@ key. Verified today on `0x9780…dd0B`. If it had failed, the fallback would hav
 been removed rather than documented as a caveat.
 
 **The browser derives, but does not seal.**
-`try.html` steps 1 to 5 run without a wallet — that is the strongest claim the
+`demo.html` steps 1 to 5 run without a wallet — that is the strongest claim the
 page makes — so the ephemeral pair there is random and lives in a JS variable.
 Step 6, which already asks for a wallet, derives a real one from a signature and
 recomputes both records before requesting the first transaction signature. It
@@ -410,7 +410,7 @@ ephemeral key *and* the recipient's public key still reaches neither the address
 nor the grant. `web/test/interop.mjs` checks that two independent
 implementations agree — and now compares the signing message character for
 character, because it is an input to a key derivation and one stray line break
-would derive a different key. `web/test/playground.mjs` drives try.html in a
+would derive a different key. `web/test/playground.mjs` drives demo.html in a
 real browser, which is the only one of the three that can notice a renamed
 element or a handler that throws.
 
