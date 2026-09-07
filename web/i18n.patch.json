@@ -1,101 +1,74 @@
 {
   "de": {
-    "d.v2h": "Dieselbe Empfängerin, unter v2",
-    "d.v2w": "wo das Panel darüber aufhört zu funktionieren",
-    "d.v2.eph": "der Name veröffentlicht",
-    "d.v2.same": "ihr Schlüssel, derselbe wie oben",
-    "d.v2.tried": "also hat dieser Browser hier nachgesehen",
-    "d.v2.unexpected": "Dort steht etwas. Auf einem v2-Namen sollte das nicht passieren — bitte sagen Sie uns Bescheid.",
-    "d.v2.nothing": "Nichts. Die Adresse, die ein Panel weiter oben trägt, führt hier ins Leere.",
-    "d.v2.note1": "Anna hat auf diesem Namen sehr wohl eine Freigabe. Deren Adresse entsteht aus einem ECDH zwischen dem ephemeren Schlüssel oben und ihrem privaten — sie kann sie ausrechnen, der Eigentümer kann es, und diese Seite kann es nicht, weil sie keine der beiden privaten Hälften hat.",
-    "d.v2.note2": "Um genau zu sein, was verborgen ist: der Record nicht. Text-Records lassen sich aus ihren Events auflisten, ein Indexer kann also zählen, wie viele Freigaben dieser Name trägt. Was niemand kann, ist sagen, welche davon ihre ist — oder ob überhaupt eine es ist. Ein Panel weiter oben brauchte das ein einziges SHA-256."
+    "t.chain.noresolver": "Dieser Name hat auf diesem Deployment keinen Resolver, es gibt also nichts, wohin geschrieben werden könnte. Entweder ist er hier nicht registriert, oder es wurde noch kein Resolver angehängt.",
+    "t.chain.noresolvernote": "Es wurde nichts signiert und kein Gas ausgegeben. Ein Name, den Sie anderswo halten — etwa auf dem produktiven ENS — genügt nicht: dies ist das Hackathon-Deployment, und ein Name muss hier existieren und einen Resolver tragen. Der Weg darüber leiht Ihnen einen, der das tut.",
+    "t.chain.notcontract": "Der Resolver, auf den dieser Name zeigt, enthält keinen Vertrag. Dorthin zu schreiben würde Gas kosten und nichts bewirken.",
+    "t.chain.primary": "sein primärer Name",
+    "t.chain.prefilled": "Unten eingetragen. Das ist der Name, auf den dieses Konto auf diesem Deployment hört — ändern Sie ihn, falls Sie einen anderen meinten.",
+    "t.chain.noprimary": "Für dieses Konto ist hier kein primärer Name gesetzt, das Feld unten lässt sich also nicht für Sie ausfüllen. Tragen Sie einen Namen ein, den Sie auf diesem Deployment halten. Alle Namen einer Adresse aufzuzählen braucht einen Indexer, den eine Seite aus statischen Dateien nicht hat."
   },
   "fr": {
-    "d.v2h": "La même destinataire, en v2",
-    "d.v2w": "là où le panneau du dessus cesse de fonctionner",
-    "d.v2.eph": "ce nom publie",
-    "d.v2.same": "sa clé, la même que ci-dessus",
-    "d.v2.tried": "ce navigateur a donc regardé à",
-    "d.v2.unexpected": "Il y a quelque chose. Cela ne devrait pas arriver sur un nom en v2 — dites-le-nous.",
-    "d.v2.nothing": "Rien. L'adresse qui fonctionne un panneau plus haut ne mène nulle part ici.",
-    "d.v2.note1": "Anna a bel et bien une autorisation sur ce nom. Son adresse sort d'un ECDH entre la clé éphémère ci-dessus et sa clé privée — elle peut la calculer, le propriétaire aussi, et cette page non, car elle ne détient aucune des deux moitiés privées.",
-    "d.v2.note2": "Pour être exact sur ce qui est caché : l'enregistrement ne l'est pas. Les enregistrements texte se listent depuis leurs événements, un indexeur peut donc compter combien d'autorisations porte ce nom. Ce que personne ne peut faire, c'est dire laquelle est la sienne — ni si l'une d'elles l'est. Un panneau plus haut, cela tenait en un seul SHA-256."
+    "t.chain.noresolver": "Ce nom n'a pas de resolver sur ce déploiement : il n'y a donc nulle part où écrire. Soit il n'y est pas enregistré, soit aucun resolver ne lui est encore attaché.",
+    "t.chain.noresolvernote": "Rien n'a été signé et aucun gaz dépensé. Un nom que vous détenez ailleurs — sur l'ENS de production, par exemple — ne convient pas : ceci est le déploiement du hackathon, et un nom doit y exister et porter un resolver. La voie du dessus vous en prête un qui remplit ces conditions.",
+    "t.chain.notcontract": "Le resolver vers lequel pointe ce nom ne contient aucun contrat. Y écrire consommerait du gaz sans rien changer.",
+    "t.chain.primary": "son nom principal",
+    "t.chain.prefilled": "Rempli ci-dessous. C'est le nom auquel ce compte répond sur ce déploiement — changez-le si vous en visiez un autre.",
+    "t.chain.noprimary": "Aucun nom principal n'est défini ici pour ce compte, le champ ci-dessous ne peut donc pas être rempli pour vous. Saisissez un nom que vous détenez sur ce déploiement. Énumérer tous les noms d'une adresse demande un indexeur, dont une page servie en fichiers statiques ne dispose pas."
   },
   "es": {
-    "d.v2h": "La misma destinataria, bajo v2",
-    "d.v2w": "donde el panel de arriba deja de funcionar",
-    "d.v2.eph": "este nombre publica",
-    "d.v2.same": "su clave, la misma de arriba",
-    "d.v2.tried": "así que este navegador miró en",
-    "d.v2.unexpected": "Ahí hay algo. Eso no debería ocurrir en un nombre v2 — avísenos, por favor.",
-    "d.v2.nothing": "Nada. La dirección que funciona un panel más arriba aquí no lleva a ninguna parte.",
-    "d.v2.note1": "Anna sí tiene una concesión en este nombre. Su dirección sale de un ECDH entre la clave efímera de arriba y la privada de ella — ella puede calcularla, el propietario también, y esta página no, porque no tiene ninguna de las dos mitades privadas.",
-    "d.v2.note2": "Para ser exactos sobre qué está oculto: el registro no lo está. Los registros de texto se pueden listar desde sus eventos, así que un indexador puede contar cuántas concesiones lleva este nombre. Lo que nadie puede hacer es decir cuál es la suya — ni si alguna lo es. Un panel más arriba, eso costaba un solo SHA-256."
+    "t.chain.noresolver": "Ese nombre no tiene resolver en este despliegue, así que no hay dónde escribir. O no está registrado aquí, o todavía no se le ha adjuntado un resolver.",
+    "t.chain.noresolvernote": "No se firmó nada ni se gastó gas. Un nombre que tenga en otro sitio — en el ENS de producción, por ejemplo — no sirve: esto es el despliegue del hackathon, y un nombre tiene que existir aquí y llevar un resolver. La vía de arriba le presta uno que sí lo cumple.",
+    "t.chain.notcontract": "El resolver al que apunta ese nombre no contiene ningún contrato. Escribir ahí gastaría gas y no cambiaría nada.",
+    "t.chain.primary": "su nombre principal",
+    "t.chain.prefilled": "Puesto abajo. Es el nombre al que responde esta cuenta en este despliegue — cámbielo si se refería a otro.",
+    "t.chain.noprimary": "Esta cuenta no tiene aquí un nombre principal, así que el campo de abajo no puede rellenarse por usted. Escriba un nombre que tenga en este despliegue. Enumerar todos los nombres de una dirección requiere un indexador, y una página servida como archivos estáticos no tiene ninguno."
   },
   "it": {
-    "d.v2h": "La stessa destinataria, sotto v2",
-    "d.v2w": "dove il pannello qui sopra smette di funzionare",
-    "d.v2.eph": "questo nome pubblica",
-    "d.v2.same": "la sua chiave, la stessa di sopra",
-    "d.v2.tried": "così questo browser ha guardato in",
-    "d.v2.unexpected": "Lì c'è qualcosa. Su un nome v2 non dovrebbe accadere — ce lo faccia sapere.",
-    "d.v2.nothing": "Niente. L'indirizzo che funziona un pannello più su qui non porta da nessuna parte.",
-    "d.v2.note1": "Anna una concessione su questo nome ce l'ha eccome. Il suo indirizzo nasce da un ECDH fra la chiave effimera qui sopra e la sua privata — lei può calcolarlo, il proprietario può, e questa pagina no, perché non possiede nessuna delle due metà private.",
-    "d.v2.note2": "Per essere precisi su che cosa è nascosto: il record no. I record di testo si possono elencare dai loro eventi, quindi un indicizzatore può contare quante concessioni porta questo nome. Ciò che nessuno può fare è dire quale sia la sua — né se una lo sia. Un pannello più su, bastava un solo SHA-256."
+    "t.chain.noresolver": "Questo nome non ha un resolver su questo deployment, quindi non c'è dove scrivere. O non è registrato qui, o non gli è ancora stato collegato un resolver.",
+    "t.chain.noresolvernote": "Non è stato firmato nulla e non è stato speso gas. Un nome che possiede altrove — sull'ENS di produzione, per esempio — non basta: questo è il deployment dell'hackathon, e un nome deve esistere qui e portare un resolver. La via qui sopra gliene presta uno che li ha.",
+    "t.chain.notcontract": "Il resolver a cui punta questo nome non contiene alcun contratto. Scriverci costerebbe gas senza cambiare nulla.",
+    "t.chain.primary": "il suo nome principale",
+    "t.chain.prefilled": "Inserito qui sotto. È il nome a cui questo account risponde su questo deployment — lo cambi se ne intendeva un altro.",
+    "t.chain.noprimary": "Per questo account non è impostato un nome principale qui, quindi il campo sotto non può essere compilato al posto suo. Scriva un nome che possiede su questo deployment. Elencare tutti i nomi di un indirizzo richiede un indicizzatore, che una pagina servita da file statici non ha."
   },
   "pt": {
-    "d.v2h": "A mesma destinatária, sob v2",
-    "d.v2w": "onde o painel acima deixa de funcionar",
-    "d.v2.eph": "este nome publica",
-    "d.v2.same": "a chave dela, a mesma de cima",
-    "d.v2.tried": "por isso este navegador foi ver em",
-    "d.v2.unexpected": "Está lá alguma coisa. Isso não devia acontecer num nome v2 — diga-nos, por favor.",
-    "d.v2.nothing": "Nada. O endereço que funciona um painel acima aqui não leva a lado nenhum.",
-    "d.v2.note1": "A Anna tem de facto uma concessão neste nome. O endereço dela sai de um ECDH entre a chave efémera acima e a privada dela — ela consegue calculá-lo, o proprietário também, e esta página não, porque não tem nenhuma das duas metades privadas.",
-    "d.v2.note2": "Para ser exato sobre o que está escondido: o registo não está. Os registos de texto podem ser listados a partir dos seus eventos, portanto um indexador consegue contar quantas concessões este nome carrega. O que ninguém consegue é dizer qual é a dela — nem se alguma o é. Um painel acima, isso custava um único SHA-256."
+    "t.chain.noresolver": "Este nome não tem resolver neste deployment, portanto não há para onde escrever. Ou não está registado aqui, ou ainda não lhe foi ligado um resolver.",
+    "t.chain.noresolvernote": "Nada foi assinado e nenhum gás foi gasto. Um nome que tenha noutro lado — no ENS de produção, por exemplo — não serve: isto é o deployment do hackathon, e um nome tem de existir aqui e ter um resolver. A via acima empresta-lhe um que tem.",
+    "t.chain.notcontract": "O resolver para o qual este nome aponta não contém nenhum contrato. Escrever lá gastaria gás e não mudaria nada.",
+    "t.chain.primary": "o seu nome principal",
+    "t.chain.prefilled": "Preenchido abaixo. É o nome a que esta conta responde neste deployment — mude-o se queria outro.",
+    "t.chain.noprimary": "Esta conta não tem aqui um nome principal, por isso o campo abaixo não pode ser preenchido por si. Escreva um nome que detenha neste deployment. Enumerar todos os nomes de um endereço exige um indexador, que uma página servida a partir de ficheiros estáticos não tem."
   },
   "ru": {
-    "d.v2h": "Та же получательница, но под v2",
-    "d.v2w": "здесь панель сверху перестаёт работать",
-    "d.v2.eph": "это имя публикует",
-    "d.v2.same": "её ключ, тот же, что выше",
-    "d.v2.tried": "поэтому этот браузер посмотрел в",
-    "d.v2.unexpected": "Там что-то есть. На имени v2 такого быть не должно — сообщите нам, пожалуйста.",
-    "d.v2.nothing": "Ничего. Адрес, который работает панелью выше, здесь ведёт в пустоту.",
-    "d.v2.note1": "Доступ у Анны на этом имени как раз есть. Его адрес возникает из ECDH между эфемерным ключом выше и её закрытым — она может его вычислить, владелец может, а эта страница не может, потому что ни одной из двух закрытых половин у неё нет.",
-    "d.v2.note2": "Чтобы быть точным в том, что именно скрыто: сама запись — нет. Текстовые записи перечисляются по их событиям, так что индексатор может посчитать, сколько доступов несёт это имя. Чего никто не может — это сказать, какой из них её, и есть ли среди них её вообще. Панелью выше это стоило одного SHA-256."
+    "t.chain.noresolver": "У этого имени нет резолвера в этом развёртывании, значит, писать некуда. Либо оно здесь не зарегистрировано, либо резолвер к нему ещё не прикреплён.",
+    "t.chain.noresolvernote": "Ничего не подписано и газ не потрачен. Имя, которым вы владеете в другом месте — скажем, в продакшн-ENS — не подойдёт: это развёртывание хакатона, и имя должно существовать здесь и нести резолвер. Путь выше одалживает вам такое.",
+    "t.chain.notcontract": "Резолвер, на который указывает это имя, не содержит контракта. Запись туда потратила бы газ и ничего не изменила.",
+    "t.chain.primary": "его основное имя",
+    "t.chain.prefilled": "Подставлено ниже. Это имя, на которое отзывается этот счёт в данном развёртывании — измените, если имели в виду другое.",
+    "t.chain.noprimary": "Для этого счёта здесь не задано основное имя, поэтому поле ниже нельзя заполнить за вас. Введите имя, которым вы владеете в этом развёртывании. Перечислить все имена адреса можно только через индексатор, а у страницы из статических файлов его нет."
   },
   "ua": {
-    "d.v2h": "Та сама отримувачка, але під v2",
-    "d.v2w": "тут панель згори перестає працювати",
-    "d.v2.eph": "це ім'я публікує",
-    "d.v2.same": "її ключ, той самий, що вище",
-    "d.v2.tried": "тож цей браузер зазирнув до",
-    "d.v2.unexpected": "Там щось є. На імені v2 такого бути не повинно — повідомте нам, будь ласка.",
-    "d.v2.nothing": "Нічого. Адреса, яка працює панеллю вище, тут веде в порожнечу.",
-    "d.v2.note1": "Дозвіл в Анни на цьому імені якраз є. Його адреса постає з ECDH між ефемерним ключем вище та її закритим — вона може його обчислити, власник може, а ця сторінка не може, бо жодної з двох закритих половин у неї немає.",
-    "d.v2.note2": "Щоб бути точним у тому, що саме приховано: сам запис — ні. Текстові записи перелічуються за їхніми подіями, тож індексатор може порахувати, скільки дозволів несе це ім'я. Чого ніхто не може — це сказати, який із них її, і чи є серед них її взагалі. Панеллю вище це коштувало одного SHA-256."
+    "t.chain.noresolver": "У цього імені немає резолвера в цьому розгортанні, тож писати нікуди. Або воно тут не зареєстроване, або резолвер до нього ще не приєднано.",
+    "t.chain.noresolvernote": "Нічого не підписано і газу не витрачено. Ім'я, яким ви володієте деінде — скажімо, у продакшн-ENS — не підійде: це розгортання хакатону, і ім'я має існувати тут та нести резолвер. Шлях вище позичає вам таке.",
+    "t.chain.notcontract": "Резолвер, на який вказує це ім'я, не містить контракту. Запис туди витратив би газ і нічого не змінив.",
+    "t.chain.primary": "його основне ім'я",
+    "t.chain.prefilled": "Підставлено нижче. Це ім'я, на яке відгукується цей рахунок у цьому розгортанні — змініть, якщо мали на увазі інше.",
+    "t.chain.noprimary": "Для цього рахунку тут не задано основного імені, тож поле нижче не можна заповнити за вас. Введіть ім'я, яким ви володієте в цьому розгортанні. Перелічити всі імена адреси можна лише через індексатор, а сторінка зі статичних файлів його не має."
   },
   "cn": {
-    "d.v2h": "同一位接收者，换到 v2",
-    "d.v2w": "上面那块面板在这里失灵",
-    "d.v2.eph": "这个名字发布了",
-    "d.v2.same": "她的公钥，与上面同一把",
-    "d.v2.tried": "于是本浏览器去这里查看",
-    "d.v2.unexpected": "那里有东西。在 v2 名字上不该如此——请告诉我们。",
-    "d.v2.nothing": "什么也没有。上一块面板里管用的地址，在这里通向空处。",
-    "d.v2.note1": "Anna 在这个名字上确实有一份授权。它的地址出自上面那把临时密钥与她私钥之间的 ECDH——她算得出来，名字的所有者算得出来，而本页算不出来，因为两把私钥它一把也没有。",
-    "d.v2.note2": "把「藏起来的是什么」说准确：不是这条记录。文本记录可以从事件里列举出来，索引器数得清这个名字带着几份授权。谁都做不到的，是说出哪一份是她的——或者是否有任何一份是。上一块面板里，这只需要一次 SHA-256。"
+    "t.chain.noresolver": "这个名字在本部署上没有 resolver，因此无处可写。要么它没有在这里注册，要么还没有给它挂上 resolver。",
+    "t.chain.noresolvernote": "没有签署任何东西，也没有花费燃料费。您在别处持有的名字——比如在生产环境的 ENS 上——不算数：这里是黑客松部署，名字必须在这里存在并带有 resolver。上面那条路会借您一个符合条件的。",
+    "t.chain.notcontract": "这个名字所指向的 resolver 里没有合约。往那里写会花掉燃料费，什么也不会改变。",
+    "t.chain.primary": "它的主名称",
+    "t.chain.prefilled": "已填入下方。这是该账户在本部署上所对应的名字——若您指的是别的，请改掉。",
+    "t.chain.noprimary": "该账户在这里没有设置主名称，因此下面的字段无法替您填写。请输入一个您在本部署上持有的名字。要列出一个地址拥有的全部名字需要索引器，而由静态文件提供的页面没有索引器。"
   },
   "fa": {
-    "d.v2h": "همان گیرنده، این‌بار زیر v2",
-    "d.v2w": "جایی که پنل بالا از کار می‌افتد",
-    "d.v2.eph": "این نام منتشر می‌کند",
-    "d.v2.same": "کلید او، همان که بالا آمد",
-    "d.v2.tried": "پس این مرورگر اینجا را نگاه کرد",
-    "d.v2.unexpected": "آنجا چیزی هست. روی یک نام v2 نباید چنین شود — لطفاً به ما خبر بدهید.",
-    "d.v2.nothing": "هیچ. نشانی‌ای که یک پنل بالاتر کار می‌کند، اینجا به جایی نمی‌رسد.",
-    "d.v2.note1": "آنا روی این نام دسترسی دارد، و چه دسترسی‌ای. نشانی‌اش از ECDH میان کلید زودگذرِ بالا و کلید خصوصی او بیرون می‌آید — او می‌تواند حسابش کند، صاحبِ نام می‌تواند، و این صفحه نمی‌تواند، چون هیچ‌یک از آن دو نیمهٔ خصوصی را ندارد.",
-    "d.v2.note2": "برای آن‌که دقیق بگوییم چه چیزی پنهان است: خودِ رکورد پنهان نیست. رکوردهای متنی را می‌توان از رویدادهایشان فهرست کرد، پس یک نمایه‌ساز می‌تواند بشمارد این نام چند دسترسی دارد. آنچه هیچ‌کس نمی‌تواند، این است که بگوید کدام‌یک از آنِ اوست — یا اصلاً یکی از آنِ او هست یا نه. یک پنل بالاتر، این کار تنها یک SHA-256 می‌خواست."
+    "t.chain.noresolver": "این نام روی این استقرار هیچ resolver ندارد، پس جایی برای نوشتن نیست. یا اینجا ثبت نشده، یا هنوز resolver ای به آن وصل نشده است.",
+    "t.chain.noresolvernote": "چیزی امضا نشد و گسی خرج نشد. نامی که جای دیگری دارید — مثلاً روی ENS تولیدی — کافی نیست: اینجا استقرار هکاتون است و نام باید همین‌جا وجود داشته باشد و resolver داشته باشد. راه بالا یکی از همان‌ها را به شما قرض می‌دهد.",
+    "t.chain.notcontract": "resolver ای که این نام به آن اشاره می‌کند هیچ قراردادی ندارد. نوشتن در آن گس می‌برد و چیزی را تغییر نمی‌دهد.",
+    "t.chain.primary": "نام اصلی‌اش",
+    "t.chain.prefilled": "پایین وارد شد. این نامی است که این حساب روی این استقرار به آن پاسخ می‌دهد — اگر نام دیگری در نظر داشتید، تغییرش دهید.",
+    "t.chain.noprimary": "برای این حساب اینجا نام اصلی تعیین نشده است، پس فیلد پایین را نمی‌توان برایتان پر کرد. نامی را بنویسید که روی این استقرار در اختیار دارید. فهرست‌کردن همهٔ نام‌های یک نشانی به نمایه‌ساز نیاز دارد و صفحه‌ای که از فایل‌های ایستا سرو می‌شود چنین چیزی ندارد."
   }
 }

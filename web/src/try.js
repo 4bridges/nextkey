@@ -123,6 +123,54 @@ const say = (el, kind, html) => {
   el.hidden = false
 }
 
+/**
+ * Does this page match this bundle?
+ *
+ * try.html and try.js are deployed as two files, and they can be uploaded
+ * separately, cached separately, and end up one version apart. When that
+ * happened the symptom was `Cannot set properties of null (setting 'hidden')`
+ * on pressing a button — technically accurate, useless to everybody, and
+ * indistinguishable from a bug in the cryptography to anyone watching.
+ *
+ * So the bundle states what it needs and says so plainly when it is missing.
+ * Checked once at load rather than at every use: a page that is half a version
+ * behind is broken from the start, and finding out three steps in is worse than
+ * finding out immediately.
+ */
+const REQUIRED_ELEMENTS = [
+  'phrase', 'gen', 'step1-state', 'own-phrase-warn',
+  'gen-recipient', 'r-local', 'r-local-out', 'r-ens', 'r-ens-out', 'ens-name', 'lookup',
+  'go-store', 'store-out',
+  'step-chain', 'confirm-fake', 'write-demo', 'demo-out', 'demo-state',
+  'connect', 'wallet-out', 'own-name', 'publish', 'publish-out',
+  'step-open', 'open-as', 'open-other', 'open-out', 'open-remote-note',
+  'step-revoke', 'revoke', 'revoke-out',
+]
+
+{
+  const missing = REQUIRED_ELEMENTS.filter((id) => !document.getElementById(id))
+  if (missing.length) {
+    const banner = document.createElement('div')
+    banner.style.cssText =
+      'margin:1rem;padding:1rem 1.2rem;border:2px solid #b3261e;border-radius:9px;' +
+      'font:15px/1.6 ui-sans-serif,system-ui,sans-serif;max-width:44rem'
+    // A link with a fresh query string, because that is the only remedy a
+    // visitor can actually apply. A different URL is a different cache entry,
+    // which works even in the MetaMask in-app browser, where clearing the cache
+    // is unreliable enough to have its own long-standing bug report. Telling
+    // somebody to "clear the cache" is telling them to solve our problem.
+    const fresh = new URL(location.href)
+    fresh.searchParams.set('v', Date.now().toString(36))
+    banner.innerHTML =
+      '<strong>This page and its script are different versions.</strong>' +
+      `<p style="margin:.5rem 0 0"><a href="${fresh}" style="font-weight:600">Open the current one</a>` +
+      ' — that link carries a fresh address, which every browser treats as a new page.</p>' +
+      `<p style="margin:.5rem 0 0;font-family:ui-monospace,monospace;font-size:.85em">missing: ${missing.join(', ')}</p>`
+    document.body.prepend(banner)
+    throw new Error(`try.html is out of step with try.js — missing: ${missing.join(', ')}`)
+  }
+}
+
 /** Turn whatever a library threw into one line a reader can act on. */
 const plain = (e) => {
   const m = e?.shortMessage ?? e?.details ?? e?.message ?? String(e)
@@ -623,12 +671,35 @@ async function connectWith(eth) {
 
     wallet = createWalletClient({ account: addr, chain: sepolia, transport: custom(eth) })
 
+    /**
+     * What actually matters is the name, not the address.
+     *
+     * The address is only evidence that you may write to a name — so the page
+     * asks the chain which name this account answers to and fills the field in
+     * rather than making somebody type it from memory. That is reverse
+     * resolution, and it only works if a primary name has been set, which most
+     * people have not done on a test deployment. So it is an offer, not a
+     * requirement.
+     *
+     * There is no cheap way to list every name an address owns: that needs an
+     * indexer, and the honest answer for a static page is to say so.
+     */
+    let primary = null
+    try { primary = await reader.getEnsName({ address: addr }) } catch { /* none */ }
+    if (primary && !$('own-name').value.trim()) $('own-name').value = primary
+
     // Gas, before it becomes a problem. An empty account cannot write, and
     // finding that out from a failed transaction is a worse way to learn it
     // than a sentence and two links.
     const balance = await reader.getBalance({ address: addr })
     say(walletOut, balance === 0n ? 'bad' : 'ok', `
-      <dl><dt>${t('t.s6.connected', 'connected')}</dt><dd class="mono break">${esc(addr)}</dd></dl>
+      <dl><dt>${t('t.s6.connected', 'connected')}</dt><dd class="mono break">${esc(addr)}</dd>
+      ${primary
+        ? `<dt>${t('t.chain.primary', 'its primary name')}</dt><dd class="mono break">${esc(primary)}</dd>`
+        : ''}</dl>
+      ${primary
+        ? `<p class="note">${t('t.chain.prefilled', 'Filled in below. It is the name this account answers to on this deployment — change it if you meant another one.')}</p>`
+        : `<p class="note">${t('t.chain.noprimary', 'This account has no primary name set here, so the field below cannot be filled in for you. Type a name you hold on this deployment. Listing every name an address owns needs an indexer, which a page served from static files does not have.')}</p>`}
       ${balance === 0n ? `
       <p>${t('t.chain.nogas', 'That account holds no Sepolia ether, so it cannot pay for a write.')}</p>
       <p class="note">${t('t.chain.nogasnote', 'A faucet will give you some — you need only a fraction of one. Or use the lane above, which pays for itself.')}</p>
@@ -655,8 +726,43 @@ $('publish').addEventListener('click', async () => {
   writing = true
   $('publish').disabled = true
   try {
+    /**
+     * Does this name have a resolver at all — and is it a contract?
+     *
+     * Both halves are load-bearing, and the second one is the reason this check
+     * exists rather than being left to the simulation below.
+     *
+     * A name with no resolver on this deployment resolves to the zero address.
+     * Left unchecked, everything downstream carried on: the write was aimed at
+     * 0x000…000 and the visitor's wallet was asked to sign it. MetaMask's own
+     * burn-address warning was the only thing standing between a judge and a
+     * transaction that could never have done anything.
+     *
+     * And the simulation does not catch it. `setText` returns nothing, so an
+     * eth_call against an address with no code comes back empty — which, for a
+     * function with no outputs, is a perfectly valid answer. The guard that
+     * ought to protect us cheerfully says yes. Hence the explicit code check.
+     */
     say(chainOut, 'busy', `<p>${t('t.s6.finding', 'Finding the resolver for that name…')}</p>`)
-    const resolver = await reader.getEnsResolver({ name })
+    let resolver
+    try {
+      resolver = await reader.getEnsResolver({ name })
+    } catch { /* reported as "none" below, with the same message */ }
+
+    if (!resolver || /^0x0+$/i.test(resolver)) {
+      const err = new Error(t('t.chain.noresolver',
+        'That name has no resolver on this deployment, so there is nowhere to write. Either it is not registered here, or it has no resolver attached yet.'))
+      err.noResolver = true
+      throw err
+    }
+
+    const code = await reader.getBytecode({ address: resolver })
+    if (!code || code === '0x') {
+      const err = new Error(t('t.chain.notcontract',
+        'The resolver this name points at holds no contract. Writing there would consume gas and change nothing.'))
+      err.noResolver = true
+      throw err
+    }
 
     say(chainOut, 'busy', `<p>${t('t.s6.deriving', 'Sign the derivation message — it is not a transaction and moves nothing…')}</p>`)
     const { records, moved } = await recordsFor(name,
@@ -731,7 +837,9 @@ $('publish').addEventListener('click', async () => {
     say(chainOut, 'bad', `
       <p>${t('t.s6.fail', 'That did not go through.')}</p>
       <p class="note mono">${esc(plain(e))}</p>
-      <p class="note">${e.ephClash
+      <p class="note">${e.noResolver
+        ? t('t.chain.noresolvernote', 'Nothing was signed and no gas was spent. A name you hold elsewhere — on production ENS, say — will not do: this is the hackathon deployment, and a name has to exist here and carry a resolver. The lane above lends you one that does.')
+        : e.ephClash
         ? t('t.s6.ephclashnote', 'Nothing was written, and nothing was lost. A name carries one ephemeral key for its whole life precisely so that this cannot happen by accident.')
         : e.bothShapesRefused
         ? t('t.s6.failboth', 'Both setText signatures were refused, and the two reasons are above. If the name is not yours, that is the system working. If it is yours, its resolver may be one this page does not know how to write to — tell us which resolver, and it can be added.')
