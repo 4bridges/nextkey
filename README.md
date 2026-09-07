@@ -19,11 +19,13 @@ product.
 
 ## What it does
 
-You place a secret: a seed phrase, a private key, a credential, a document. Then you decide two things — who may open it, and under what conditions. Both are enforced by the protocol, not by our servers and not by anyone's goodwill.
+You place a secret: a seed phrase, an API credential, a private message. Then you decide two things — who may open it, and under what conditions. Both are enforced by the protocol, not by our servers and not by anyone's goodwill.
 
 **Who may open it** is answered by cryptography, addressed through ENSv2. Sharing a secret with `anna.eth` wraps its key to the X25519 public key Anna publishes in her own ENS records — you share with a name, not with `0x7f3a…`, and Anna never registers with us. ENSv2 enforces the other half: who may write that grant, revoke it, or delegate the right to. That is state in a registry you own, not a row in our database.
 
-**Under what conditions** is answered inside a trusted execution environment. A release agent can propose but never act alone; the condition itself — a guardian quorum, a time lock, prolonged inactivity — is evaluated inside a Chainlink CRE Confidential Workflow, so the secret never passes a node anyone can inspect.
+Three independent runs are already on Sepolia, with transaction hashes in [`evidence/v2-onchain.log`](./evidence/v2-onchain.log): a grant written from a phone with no wallet; one written in a browser on a name outside our own registry and opened from a command line by a key that was never in that browser; and a recovery in which two unrelated signer implementations, MetaMask and viem, reconstructed the same 32 bytes and the chain agreed.
+
+**Under what conditions** is answered inside a trusted execution environment. A release agent can propose but never act alone. The condition — a guardian quorum, a time lock, prolonged inactivity — is evaluated in a Chainlink CRE Confidential Workflow on AWS Nitro, and the verdict carries the hash of the on-chain request it judged, so anyone can recompute it and see that the enclave decided *that* request and not a modified one. [`evidence/cre-decision.log`](./evidence/cre-decision.log) has a passing run; [`evidence/release-loop.log`](./evidence/release-loop.log) has one where the binding fails on purpose and the release refuses. What leaves the enclave is the verdict and a coarse reason — never how far a request stood from its threshold. Honest scope: the guardian approvals are fixtures. The request is real and on chain; the people around it are not yet.
 
 **Where your own key lives** is your decision alone. A file on your machine, or a Ledger — the difference is invisible to whoever shares with you, because what they read is a public key in your ENS record and nothing else. On a device, opening a secret costs a deliberate button press, so software running on your laptop cannot do it while you are away from it.
 

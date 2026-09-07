@@ -55,7 +55,9 @@ export const POOL_RESOLVER = '0x04B2DB6567Cc68d059c061215Adf9a99adD1cA65'
  * at random — at random rather than in order, so that two visitors arriving in
  * the same minute are unlikely to collide.
  *
- * Extend it with `demo-wallet.mjs series hero 40` and add the names here.
+ * Extend it with `demo-wallet.mjs series hero <n>`, then raise the length here.
+ * On chain and in this constant are two separate facts: a name nobody lists
+ * here is a name the page will never lend, however well registered it is.
  */
-export const POOL = Array.from({ length: 20 },
+export const POOL = Array.from({ length: 50 },
   (_, i) => `hero${String(i + 1).padStart(2, '0')}`)

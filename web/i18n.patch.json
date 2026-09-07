@@ -1,74 +1,83 @@
 {
-  "de": {
-    "t.chain.noresolver": "Dieser Name hat auf diesem Deployment keinen Resolver, es gibt also nichts, wohin geschrieben werden könnte. Entweder ist er hier nicht registriert, oder es wurde noch kein Resolver angehängt.",
-    "t.chain.noresolvernote": "Es wurde nichts signiert und kein Gas ausgegeben. Ein Name, den Sie anderswo halten — etwa auf dem produktiven ENS — genügt nicht: dies ist das Hackathon-Deployment, und ein Name muss hier existieren und einen Resolver tragen. Der Weg darüber leiht Ihnen einen, der das tut.",
-    "t.chain.notcontract": "Der Resolver, auf den dieser Name zeigt, enthält keinen Vertrag. Dorthin zu schreiben würde Gas kosten und nichts bewirken.",
-    "t.chain.primary": "sein primärer Name",
-    "t.chain.prefilled": "Unten eingetragen. Das ist der Name, auf den dieses Konto auf diesem Deployment hört — ändern Sie ihn, falls Sie einen anderen meinten.",
-    "t.chain.noprimary": "Für dieses Konto ist hier kein primärer Name gesetzt, das Feld unten lässt sich also nicht für Sie ausfüllen. Tragen Sie einen Namen ein, den Sie auf diesem Deployment halten. Alle Namen einer Adresse aufzuzählen braucht einen Indexer, den eine Seite aus statischen Dateien nicht hat."
-  },
-  "fr": {
-    "t.chain.noresolver": "Ce nom n'a pas de resolver sur ce déploiement : il n'y a donc nulle part où écrire. Soit il n'y est pas enregistré, soit aucun resolver ne lui est encore attaché.",
-    "t.chain.noresolvernote": "Rien n'a été signé et aucun gaz dépensé. Un nom que vous détenez ailleurs — sur l'ENS de production, par exemple — ne convient pas : ceci est le déploiement du hackathon, et un nom doit y exister et porter un resolver. La voie du dessus vous en prête un qui remplit ces conditions.",
-    "t.chain.notcontract": "Le resolver vers lequel pointe ce nom ne contient aucun contrat. Y écrire consommerait du gaz sans rien changer.",
-    "t.chain.primary": "son nom principal",
-    "t.chain.prefilled": "Rempli ci-dessous. C'est le nom auquel ce compte répond sur ce déploiement — changez-le si vous en visiez un autre.",
-    "t.chain.noprimary": "Aucun nom principal n'est défini ici pour ce compte, le champ ci-dessous ne peut donc pas être rempli pour vous. Saisissez un nom que vous détenez sur ce déploiement. Énumérer tous les noms d'une adresse demande un indexeur, dont une page servie en fichiers statiques ne dispose pas."
-  },
-  "es": {
-    "t.chain.noresolver": "Ese nombre no tiene resolver en este despliegue, así que no hay dónde escribir. O no está registrado aquí, o todavía no se le ha adjuntado un resolver.",
-    "t.chain.noresolvernote": "No se firmó nada ni se gastó gas. Un nombre que tenga en otro sitio — en el ENS de producción, por ejemplo — no sirve: esto es el despliegue del hackathon, y un nombre tiene que existir aquí y llevar un resolver. La vía de arriba le presta uno que sí lo cumple.",
-    "t.chain.notcontract": "El resolver al que apunta ese nombre no contiene ningún contrato. Escribir ahí gastaría gas y no cambiaría nada.",
-    "t.chain.primary": "su nombre principal",
-    "t.chain.prefilled": "Puesto abajo. Es el nombre al que responde esta cuenta en este despliegue — cámbielo si se refería a otro.",
-    "t.chain.noprimary": "Esta cuenta no tiene aquí un nombre principal, así que el campo de abajo no puede rellenarse por usted. Escriba un nombre que tenga en este despliegue. Enumerar todos los nombres de una dirección requiere un indexador, y una página servida como archivos estáticos no tiene ninguno."
-  },
-  "it": {
-    "t.chain.noresolver": "Questo nome non ha un resolver su questo deployment, quindi non c'è dove scrivere. O non è registrato qui, o non gli è ancora stato collegato un resolver.",
-    "t.chain.noresolvernote": "Non è stato firmato nulla e non è stato speso gas. Un nome che possiede altrove — sull'ENS di produzione, per esempio — non basta: questo è il deployment dell'hackathon, e un nome deve esistere qui e portare un resolver. La via qui sopra gliene presta uno che li ha.",
-    "t.chain.notcontract": "Il resolver a cui punta questo nome non contiene alcun contratto. Scriverci costerebbe gas senza cambiare nulla.",
-    "t.chain.primary": "il suo nome principale",
-    "t.chain.prefilled": "Inserito qui sotto. È il nome a cui questo account risponde su questo deployment — lo cambi se ne intendeva un altro.",
-    "t.chain.noprimary": "Per questo account non è impostato un nome principale qui, quindi il campo sotto non può essere compilato al posto suo. Scriva un nome che possiede su questo deployment. Elencare tutti i nomi di un indirizzo richiede un indicizzatore, che una pagina servita da file statici non ha."
-  },
-  "pt": {
-    "t.chain.noresolver": "Este nome não tem resolver neste deployment, portanto não há para onde escrever. Ou não está registado aqui, ou ainda não lhe foi ligado um resolver.",
-    "t.chain.noresolvernote": "Nada foi assinado e nenhum gás foi gasto. Um nome que tenha noutro lado — no ENS de produção, por exemplo — não serve: isto é o deployment do hackathon, e um nome tem de existir aqui e ter um resolver. A via acima empresta-lhe um que tem.",
-    "t.chain.notcontract": "O resolver para o qual este nome aponta não contém nenhum contrato. Escrever lá gastaria gás e não mudaria nada.",
-    "t.chain.primary": "o seu nome principal",
-    "t.chain.prefilled": "Preenchido abaixo. É o nome a que esta conta responde neste deployment — mude-o se queria outro.",
-    "t.chain.noprimary": "Esta conta não tem aqui um nome principal, por isso o campo abaixo não pode ser preenchido por si. Escreva um nome que detenha neste deployment. Enumerar todos os nomes de um endereço exige um indexador, que uma página servida a partir de ficheiros estáticos não tem."
-  },
-  "ru": {
-    "t.chain.noresolver": "У этого имени нет резолвера в этом развёртывании, значит, писать некуда. Либо оно здесь не зарегистрировано, либо резолвер к нему ещё не прикреплён.",
-    "t.chain.noresolvernote": "Ничего не подписано и газ не потрачен. Имя, которым вы владеете в другом месте — скажем, в продакшн-ENS — не подойдёт: это развёртывание хакатона, и имя должно существовать здесь и нести резолвер. Путь выше одалживает вам такое.",
-    "t.chain.notcontract": "Резолвер, на который указывает это имя, не содержит контракта. Запись туда потратила бы газ и ничего не изменила.",
-    "t.chain.primary": "его основное имя",
-    "t.chain.prefilled": "Подставлено ниже. Это имя, на которое отзывается этот счёт в данном развёртывании — измените, если имели в виду другое.",
-    "t.chain.noprimary": "Для этого счёта здесь не задано основное имя, поэтому поле ниже нельзя заполнить за вас. Введите имя, которым вы владеете в этом развёртывании. Перечислить все имена адреса можно только через индексатор, а у страницы из статических файлов его нет."
-  },
-  "ua": {
-    "t.chain.noresolver": "У цього імені немає резолвера в цьому розгортанні, тож писати нікуди. Або воно тут не зареєстроване, або резолвер до нього ще не приєднано.",
-    "t.chain.noresolvernote": "Нічого не підписано і газу не витрачено. Ім'я, яким ви володієте деінде — скажімо, у продакшн-ENS — не підійде: це розгортання хакатону, і ім'я має існувати тут та нести резолвер. Шлях вище позичає вам таке.",
-    "t.chain.notcontract": "Резолвер, на який вказує це ім'я, не містить контракту. Запис туди витратив би газ і нічого не змінив.",
-    "t.chain.primary": "його основне ім'я",
-    "t.chain.prefilled": "Підставлено нижче. Це ім'я, на яке відгукується цей рахунок у цьому розгортанні — змініть, якщо мали на увазі інше.",
-    "t.chain.noprimary": "Для цього рахунку тут не задано основного імені, тож поле нижче не можна заповнити за вас. Введіть ім'я, яким ви володієте в цьому розгортанні. Перелічити всі імена адреси можна лише через індексатор, а сторінка зі статичних файлів його не має."
-  },
   "cn": {
+    "how.1p": "一段助记词、一份 API 凭据、一条私密消息。它在离开之前就已加密，而加密所用的密钥从不离开你的机器。",
+    "t.chain.noprimary": "该账户在这里没有设置主名称，因此下面的字段无法替您填写。请输入一个您在本部署上持有的名字。要列出一个地址拥有的全部名字需要索引器，而由静态文件提供的页面没有索引器。",
     "t.chain.noresolver": "这个名字在本部署上没有 resolver，因此无处可写。要么它没有在这里注册，要么还没有给它挂上 resolver。",
     "t.chain.noresolvernote": "没有签署任何东西，也没有花费燃料费。您在别处持有的名字——比如在生产环境的 ENS 上——不算数：这里是黑客松部署，名字必须在这里存在并带有 resolver。上面那条路会借您一个符合条件的。",
     "t.chain.notcontract": "这个名字所指向的 resolver 里没有合约。往那里写会花掉燃料费，什么也不会改变。",
-    "t.chain.primary": "它的主名称",
     "t.chain.prefilled": "已填入下方。这是该账户在本部署上所对应的名字——若您指的是别的，请改掉。",
-    "t.chain.noprimary": "该账户在这里没有设置主名称，因此下面的字段无法替您填写。请输入一个您在本部署上持有的名字。要列出一个地址拥有的全部名字需要索引器，而由静态文件提供的页面没有索引器。"
+    "t.chain.primary": "它的主名称"
+  },
+  "de": {
+    "how.1p": "Eine Seed Phrase, ein API-Zugang, eine private Nachricht. Es wird verschlüsselt, bevor es irgendwohin geht, mit einem Schlüssel, der deinen Rechner nie verlässt.",
+    "t.chain.noprimary": "Für dieses Konto ist hier kein primärer Name gesetzt, das Feld unten lässt sich also nicht für Sie ausfüllen. Tragen Sie einen Namen ein, den Sie auf diesem Deployment halten. Alle Namen einer Adresse aufzuzählen braucht einen Indexer, den eine Seite aus statischen Dateien nicht hat.",
+    "t.chain.noresolver": "Dieser Name hat auf diesem Deployment keinen Resolver, es gibt also nichts, wohin geschrieben werden könnte. Entweder ist er hier nicht registriert, oder es wurde noch kein Resolver angehängt.",
+    "t.chain.noresolvernote": "Es wurde nichts signiert und kein Gas ausgegeben. Ein Name, den Sie anderswo halten — etwa auf dem produktiven ENS — genügt nicht: dies ist das Hackathon-Deployment, und ein Name muss hier existieren und einen Resolver tragen. Der Weg darüber leiht Ihnen einen, der das tut.",
+    "t.chain.notcontract": "Der Resolver, auf den dieser Name zeigt, enthält keinen Vertrag. Dorthin zu schreiben würde Gas kosten und nichts bewirken.",
+    "t.chain.prefilled": "Unten eingetragen. Das ist der Name, auf den dieses Konto auf diesem Deployment hört — ändern Sie ihn, falls Sie einen anderen meinten.",
+    "t.chain.primary": "sein primärer Name"
+  },
+  "es": {
+    "how.1p": "Una frase semilla, una credencial de API, un mensaje privado. Se cifra antes de ir a ninguna parte, con una clave que nunca sale de tu equipo.",
+    "t.chain.noprimary": "Esta cuenta no tiene aquí un nombre principal, así que el campo de abajo no puede rellenarse por usted. Escriba un nombre que tenga en este despliegue. Enumerar todos los nombres de una dirección requiere un indexador, y una página servida como archivos estáticos no tiene ninguno.",
+    "t.chain.noresolver": "Ese nombre no tiene resolver en este despliegue, así que no hay dónde escribir. O no está registrado aquí, o todavía no se le ha adjuntado un resolver.",
+    "t.chain.noresolvernote": "No se firmó nada ni se gastó gas. Un nombre que tenga en otro sitio — en el ENS de producción, por ejemplo — no sirve: esto es el despliegue del hackathon, y un nombre tiene que existir aquí y llevar un resolver. La vía de arriba le presta uno que sí lo cumple.",
+    "t.chain.notcontract": "El resolver al que apunta ese nombre no contiene ningún contrato. Escribir ahí gastaría gas y no cambiaría nada.",
+    "t.chain.prefilled": "Puesto abajo. Es el nombre al que responde esta cuenta en este despliegue — cámbielo si se refería a otro.",
+    "t.chain.primary": "su nombre principal"
   },
   "fa": {
+    "how.1p": "یک عبارت بازیابی، یک اعتبارنامهٔ API، یک پیام خصوصی. پیش از آنکه به جایی برود رمزگذاری می‌شود، با کلیدی که هرگز از دستگاه شما بیرون نمی‌رود.",
+    "t.chain.noprimary": "برای این حساب اینجا نام اصلی تعیین نشده است، پس فیلد پایین را نمی‌توان برایتان پر کرد. نامی را بنویسید که روی این استقرار در اختیار دارید. فهرست‌کردن همهٔ نام‌های یک نشانی به نمایه‌ساز نیاز دارد و صفحه‌ای که از فایل‌های ایستا سرو می‌شود چنین چیزی ندارد.",
     "t.chain.noresolver": "این نام روی این استقرار هیچ resolver ندارد، پس جایی برای نوشتن نیست. یا اینجا ثبت نشده، یا هنوز resolver ای به آن وصل نشده است.",
     "t.chain.noresolvernote": "چیزی امضا نشد و گسی خرج نشد. نامی که جای دیگری دارید — مثلاً روی ENS تولیدی — کافی نیست: اینجا استقرار هکاتون است و نام باید همین‌جا وجود داشته باشد و resolver داشته باشد. راه بالا یکی از همان‌ها را به شما قرض می‌دهد.",
     "t.chain.notcontract": "resolver ای که این نام به آن اشاره می‌کند هیچ قراردادی ندارد. نوشتن در آن گس می‌برد و چیزی را تغییر نمی‌دهد.",
-    "t.chain.primary": "نام اصلی‌اش",
     "t.chain.prefilled": "پایین وارد شد. این نامی است که این حساب روی این استقرار به آن پاسخ می‌دهد — اگر نام دیگری در نظر داشتید، تغییرش دهید.",
-    "t.chain.noprimary": "برای این حساب اینجا نام اصلی تعیین نشده است، پس فیلد پایین را نمی‌توان برایتان پر کرد. نامی را بنویسید که روی این استقرار در اختیار دارید. فهرست‌کردن همهٔ نام‌های یک نشانی به نمایه‌ساز نیاز دارد و صفحه‌ای که از فایل‌های ایستا سرو می‌شود چنین چیزی ندارد."
+    "t.chain.primary": "نام اصلی‌اش"
+  },
+  "fr": {
+    "how.1p": "Une phrase de récupération, un identifiant d'API, un message privé. Il est chiffré avant de partir où que ce soit, avec une clé qui ne quitte jamais votre machine.",
+    "t.chain.noprimary": "Aucun nom principal n'est défini ici pour ce compte, le champ ci-dessous ne peut donc pas être rempli pour vous. Saisissez un nom que vous détenez sur ce déploiement. Énumérer tous les noms d'une adresse demande un indexeur, dont une page servie en fichiers statiques ne dispose pas.",
+    "t.chain.noresolver": "Ce nom n'a pas de resolver sur ce déploiement : il n'y a donc nulle part où écrire. Soit il n'y est pas enregistré, soit aucun resolver ne lui est encore attaché.",
+    "t.chain.noresolvernote": "Rien n'a été signé et aucun gaz dépensé. Un nom que vous détenez ailleurs — sur l'ENS de production, par exemple — ne convient pas : ceci est le déploiement du hackathon, et un nom doit y exister et porter un resolver. La voie du dessus vous en prête un qui remplit ces conditions.",
+    "t.chain.notcontract": "Le resolver vers lequel pointe ce nom ne contient aucun contrat. Y écrire consommerait du gaz sans rien changer.",
+    "t.chain.prefilled": "Rempli ci-dessous. C'est le nom auquel ce compte répond sur ce déploiement — changez-le si vous en visiez un autre.",
+    "t.chain.primary": "son nom principal"
+  },
+  "it": {
+    "how.1p": "Una seed phrase, una credenziale API, un messaggio privato. Viene cifrato prima di andare ovunque, con una chiave che non lascia mai la tua macchina.",
+    "t.chain.noprimary": "Per questo account non è impostato un nome principale qui, quindi il campo sotto non può essere compilato al posto suo. Scriva un nome che possiede su questo deployment. Elencare tutti i nomi di un indirizzo richiede un indicizzatore, che una pagina servita da file statici non ha.",
+    "t.chain.noresolver": "Questo nome non ha un resolver su questo deployment, quindi non c'è dove scrivere. O non è registrato qui, o non gli è ancora stato collegato un resolver.",
+    "t.chain.noresolvernote": "Non è stato firmato nulla e non è stato speso gas. Un nome che possiede altrove — sull'ENS di produzione, per esempio — non basta: questo è il deployment dell'hackathon, e un nome deve esistere qui e portare un resolver. La via qui sopra gliene presta uno che li ha.",
+    "t.chain.notcontract": "Il resolver a cui punta questo nome non contiene alcun contratto. Scriverci costerebbe gas senza cambiare nulla.",
+    "t.chain.prefilled": "Inserito qui sotto. È il nome a cui questo account risponde su questo deployment — lo cambi se ne intendeva un altro.",
+    "t.chain.primary": "il suo nome principale"
+  },
+  "pt": {
+    "how.1p": "Uma frase semente, uma credencial de API, uma mensagem privada. É cifrada antes de ir a qualquer lugar, com uma chave que nunca sai da sua máquina.",
+    "t.chain.noprimary": "Esta conta não tem aqui um nome principal, por isso o campo abaixo não pode ser preenchido por si. Escreva um nome que detenha neste deployment. Enumerar todos os nomes de um endereço exige um indexador, que uma página servida a partir de ficheiros estáticos não tem.",
+    "t.chain.noresolver": "Este nome não tem resolver neste deployment, portanto não há para onde escrever. Ou não está registado aqui, ou ainda não lhe foi ligado um resolver.",
+    "t.chain.noresolvernote": "Nada foi assinado e nenhum gás foi gasto. Um nome que tenha noutro lado — no ENS de produção, por exemplo — não serve: isto é o deployment do hackathon, e um nome tem de existir aqui e ter um resolver. A via acima empresta-lhe um que tem.",
+    "t.chain.notcontract": "O resolver para o qual este nome aponta não contém nenhum contrato. Escrever lá gastaria gás e não mudaria nada.",
+    "t.chain.prefilled": "Preenchido abaixo. É o nome a que esta conta responde neste deployment — mude-o se queria outro.",
+    "t.chain.primary": "o seu nome principal"
+  },
+  "ru": {
+    "how.1p": "Seed-фраза, ключ доступа к API, личное сообщение. Секрет шифруется ещё до того, как куда-либо отправится, ключом, который никогда не покидает вашу машину.",
+    "t.chain.noprimary": "Для этого счёта здесь не задано основное имя, поэтому поле ниже нельзя заполнить за вас. Введите имя, которым вы владеете в этом развёртывании. Перечислить все имена адреса можно только через индексатор, а у страницы из статических файлов его нет.",
+    "t.chain.noresolver": "У этого имени нет резолвера в этом развёртывании, значит, писать некуда. Либо оно здесь не зарегистрировано, либо резолвер к нему ещё не прикреплён.",
+    "t.chain.noresolvernote": "Ничего не подписано и газ не потрачен. Имя, которым вы владеете в другом месте — скажем, в продакшн-ENS — не подойдёт: это развёртывание хакатона, и имя должно существовать здесь и нести резолвер. Путь выше одалживает вам такое.",
+    "t.chain.notcontract": "Резолвер, на который указывает это имя, не содержит контракта. Запись туда потратила бы газ и ничего не изменила.",
+    "t.chain.prefilled": "Подставлено ниже. Это имя, на которое отзывается этот счёт в данном развёртывании — измените, если имели в виду другое.",
+    "t.chain.primary": "его основное имя"
+  },
+  "ua": {
+    "how.1p": "Сід-фраза, ключ доступу до API, приватне повідомлення. Секрет шифрується ще до того, як кудись піде, ключем, який ніколи не залишає ваш комп'ютер.",
+    "t.chain.noprimary": "Для цього рахунку тут не задано основного імені, тож поле нижче не можна заповнити за вас. Введіть ім'я, яким ви володієте в цьому розгортанні. Перелічити всі імена адреси можна лише через індексатор, а сторінка зі статичних файлів його не має.",
+    "t.chain.noresolver": "У цього імені немає резолвера в цьому розгортанні, тож писати нікуди. Або воно тут не зареєстроване, або резолвер до нього ще не приєднано.",
+    "t.chain.noresolvernote": "Нічого не підписано і газу не витрачено. Ім'я, яким ви володієте деінде — скажімо, у продакшн-ENS — не підійде: це розгортання хакатону, і ім'я має існувати тут та нести резолвер. Шлях вище позичає вам таке.",
+    "t.chain.notcontract": "Резолвер, на який вказує це ім'я, не містить контракту. Запис туди витратив би газ і нічого не змінив.",
+    "t.chain.prefilled": "Підставлено нижче. Це ім'я, на яке відгукується цей рахунок у цьому розгортанні — змініть, якщо мали на увазі інше.",
+    "t.chain.primary": "його основне ім'я"
   }
 }

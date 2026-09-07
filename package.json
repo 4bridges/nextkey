@@ -1,7 +1,7 @@
 {
   "name": "nextkey",
   "version": "1.0.0",
-  "description": "Hand over secrets by ENS name, released by rules, recovered by proof of humanness.",
+  "description": "Hand over secrets by ENS name, released by rules an enclave evaluates, opened only by the person you named.",
   "directories": {
     "doc": "docs"
   },
