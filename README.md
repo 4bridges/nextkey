@@ -11,7 +11,30 @@ ether, on a phone if you like: we lend you a name and pay the gas. If you hold a
 deployment yourself, the same step writes it under *your* name with *your* wallet, which is the real
 product.
 
-> **Repository note.** This repository was initialized on 3 September 2026 with scaffolding only (README stub, `.gitignore`, MIT license). All project work begins at the official ETHOnline 2026 kickoff on 4 September 2026 — see the commit history. No code, designs or assets predate the kickoff.
+> **Repository note — please read this before the automated check does.** The
+> first commit predates the ETHOnline 2026 kickoff by one day, and ETHGlobal's
+> repository check flags it. Here is exactly what it contains, so the flag can be
+> resolved by looking rather than by trusting:
+>
+> ```
+> git show --stat cffa0fbe52452b517320192564d4ee3696ead008
+> ```
+>
+> `cffa0fbe`, 3 September 2026 11:54:50 +0200 — **two files, 164 lines: GitHub's
+> Node `.gitignore` template and the MIT licence.** No README, no source, no
+> assets, nothing about this project. It is the repository GitHub creates when you
+> tick two boxes.
+>
+> The next commit is 4 September 2026 21:53, after the kickoff, and everything
+> after it is the project. The rules permit boilerplate; this is boilerplate in
+> the most literal sense, and rewriting the history to hide a day would have been
+> both dishonest and worse evidence than leaving it in place.
+>
+> Planning artifacts from 2 and 3 September exist and are dated — they are prose:
+> rules research, sponsor track comparison, positioning. They are in
+> [`docs/planning/`](./docs/planning) and disclosed in
+> [`AI_USAGE.md`](./AI_USAGE.md) rather than tucked away. No code, designs or
+> assets predate the kickoff.
 
 > **Status: prototype.** Built during ETHGlobal ETHOnline 2026, running against the ENSv2 beta on **Sepolia testnet**. Not audited. Do not put a seed phrase you actually rely on into it.
 
