@@ -33,8 +33,13 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const WEB = join(ROOT, 'web')
 const STAMP = join(WEB, 'i18n.stamp.json')
 
-const PAGES = ['index.html', 'poc.html', 'demo.html']
-const SOURCES = ['src/app.js', 'src/demo.js']
+// Every page that carries translatable text, and every bundle that builds a
+// string after a button is pressed. Two pages were missing here for a day:
+// blog.html and explorer.html shipped with their whole vocabulary outside the
+// check, so nine languages fell back to English and nothing went red. A
+// checker that does not know about a file cannot report it.
+const PAGES = ['index.html', 'poc.html', 'demo.html', 'blog.html', 'explorer.html']
+const SOURCES = ['src/app.js', 'src/demo.js', 'src/blog.js', 'src/explorer.js']
 
 const digest = (s) => createHash('sha256').update(s).digest('hex').slice(0, 12)
 
