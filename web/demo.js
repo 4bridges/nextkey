@@ -20584,7 +20584,7 @@ zurdo`.split(`
       <dt>${_("t.chain.name","the name")}</dt><dd class="mono break">${W(t)}</dd>
       ${r.map(([i,s])=>`
       <dt class="mono">${W(i)}</dt>
-      <dd class="mono break"><a href="https://sepolia.etherscan.io/tx/${W(s)}" rel="noopener">${W(rf(s,26))}</a></dd>`).join("")}
+      <dd class="mono break"><a href="https://sepolia.etherscan.io/tx/${W(s)}" target="_blank" rel="noopener noreferrer">${W(rf(s,26))}</a></dd>`).join("")}
     </dl>
     <p class="note"><a href="./explorer.html?name=${encodeURIComponent(t)}">${_("t.s6.explorer","See what this name now carries")}</a></p>
     ${Jt(_("t.why","Why this matters"),`
@@ -20619,8 +20619,8 @@ zurdo`.split(`
       <p>${_("t.chain.nogas","That account holds no Sepolia ether, so it cannot pay for a write.")}</p>
       <p class="note">${_("t.chain.nogasnote","A faucet will give you some \u2014 you need only a fraction of one. Or use the lane above, which pays for itself.")}</p>
       <p class="note">
-        <a href="https://cloud.google.com/application/web3/faucet/ethereum/sepolia" rel="noopener">Google Cloud</a> \xB7
-        <a href="https://faucet.quicknode.com/ethereum/sepolia" rel="noopener">QuickNode</a>
+        <a href="https://cloud.google.com/application/web3/faucet/ethereum/sepolia" target="_blank" rel="noopener noreferrer">Google Cloud</a> \xB7
+        <a href="https://faucet.quicknode.com/ethereum/sepolia" target="_blank" rel="noopener noreferrer">QuickNode</a>
       </p>`:""}`),G("publish").disabled=!!ce}catch(t){X(Bc,"bad",`<p>${W(xr(t))}</p>`)}}G("publish").addEventListener("click",async()=>{if(an)return;let e=G("own-name").value.trim().toLowerCase();if(!e)return X(aa,"bad",`<p>${_("t.s6.needname","Enter a name you own.")}</p>`);if(!D.sealed)return X(aa,"bad",`
     <p>${_("t.s6.needsecret","Do steps 1 to 3 first \u2014 there is nothing to write yet.")}</p>`);an=!0,G("publish").disabled=!0;try{X(aa,"busy",`<p>${_("t.s6.finding","Finding the resolver for that name\u2026")}</p>`);let t;try{t=await Me.getEnsResolver({name:e})}catch{}if(!t||/^0x0+$/i.test(t)){let l=new Error(_("t.chain.noresolver","That name has no resolver on this deployment, so there is nowhere to write. Either it is not registered here, or it has no resolver attached yet."));throw l.noResolver=!0,l}let r=await Me.getBytecode({address:t});if(!r||r==="0x"){let l=new Error(_("t.chain.notcontract","The resolver this name points at holds no contract. Writing there would consume gas and change nothing."));throw l.noResolver=!0,l}X(aa,"busy",`<p>${_("t.s6.deriving","Sign the derivation message \u2014 it is not a transaction and moves nothing\u2026")}</p>`);let{records:o,moved:n}=await U8(e,l=>kc.signMessage({account:w0,message:l})),a=await Me.getEnsText({name:e,key:nn});if(a&&a!==o[0][1]){let l=new Error(_("t.s6.ephclash","This name already publishes a different nextkey.eph. Overwriting it would move every grant on the name to a new address and leave the existing ones unreadable, so nothing was written. Use another name."));throw l.ephClash=!0,l}let i=a?o.slice(1):o;X(aa,"busy",`<p>${_("t.s6.simulating","Checking the write would succeed, before asking you to sign\u2026")}</p>`);let s=null,c=[];for(let l of j8)try{await Me.simulateContract({address:t,abi:l.abi,functionName:"setText",args:[l.arg(e),...i[0]],account:w0}),s=l;break}catch(d){c.push(`setText(${l.id}): ${xr(d)}`)}if(!s){let l=new Error(c.join("  \xB7  "));throw l.bothShapesRefused=!0,l}let u=s.arg(e);for(let l of i.slice(1))await Me.simulateContract({address:t,abi:s.abi,functionName:"setText",args:[u,...l],account:w0});let f=[];for(let[l,d]of i){X(aa,"busy",`<p>${_("t.s6.signing","Approve in your wallet \u2014")} <span class="mono">${W(l)}</span></p>`);let p=await kc.writeContract({address:t,abi:s.abi,functionName:"setText",args:[u,l,d],chain:vt});f.push([l,p]),await Me.waitForTransactionReceipt({hash:p})}ce={name:e,via:"wallet",resolver:t,node:u,abi:s.abi},G("publish").disabled=!0,q8(aa,e,f,n,`
       <p>${_("t.s6.donenote","Nothing about those records mentions NextKey as a service, and no server of ours knows they exist. The recipient can open them with the command-line tool; we could not, and neither could anyone who takes this site down.")}</p>`)}catch(t){X(aa,"bad",`
@@ -20655,7 +20655,7 @@ zurdo`.split(`
       <p class="found">\u2713 ${_("t.ack.sent","Receipt written.")}</p>
       <dl>
         <dt class="mono">${W(t)}</dt>
-        <dd class="mono break"><a href="https://sepolia.etherscan.io/tx/${W(n)}" rel="noopener">${W(rf(n,26))}</a></dd>
+        <dd class="mono break"><a href="https://sepolia.etherscan.io/tx/${W(n)}" target="_blank" rel="noopener noreferrer">${W(rf(n,26))}</a></dd>
       </dl>
       ${Jt(_("t.why","Why this matters, and what it costs"),`
         <p>${_("t.ack.note","That address comes out of the same shared secret as the grant, under a different derivation. The sender can compute it without being told, and nobody else can compute it at all \u2014 so the receipt is delivered by being findable rather than by being sent.")}</p>
@@ -20688,7 +20688,7 @@ zurdo`.split(`
       <dl>
         ${D.extra.map(i=>`
         <dt class="mono break">${W(i.record)}</dt>
-        <dd class="mono break"><a href="https://sepolia.etherscan.io/tx/${W(i.tx)}" rel="noopener">${W(rf(i.tx,26))}</a></dd>`).join("")}
+        <dd class="mono break"><a href="https://sepolia.etherscan.io/tx/${W(i.tx)}" target="_blank" rel="noopener noreferrer">${W(rf(i.tx,26))}</a></dd>`).join("")}
       </dl>
       <p class="note">${_("t.s7.short","One more record on the same name. The ciphertext and the ephemeral key were not touched.")}</p>
       ${Jt(_("t.why","Why this matters"),`
@@ -20698,7 +20698,7 @@ zurdo`.split(`
       <p class="found">\u2713 ${_("t.s5.done","The grant record is empty.")}</p>
       <dl>
         <dt class="mono">${W(D.grantKey)}</dt>
-        <dd class="mono break"><a href="https://sepolia.etherscan.io/tx/${W(r)}" rel="noopener">${W(rf(r,26))}</a></dd>
+        <dd class="mono break"><a href="https://sepolia.etherscan.io/tx/${W(r)}" target="_blank" rel="noopener noreferrer">${W(rf(r,26))}</a></dd>
       </dl>
       <p class="note">${_("t.s5.short","The ciphertext is untouched; the wrapped key is gone. Check the inbox again.")}</p>
       ${D.extra.length?`<p class="note">${_("t.s5.others","The other grants on this name are untouched and still open. Only the record above was emptied.")}</p>`:""}

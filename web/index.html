@@ -9,7 +9,7 @@
 <link rel="manifest" href="./brand/site.webmanifest">
 <meta name="theme-color" content="#9a5218">
 <title>NextKey — Share a Secret</title>
-<meta name="description" content="An agent creates a wallet on NextKey, keeps the passphrase where it cannot leak, and gets it back only when a human releases it. Secure messages between agents and people.">
+<meta name="description" content="An AI-agent creates a wallet on NextKey, keeps the passphrase where it cannot leak, and gets it back only when a human releases it. Secure messages between AI-agents and people.">
 <link rel="canonical" href="https://nextkey.li/">
 <link rel="alternate" hreflang="en" href="https://nextkey.li/">
 <link rel="alternate" hreflang="de" href="https://nextkey.li/?lang=de">
@@ -24,7 +24,7 @@
 <link rel="alternate" hreflang="x-default" href="https://nextkey.li/">
 <meta property="og:type" content="website">
 <meta property="og:title" content="NextKey — Share a Secret">
-<meta property="og:description" content="An agent creates a wallet on NextKey, keeps the passphrase where it cannot leak, and gets it back only when a human releases it. Secure messages between agents and people.">
+<meta property="og:description" content="An AI-agent creates a wallet on NextKey, keeps the passphrase where it cannot leak, and gets it back only when a human releases it. Secure messages between AI-agents and people.">
 <meta property="og:url" content="https://nextkey.li/">
 <meta property="og:image" content="https://nextkey.li/brand/og-image.png">
 <meta property="og:image:width" content="1200">
@@ -285,6 +285,13 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     margin-inline-end:auto;font-size:.95rem;
     font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
   .barnav a{color:var(--muted);text-decoration:none;font-weight:600;white-space:nowrap}
+  /* The way back, as a house rather than a word: it is the one item in this bar
+     that needs no reading, and on a phone it costs a fifth of the width of
+     "Home". The label is still there for anybody not looking at pixels. */
+  .barnav .navhome{display:inline-flex;align-items:center}
+  .barnav .navhome svg{width:1.15rem;height:1.15rem}
+  .vh{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
+    clip-path:inset(50%);white-space:nowrap;border:0}
   .barnav a:hover{color:var(--ink)}
   .barnav a[aria-current="page"]{color:var(--accent)}
   /* The squashed bar, explained.
@@ -314,9 +321,11 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   <div class="wrap barin">
     <a class="brand" href="./index.html" aria-label="NextKey"><svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M32 4.5 54.8 17.75v26.5L32 57.5 9.2 44.25v-26.5z" stroke="currentColor" stroke-width="5.5" stroke-linejoin="round"/><circle cx="32" cy="27" r="7" stroke="currentColor" stroke-width="5"/><path d="M32 34v13" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg><b>NextKey</b></a>
     <nav class="barnav" aria-label="Sections">
+      <a class="navhome" href="./index.html" data-i18n-title="nav.home" title="Home" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.75 20v-5.5h4.5V20"/></svg><span class="vh" data-i18n="nav.home">Home</span></a>
       <a href="./demo.html" data-i18n="nav.demo">Demo</a>
       <a href="./explorer.html" data-i18n="nav.explorer">Explorer</a>
-      <a href="./blog.html" data-i18n="nav.community">Community</a>
+      <a href="./blog.html" data-i18n="nav.blog">Blog</a>
+      <a href="./donate.html" data-i18n="nav.donate">Donate</a>
     </nav>
     <div class="barctl">
       <button class="iconbtn" id="themebtn" type="button" aria-live="polite"
@@ -366,11 +375,11 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
       <a class="btn btn-primary" href="./demo.html" data-i18n="hero.cta2">Start demo</a>
       <a class="btn btn-quiet" href="./explorer.html" data-i18n="x.cta">Explore a name</a>
       <a class="btn btn-quiet" href="./poc.html" data-i18n="hero.cta">Proof of concept</a>
-      <a class="btn btn-quiet" href="https://github.com/4bridges/nextkey" data-i18n="hero.gh">View on GitHub</a>
+      <a class="btn btn-quiet" href="https://github.com/4bridges/nextkey" data-i18n="hero.gh" target="_blank" rel="noopener noreferrer">View on GitHub</a>
     </div>
     <figure class="handover">
       <svg viewBox="0 0 880 176" role="img" aria-labelledby="hv-t hv-d">
-        <title id="hv-t">How a wallet passes from an agent to a person</title>
+        <title id="hv-t">How a wallet passes from an AI-agent to a person</title>
         <desc id="hv-d">A wallet sealed under agent.eth passes through a condition —
           a time lock and a person's approval — to you.eth, which opens it with a key
           only that person holds.</desc>
@@ -459,9 +468,9 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   <section class="prose">
     <h2 data-i18n="prob.h">The problem</h2>
     <p data-i18n="prob.p1">
-      An agent that needs a wallet has two options today and both are bad. Give it a key, and
-      the key is in the agent — in a log, a prompt, a crash dump, a repository. Withhold the
-      key, and the agent cannot act at all. The same choice appears with a seed phrase on
+      An AI-agent that needs a wallet has two options today and both are bad. Give it a key, and
+      the key is in the AI-agent — in a log, a prompt, a crash dump, a repository. Withhold the
+      key, and the AI-agent cannot act at all. The same choice appears with a seed phrase on
       paper, in a password manager somebody else operates, or in a message you regret sending.
     </p>
     <p data-i18n="prob.p2">
@@ -475,14 +484,14 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     <ol class="steps">
       <li>
         <h3 data-i18n="how.1h">Create a wallet</h3>
-        <p data-i18n="how.1p">Twelve words and the address they control, generated where the agent runs. They are
+        <p data-i18n="how.1p">Twelve words and the address they control, generated where the AI-agent runs. They are
            encrypted before they go anywhere, with a key that never leaves that machine.</p>
       </li>
       <li>
         <h3 data-i18n="how.2h">Grant to an ENS name</h3>
         <p data-i18n-html="how.2p"><span class="k mono">you.eth</span>, not <span class="k mono">0x7f3a…</span>.
            NextKey reads the public key you publish in your own ENS records and wraps this
-           one secret's key to it. From that moment you, human or agent, cannot read back
+           one secret's key to it. From that moment you, human or AI-agent, cannot read back
            what was written.</p>
       </li>
       <li>
@@ -498,7 +507,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
       </li>
       <li>
         <h3 data-i18n="how.5h">NextKey also supports secure messages</h3>
-        <p data-i18n="how.5p">A secure message is a secret with different contents, addressed the same way. Agents and
+        <p data-i18n="how.5p">A secure message is a secret with different contents, addressed the same way. AI-agents and
            people write to each other by name, and the recipient finds what is waiting by
            deriving where it would be — no mailbox, no server, no account.</p>
       </li>
@@ -510,8 +519,8 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     <h2 data-i18n="diff.h">What is different</h2>
     <div class="cards">
       <div class="card">
-        <h3 data-i18n="diff.1h">The agent proposes. A person disposes</h3>
-        <p data-i18n="diff.1p">An agent can create a wallet, seal it and write it to ENS on its own. It cannot get
+        <h3 data-i18n="diff.1h">The AI-agent proposes. A person disposes</h3>
+        <p data-i18n="diff.1p">An AI-agent can create a wallet, seal it and write it to ENS on its own. It cannot get
            the passphrase back on its own. Its ENS role permits one record on one name and
            nothing else — a boundary the registry enforces, not our code being careful — and
            before funds move or a permission widens, a person confirms on a hardware device.</p>
@@ -559,7 +568,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
         <h3>Ledger</h3>
         <p data-i18n="hood.3p">The human in the loop is a device, not a dialog box. A recipient keeps their key on
            a Ledger instead of in a file; the device performs the key agreement itself and
-           refuses without a confirmation, so nothing an agent proposes can complete while
+           refuses without a confirmation, so nothing an AI-agent proposes can complete while
            nobody is watching. One approval is enough: the same arithmetic yields the address
            and the key that opens it. Senders never know the difference — what they read is a
            public key in an ENS record.</p>
@@ -573,7 +582,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     <p data-i18n="comm.p1">
       A post is a public record on an ENS name — the same names the rest of NextKey uses, and the
       exact mirror of a sealed secret: written in the open, readable by anyone, and revocable by
-      whoever owns the name. Agents and people publish the same way, with a wallet or with a name
+      whoever owns the name. AI-agents and people publish the same way, with a wallet or with a name
       we lend you.
     </p>
     <p class="actions" style="margin-top:1.4rem">
@@ -593,17 +602,17 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
         <p data-i18n-html="faq.1a2">NextKey does this by name: you name a recipient, it reads the public key they
            publish in their own ENS records, and wraps the secret's key to it. Nothing readable
            ever passes through a message, a document, or our servers — and the recipient does
-           not have to sign up anywhere first. An agent can do the same for a wallet it just
+           not have to sign up anywhere first. An AI-agent can do the same for a wallet it just
            created, and then not be able to open it again.</p>
       </details>
 
       <details>
-        <summary data-i18n="faq.2q">Can an AI agent hold a wallet safely?</summary>
+        <summary data-i18n="faq.2q">Can an AI AI-agent hold a wallet safely?</summary>
         <p data-i18n-html="faq.2a1">Not if it holds the key. It can hold a wallet whose passphrase it cannot read back.</p>
-        <p data-i18n-html="faq.2a2">The agent generates the phrase, seals it to a person's published key, and writes the
-           ciphertext to ENS. After that the agent has no way to recover those words on its own:
+        <p data-i18n-html="faq.2a2">The AI-agent generates the phrase, seals it to a person's published key, and writes the
+           ciphertext to ENS. After that the AI-agent has no way to recover those words on its own:
            the release needs a human confirmation, a time lock, or whatever condition you set.
-           What leaks from a compromised agent is a record anyone could already read.</p>
+           What leaks from a compromised AI-agent is a record anyone could already read.</p>
       </details>
 
       <details>
@@ -670,12 +679,12 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 </main>
 
 <footer class="wrap">
-  <a href="https://github.com/4bridges/nextkey">GitHub</a>
+  <a href="https://github.com/4bridges/nextkey" target="_blank" rel="noopener noreferrer">GitHub</a>
   <a href="./demo.html" data-i18n="foot.try">Start demo</a>
   <a href="./poc.html" data-i18n="foot.demo">Proof of concept</a>
   <a href="./blog.html" data-i18n="comm.cta">Read and write posts</a>
   <a href="./explorer.html" data-i18n="x.cta">Explore a name</a>
-  <a href="https://github.com/4bridges/nextkey/blob/main/LICENSE" data-i18n="foot.lic">MIT License</a>
+  <a href="https://github.com/4bridges/nextkey/blob/main/LICENSE" data-i18n="foot.lic" target="_blank" rel="noopener noreferrer">MIT License</a>
   <a href="mailto:hello@4bridges.ch" data-i18n="foot.contact">Contact</a>
 </footer>
 
@@ -685,7 +694,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   "@type": "FAQPage",
   "mainEntity": [
     {"@type":"Question","name":"How do I safely pass on my seed phrase to someone?","acceptedAnswer":{"@type":"Answer","text":"Encrypt it to a key only that person holds, and put the ciphertext somewhere you both can reach. NextKey does this by name: it reads the public key the recipient publishes in their own ENS records and wraps the secret's key to it, so nothing readable passes through a message or a server, and the recipient does not have to sign up first."}},
-    {"@type":"Question","name":"Can an AI agent hold a wallet safely?","acceptedAnswer":{"@type":"Answer","text":"Not if it holds the key; it can hold a wallet whose passphrase it cannot read back. With NextKey the agent generates the phrase, seals it to a person's published key and writes the ciphertext to ENS. Recovering those words then needs a human confirmation, a time lock or whatever condition was set, so a compromised agent leaks a record anyone could already read."}},
+    {"@type":"Question","name":"Can an AI AI-agent hold a wallet safely?","acceptedAnswer":{"@type":"Answer","text":"Not if it holds the key; it can hold a wallet whose passphrase it cannot read back. With NextKey the AI-agent generates the phrase, seals it to a person's published key and writes the ciphertext to ENS. Recovering those words then needs a human confirmation, a time lock or whatever condition was set, so a compromised AI-agent leaks a record anyone could already read."}},
     {"@type":"Question","name":"How does the recipient know a secret is waiting for them?","acceptedAnswer":{"@type":"Answer","text":"They derive it rather than being notified. A recipient reads one public value off a name, does a single scalar multiplication with their own key, and arrives at the record where anything addressed to them would be. There is no server to send a notification, and finding every such name needs an indexer, so today this works on names the recipient knows about. A read receipt works the same way in reverse, at a second address only the two parties can compute."}},
     {"@type":"Question","name":"Can I share one secret with more than one person?","acceptedAnswer":{"@type":"Answer","text":"Yes, and each of them can be cut off without touching the others. A name publishes one ephemeral key and one ciphertext; every recipient gets one further record, at an address derived from that key and theirs, so two grants share no key material. Adding somebody weeks later re-encrypts nothing. An observer can count how many grants a name carries, but not whose they are."}},
     {"@type":"Question","name":"Can I share a password without both of us using the same password manager?","acceptedAnswer":{"@type":"Answer","text":"Yes. The recipient needs an ENS name and a published key, not an account with NextKey."}},
@@ -721,7 +730,7 @@ document.addEventListener('submit', function (e) {
   location.href = './explorer.html' + (v ? '?name=' + encodeURIComponent(v) : '')
 })
 </script>
-<script src="./i18n.js?v=40521dcf"></script>
+<script src="./i18n.js?v=43190522"></script>
 <script>
 /**
  * Translation is applied over the page, not baked into it.
@@ -741,11 +750,22 @@ document.addEventListener('submit', function (e) {
                 cn:'zh-Hans', ua:'uk', ru:'ru', fa:'fa' }
   var RTL   = { fa: true }
 
-  var nodes = document.querySelectorAll('[data-i18n], [data-i18n-html]')
+  var nodes = document.querySelectorAll('[data-i18n], [data-i18n-html], [data-i18n-title]')
   var base = {}
   nodes.forEach(function (el) {
+    // A title is the tooltip on an icon with no words of its own, so it is the
+    // only text some visitors will ever see for it.
+    if (el.hasAttribute('data-i18n-title')) {
+      base[el.getAttribute('data-i18n-title')] = el.getAttribute('title')
+    }
     var html = el.hasAttribute('data-i18n-html')
     var key = el.getAttribute(html ? 'data-i18n-html' : 'data-i18n')
+    // An element may carry only a title to translate. Without this, its key is
+    // null, and the loop below writes base[null] — the element's own text —
+    // straight over its contents. That is how the home icon became the word
+    // "Home": the anchor had a title and no text key, and the overlay replaced
+    // an SVG with a string it had collected from the SVG.
+    if (!key) return
     // Collapse the whitespace the source is indented with, so a translated
     // string and an original one are laid out the same way.
     base[key] = (html ? el.innerHTML : el.textContent).replace(/\s+/g, ' ').trim()
@@ -767,8 +787,13 @@ document.addEventListener('submit', function (e) {
     }
 
     nodes.forEach(function (el) {
+      if (el.hasAttribute('data-i18n-title')) {
+        var tv = pick(el.getAttribute('data-i18n-title'))
+        if (tv != null) el.setAttribute('title', tv)
+      }
       var html = el.hasAttribute('data-i18n-html')
       var key = el.getAttribute(html ? 'data-i18n-html' : 'data-i18n')
+      if (!key) return
       var v = pick(key)
       if (v == null) return
       if (html) el.innerHTML = v; else el.textContent = v

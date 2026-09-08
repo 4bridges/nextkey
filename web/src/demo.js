@@ -122,7 +122,7 @@ const clip = (s, n) => (s.length > n ? `${s.slice(0, n)}…` : s)
  * A result panel, and the same result in a form a program can read.
  *
  * The fourth argument is the machine-readable half: it lands on a `data-nk`
- * attribute beside the prose. An agent driving this page — or a test — reads
+ * attribute beside the prose. An AI-agent driving this page — or a test — reads
  * that instead of scraping sentences that exist in ten languages. Nothing
  * private goes in it; see nkState().
  */
@@ -695,7 +695,7 @@ const wroteIt = (out, name, hashes, moved, extra = '') => {
       <dt>${t('t.chain.name', 'the name')}</dt><dd class="mono break">${esc(name)}</dd>
       ${hashes.map(([k, h]) => `
       <dt class="mono">${esc(k)}</dt>
-      <dd class="mono break"><a href="https://sepolia.etherscan.io/tx/${esc(h)}" rel="noopener">${esc(clip(h, 26))}</a></dd>`).join('')}
+      <dd class="mono break"><a href="https://sepolia.etherscan.io/tx/${esc(h)}" target="_blank" rel="noopener noreferrer">${esc(clip(h, 26))}</a></dd>`).join('')}
     </dl>
     <p class="note"><a href="./explorer.html?name=${encodeURIComponent(name)}">${t('t.s6.explorer', 'See what this name now carries')}</a></p>
     ${why(t('t.why', 'Why this matters'), `
@@ -925,8 +925,8 @@ async function connectWith(eth) {
       <p>${t('t.chain.nogas', 'That account holds no Sepolia ether, so it cannot pay for a write.')}</p>
       <p class="note">${t('t.chain.nogasnote', 'A faucet will give you some — you need only a fraction of one. Or use the lane above, which pays for itself.')}</p>
       <p class="note">
-        <a href="https://cloud.google.com/application/web3/faucet/ethereum/sepolia" rel="noopener">Google Cloud</a> ·
-        <a href="https://faucet.quicknode.com/ethereum/sepolia" rel="noopener">QuickNode</a>
+        <a href="https://cloud.google.com/application/web3/faucet/ethereum/sepolia" target="_blank" rel="noopener noreferrer">Google Cloud</a> ·
+        <a href="https://faucet.quicknode.com/ethereum/sepolia" target="_blank" rel="noopener noreferrer">QuickNode</a>
       </p>` : ''}`)
     $('publish').disabled = !!onchain
   } catch (e) {
@@ -1214,7 +1214,7 @@ $('send-ack').addEventListener('click', async () => {
       <p class="found">✓ ${t('t.ack.sent', 'Receipt written.')}</p>
       <dl>
         <dt class="mono">${esc(key)}</dt>
-        <dd class="mono break"><a href="https://sepolia.etherscan.io/tx/${esc(hash)}" rel="noopener">${esc(clip(hash, 26))}</a></dd>
+        <dd class="mono break"><a href="https://sepolia.etherscan.io/tx/${esc(hash)}" target="_blank" rel="noopener noreferrer">${esc(clip(hash, 26))}</a></dd>
       </dl>
       ${why(t('t.why', 'Why this matters, and what it costs'), `
         <p>${t('t.ack.note', 'That address comes out of the same shared secret as the grant, under a different derivation. The sender can compute it without being told, and nobody else can compute it at all — so the receipt is delivered by being findable rather than by being sent.')}</p>
@@ -1351,7 +1351,7 @@ $('grant-more').addEventListener('click', async () => {
       <dl>
         ${S.extra.map((e) => `
         <dt class="mono break">${esc(e.record)}</dt>
-        <dd class="mono break"><a href="https://sepolia.etherscan.io/tx/${esc(e.tx)}" rel="noopener">${esc(clip(e.tx, 26))}</a></dd>`).join('')}
+        <dd class="mono break"><a href="https://sepolia.etherscan.io/tx/${esc(e.tx)}" target="_blank" rel="noopener noreferrer">${esc(clip(e.tx, 26))}</a></dd>`).join('')}
       </dl>
       <p class="note">${t('t.s7.short', 'One more record on the same name. The ciphertext and the ephemeral key were not touched.')}</p>
       ${why(t('t.why', 'Why this matters'), `
@@ -1393,7 +1393,7 @@ $('revoke').addEventListener('click', async () => {
       <p class="found">✓ ${t('t.s5.done', 'The grant record is empty.')}</p>
       <dl>
         <dt class="mono">${esc(S.grantKey)}</dt>
-        <dd class="mono break"><a href="https://sepolia.etherscan.io/tx/${esc(hash)}" rel="noopener">${esc(clip(hash, 26))}</a></dd>
+        <dd class="mono break"><a href="https://sepolia.etherscan.io/tx/${esc(hash)}" target="_blank" rel="noopener noreferrer">${esc(clip(hash, 26))}</a></dd>
       </dl>
       <p class="note">${t('t.s5.short', 'The ciphertext is untouched; the wrapped key is gone. Check the inbox again.')}</p>
       ${S.extra.length ? `<p class="note">${t('t.s5.others', 'The other grants on this name are untouched and still open. Only the record above was emptied.')}</p>` : ''}
@@ -1417,7 +1417,7 @@ window.__nextkeyRerender = () => { setMode(S.mode) }
 
 // ═══ The agent-facing surface ══════════════════════════════════════════════
 //
-// A page an agent can drive is not the same as a page with fewer buttons. Two
+// A page an AI-agent can drive is not the same as a page with fewer buttons. Two
 // things make the difference, and both are cheap: a prepared state reachable
 // from a link, and a result that does not have to be read as prose.
 //
@@ -1456,7 +1456,7 @@ window.NEXTKEY = {
   const to = q.get('to')
   if (to) {
     $('ens-name').value = to.trim().toLowerCase()
-    // Read their key straight away. An agent that had to press a button after
+    // Read their key straight away. An AI-agent that had to press a button after
     // following a prepared link would not have been given a prepared state.
     $('lookup').click()
   }

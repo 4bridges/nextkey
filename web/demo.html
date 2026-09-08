@@ -9,7 +9,7 @@
 <link rel="manifest" href="./brand/site.webmanifest">
 <meta name="theme-color" content="#9a5218">
 <title>NextKey — playground</title>
-<meta name="description" content="An agent makes a wallet, seals the passphrase to a person, and gets it back on release. The whole loop in your browser, no wallet required.">
+<meta name="description" content="An AI-agent makes a wallet, seals the passphrase to a person, and gets it back on release. The whole loop in your browser, no wallet required.">
 <meta name="robots" content="noindex">
 <script>
 (function(){try{var t=localStorage.getItem('nextkey.theme')
@@ -292,6 +292,13 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     margin-inline-end:auto;font-size:.95rem;
     font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
   .barnav a{color:var(--muted);text-decoration:none;font-weight:600;white-space:nowrap}
+  /* The way back, as a house rather than a word: it is the one item in this bar
+     that needs no reading, and on a phone it costs a fifth of the width of
+     "Home". The label is still there for anybody not looking at pixels. */
+  .barnav .navhome{display:inline-flex;align-items:center}
+  .barnav .navhome svg{width:1.15rem;height:1.15rem}
+  .vh{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
+    clip-path:inset(50%);white-space:nowrap;border:0}
   .barnav a:hover{color:var(--ink)}
   .barnav a[aria-current="page"]{color:var(--accent)}
   /* The squashed bar, explained.
@@ -321,9 +328,11 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   <div class="wrap barin">
     <a class="brand" href="./index.html" aria-label="NextKey"><svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M32 4.5 54.8 17.75v26.5L32 57.5 9.2 44.25v-26.5z" stroke="currentColor" stroke-width="5.5" stroke-linejoin="round"/><circle cx="32" cy="27" r="7" stroke="currentColor" stroke-width="5"/><path d="M32 34v13" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg><b>NextKey</b></a>
     <nav class="barnav" aria-label="Sections">
+      <a class="navhome" href="./index.html" data-i18n-title="nav.home" title="Home"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.75 20v-5.5h4.5V20"/></svg><span class="vh" data-i18n="nav.home">Home</span></a>
       <a href="./demo.html" data-i18n="nav.demo" aria-current="page">Demo</a>
       <a href="./explorer.html" data-i18n="nav.explorer">Explorer</a>
-      <a href="./blog.html" data-i18n="nav.community">Community</a>
+      <a href="./blog.html" data-i18n="nav.blog">Blog</a>
+      <a href="./donate.html" data-i18n="nav.donate">Donate</a>
     </nav>
     <div class="barctl">
       <button class="iconbtn" id="themebtn" type="button"
@@ -383,7 +392,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
       <p data-i18n-html="t.nojs"><strong>This page does its work in JavaScript, which is switched off.</strong>
         Nothing here is sent anywhere, so there is no server-rendered version to fall back to.
         <a href="./poc.html">The live view</a> and
-        <a href="https://github.com/4bridges/nextkey#readme">the README</a> explain the same
+        <a href="https://github.com/4bridges/nextkey#readme" target="_blank" rel="noopener noreferrer">the README</a> explain the same
         loop without running anything.</p>
     </div>
   </noscript>
@@ -561,9 +570,9 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     <div class="out" id="revoke-out" hidden></div>
   </section>
 
-  <!-- For agents ─────────────────────────────────────────────────────────── -->
+  <!-- For AI-agents ─────────────────────────────────────────────────────────── -->
   <details class="more" id="agent-api">
-    <summary data-i18n="t.agent.h">For agents — the same loop without a browser</summary>
+    <summary data-i18n="t.agent.h">For AI-agents — the same loop without a browser</summary>
     <p data-i18n="t.agent.p">Every step above has a command-line equivalent, and the page reports what it
       did in a form a program can read. Nothing here needs a person watching.</p>
     <pre class="mono">nextkey.mjs new &lt;label&gt;
@@ -597,11 +606,11 @@ nextkey.mjs revoke &lt;label&gt; &lt;recipient&gt;</pre>
   <p>
     <a href="./index.html" data-i18n="t.about">About NextKey</a>
     <a href="./poc.html" data-i18n="t.live">The live view</a>
-    <a href="https://github.com/4bridges/nextkey" data-i18n="t.source">Source</a>
+    <a href="https://github.com/4bridges/nextkey" data-i18n="t.source" target="_blank" rel="noopener noreferrer">Source</a>
   </p>
 </footer>
 
-<script src="./i18n.js?v=40521dcf"></script>
+<script src="./i18n.js?v=43190522"></script>
 <script>
 /**
  * The same overlay as the other two pages, same storage keys, so a language or
@@ -617,11 +626,16 @@ nextkey.mjs revoke &lt;label&gt; &lt;recipient&gt;</pre>
                 cn:'zh-Hans', ua:'uk', ru:'ru', fa:'fa' }
   var RTL   = { fa: true }
 
-  var nodes = document.querySelectorAll('[data-i18n], [data-i18n-html], [data-i18n-ph]')
+  var nodes = document.querySelectorAll('[data-i18n], [data-i18n-html], [data-i18n-ph], [data-i18n-title]')
   var base = {}
   nodes.forEach(function (el) {
     if (el.hasAttribute('data-i18n-ph')) {
       base[el.getAttribute('data-i18n-ph')] = el.getAttribute('placeholder')
+    }
+    // A title is the tooltip on an icon that carries no words of its own, so it
+    // is the only text some visitors will ever see for it.
+    if (el.hasAttribute('data-i18n-title')) {
+      base[el.getAttribute('data-i18n-title')] = el.getAttribute('title')
     }
     var html = el.hasAttribute('data-i18n-html')
     var key = el.getAttribute(html ? 'data-i18n-html' : 'data-i18n')
@@ -644,6 +658,10 @@ nextkey.mjs revoke &lt;label&gt; &lt;recipient&gt;</pre>
       if (el.hasAttribute('data-i18n-ph')) {
         var pv = pick(el.getAttribute('data-i18n-ph'))
         if (pv != null) el.setAttribute('placeholder', pv)
+      }
+      if (el.hasAttribute('data-i18n-title')) {
+        var tv = pick(el.getAttribute('data-i18n-title'))
+        if (tv != null) el.setAttribute('title', tv)
       }
       var html = el.hasAttribute('data-i18n-html')
       var key = el.getAttribute(html ? 'data-i18n-html' : 'data-i18n')
@@ -748,6 +766,6 @@ nextkey.mjs revoke &lt;label&gt; &lt;recipient&gt;</pre>
   label()
 })()
 </script>
-<script type="module" src="./demo.js?v=0853fc25"></script>
+<script type="module" src="./demo.js?v=09417c32"></script>
 </body>
 </html>

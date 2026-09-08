@@ -224,7 +224,7 @@ async function renderOwner() {
 }
 
 /**
- * The agent's proposal, hashed in the browser and compared with the verdict the
+ * The AI-agent's proposal, hashed in the browser and compared with the verdict the
  * enclave returned. This is the check the enclave's confidentiality would
  * otherwise make impossible.
  */

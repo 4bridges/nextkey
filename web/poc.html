@@ -9,7 +9,7 @@
 <link rel="manifest" href="./brand/site.webmanifest">
 <meta name="theme-color" content="#9a5218">
 <title>NextKey — read live from Sepolia</title>
-<meta name="description" content="A secret, its grants and an agent's release proposal, read live from the ENSv2 hackathon deployment on Sepolia.">
+<meta name="description" content="A secret, its grants and an AI-agent's release proposal, read live from the ENSv2 hackathon deployment on Sepolia.">
 <meta name="robots" content="noindex">
 <script>
 (function(){try{var t=localStorage.getItem('nextkey.theme')
@@ -152,6 +152,13 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     margin-inline-end:auto;font-size:.95rem;
     font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
   .barnav a{color:var(--muted);text-decoration:none;font-weight:600;white-space:nowrap}
+  /* The way back, as a house rather than a word: it is the one item in this bar
+     that needs no reading, and on a phone it costs a fifth of the width of
+     "Home". The label is still there for anybody not looking at pixels. */
+  .barnav .navhome{display:inline-flex;align-items:center}
+  .barnav .navhome svg{width:1.15rem;height:1.15rem}
+  .vh{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
+    clip-path:inset(50%);white-space:nowrap;border:0}
   .barnav a:hover{color:var(--ink)}
   .barnav a[aria-current="page"]{color:var(--accent)}
   /* The squashed bar, explained.
@@ -181,9 +188,11 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   <div class="wrap barin">
     <a class="brand" href="./index.html" aria-label="NextKey"><svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M32 4.5 54.8 17.75v26.5L32 57.5 9.2 44.25v-26.5z" stroke="currentColor" stroke-width="5.5" stroke-linejoin="round"/><circle cx="32" cy="27" r="7" stroke="currentColor" stroke-width="5"/><path d="M32 34v13" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg><b>NextKey</b></a>
     <nav class="barnav" aria-label="Sections">
+      <a class="navhome" href="./index.html" data-i18n-title="nav.home" title="Home"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.75 20v-5.5h4.5V20"/></svg><span class="vh" data-i18n="nav.home">Home</span></a>
       <a href="./demo.html" data-i18n="nav.demo">Demo</a>
       <a href="./explorer.html" data-i18n="nav.explorer">Explorer</a>
-      <a href="./blog.html" data-i18n="nav.community">Community</a>
+      <a href="./blog.html" data-i18n="nav.blog">Blog</a>
+      <a href="./donate.html" data-i18n="nav.donate">Donate</a>
     </nav>
     <div class="barctl">
       <button class="iconbtn" id="themebtn" type="button"
@@ -223,7 +232,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 <div class="wrap" style="padding-top:2.6rem;padding-bottom:2rem;border-bottom:1px solid var(--line)">
 
   <p class="eyebrow" data-i18n="d.eyebrow">Live from the chain</p>
-  <h1 data-i18n="d.h1">A secret, its grants, and an agent asking to release it</h1>
+  <h1 data-i18n="d.h1">A secret, its grants, and an AI-agent asking to release it</h1>
   <p class="lead" data-i18n="d.lead">
     Every value below is read from the ENSv2 hackathon deployment on Sepolia when this
     page loads. Nothing is cached or replayed. Read-only — no wallet, no signing.
@@ -238,11 +247,11 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     <div class="fallback">
       <p data-i18n-html="d.nojs1"><strong>This page reads the chain with JavaScript, which is switched off.</strong></p>
       <p data-i18n-html="d.nojs2">The same values are readable without it. Open
-        <a href="https://hackathon-deployment-portal-app.ens-cf.workers.dev/">the ENS explorer</a>
+        <a href="https://hackathon-deployment-portal-app.ens-cf.workers.dev/" target="_blank" rel="noopener noreferrer">the ENS explorer</a>
         and look up <span class="mono">visa.nextkey.eth</span>,
         <span class="mono">anna.nextkey.eth</span> and
         <span class="mono">agent.nextkey.eth</span> — or read
-        <a href="https://github.com/4bridges/nextkey#readme">the README</a>, which explains
+        <a href="https://github.com/4bridges/nextkey#readme" target="_blank" rel="noopener noreferrer">the README</a>, which explains
         what each record is for.</p>
     </div>
   </noscript>
@@ -280,7 +289,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     </section>
 
     <section class="panel">
-      <h2 data-i18n="d.p4h">The agent's proposal</h2>
+      <h2 data-i18n="d.p4h">The AI-agent's proposal</h2>
       <p class="what"><span class="mono">agent.nextkey.eth</span> · <span class="mono">nextkey.request</span><span data-i18n="d.p4w">, hashed here</span></p>
       <div class="body" id="p-agent" data-state="loading"></div>
     </section>
@@ -292,9 +301,9 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     <p data-i18n="d.notseen2">The plaintext. Opening the secret needs a private key that lives on a recipient's
        own machine and is never published, so no web page can do it for you — including
        this one. What is on display is the whole public surface of a shared secret: the
-       ciphertext, who has been granted access, and the request an agent filed to release
+       ciphertext, who has been granted access, and the request an AI-agent filed to release
        it. That surface reveals that something was shared. It does not reveal what.</p>
-    <p data-i18n="d.notseen3">The guardian approvals behind the agent's request are also absent, and deliberately:
+    <p data-i18n="d.notseen3">The guardian approvals behind the AI-agent's request are also absent, and deliberately:
        they are evaluated inside a confidential enclave. A public guardian list is a target
        list.</p>
   </div>
@@ -306,12 +315,12 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   <p>
     <a href="./demo.html" data-i18n="d.try">Start demo</a>
     <a href="./index.html" data-i18n="d.about">About NextKey</a>
-    <a href="https://github.com/4bridges/nextkey" data-i18n="d.source">Source</a>
-    <a href="https://hackathon-deployment-portal-app.ens-cf.workers.dev/">ENS explorer</a>
+    <a href="https://github.com/4bridges/nextkey" data-i18n="d.source" target="_blank" rel="noopener noreferrer">Source</a>
+    <a href="https://hackathon-deployment-portal-app.ens-cf.workers.dev/" target="_blank" rel="noopener noreferrer">ENS explorer</a>
   </p>
 </footer>
 
-<script src="./i18n.js?v=40521dcf"></script>
+<script src="./i18n.js?v=43190522"></script>
 <script>
 /**
  * Same overlay as the landing page, same storage keys, so a language or theme
@@ -327,11 +336,21 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
                 cn:'zh-Hans', ua:'uk', ru:'ru', fa:'fa' }
   var RTL   = { fa: true }
 
-  var nodes = document.querySelectorAll('[data-i18n], [data-i18n-html]')
+  var nodes = document.querySelectorAll('[data-i18n], [data-i18n-html], [data-i18n-title]')
   var base = {}
   nodes.forEach(function (el) {
+    // A title is the tooltip on an icon with no words of its own, so it is the
+    // only text some visitors will ever see for it.
+    if (el.hasAttribute('data-i18n-title')) {
+      base[el.getAttribute('data-i18n-title')] = el.getAttribute('title')
+    }
     var html = el.hasAttribute('data-i18n-html')
     var key = el.getAttribute(html ? 'data-i18n-html' : 'data-i18n')
+    // An element may carry only a title to translate. Without this, its key is
+    // null, base[null] collects the element's own text, and the loop below
+    // writes it straight over the contents — which is how a home icon turns
+    // into the word "Home".
+    if (!key) return
     base[key] = (html ? el.innerHTML : el.textContent).replace(/\s+/g, ' ').trim()
   })
   var META = document.querySelector('meta[name="description"]')
@@ -347,8 +366,13 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
       return Object.prototype.hasOwnProperty.call(dict, k) ? dict[k] : base[k]
     }
     nodes.forEach(function (el) {
+      if (el.hasAttribute('data-i18n-title')) {
+        var tv = pick(el.getAttribute('data-i18n-title'))
+        if (tv != null) el.setAttribute('title', tv)
+      }
       var html = el.hasAttribute('data-i18n-html')
       var key = el.getAttribute(html ? 'data-i18n-html' : 'data-i18n')
+      if (!key) return
       var v = pick(key)
       if (v == null) return
       if (html) el.innerHTML = v; else el.textContent = v
