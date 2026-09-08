@@ -22,10 +22,11 @@
  *   markup would hand that stranger the page.
  */
 
-import { createPublicClient, createWalletClient, custom, http, toHex } from 'viem'
+import { createPublicClient, createWalletClient, custom, http, toHex, namehash, keccak256, stringToHex } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { packetToBytes } from 'viem/ens'
 import { sepolia } from 'viem/chains'
+import { TOPIC_RECORD, TEXT_UPDATED_TOPIC, logReader, asWrite, probeWidth } from './nk-logs.mjs'
 import { DEMO_KEY, POOL, POOL_RESOLVER } from './demo-wallet.js'
 
 // ─── The deployment ────────────────────────────────────────────────────────
@@ -80,6 +81,20 @@ const ALLOW = [
   `agent.${PARENT}`,
 ]
 
+// The live window reads the chain's own events, so it shares the explorer's
+// reader rather than keeping a second copy of two topic hashes.
+const logsWith = logReader(reader)
+const POST_TOPICS = POST_SLOTS.map((k) => keccak256(stringToHex(k)))
+
+// One resolver list, same reasoning as the explorer: a name's resolver is a
+// property of the name, so the address is not guessed from one anchor.
+const FEED_RESOLVERS = ['0x04B2DB6567Cc68d059c061215Adf9a99adD1cA65']
+const ENS_APP = 'https://hackathon-deployment-portal-app.ens-cf.workers.dev'
+const FEED_WINDOWS = 20     // the node does the selecting, so this reaches far
+const FEED_SHOW = 25
+const FEED_EVERY = 20_000
+const FRESH_FOR = 6_000
+
 const setTextAbi = [{
   name: 'setText', type: 'function', stateMutability: 'nonpayable',
   inputs: [{ name: 'name', type: 'bytes' }, { name: 'key', type: 'string' },
@@ -114,7 +129,9 @@ const plain = (e) => {
 }
 
 const REQUIRED_ELEMENTS = [
-  'load', 'posts', 'title', 'body', 'write-state',
+  'posts', 'blog-live', 'title', 'body', 'write-state',
+  'edit-connect', 'edit-wallet', 'edit-name', 'edit-load', 'edit-list',
+  'edit-form', 'edit-title', 'edit-body', 'edit-save', 'edit-empty', 'edit-out',
   'lane-lent', 'post-lent', 'lent-out',
   'lane-own-wrap', 'lane-own', 'connect', 'wallet-out', 'own-name', 'post-own', 'own-out',
 ]
@@ -158,67 +175,280 @@ const readPost = async (name) => {
   return POST_SLOTS.map((key, i) => parsePost(name, key, raw[i])).filter(Boolean)
 }
 
-/**
- * Newest first, and honest about the date.
- *
- * `at` is written by whoever published, so it is a claim rather than a fact —
- * a record can say any time it likes. The chain knows better, but reading the
- * block a record was written in costs a log query per post, and this page has
- * no indexer to make that cheap. So the claimed time orders the list, posts
- * without one fall to the end, and the page does not pretend the order is
- * cryptographic.
- */
-const newestFirst = (posts) => [...posts].sort((a, b) => {
-  if (!a.at && !b.at) return 0
-  if (!a.at) return 1
-  if (!b.at) return -1
-  return String(b.at).localeCompare(String(a.at))
-})
-
 /** The one name a visitor asked for by hand, if any. */
 const asked = () => {
   const from = new URLSearchParams(location.search).get('from')
   return from ? from.trim().toLowerCase() : null
 }
 
-const render = (posts, extra) => {
-  if (!posts.length) return say($('posts'), '', `
+/**
+ * The window.
+ *
+ * The first version of this page read a short list of names and asked the
+ * visitor to press a button. That was honest but small: it could only show
+ * posts on names somebody had written into the source, and it showed them as
+ * records — a key, a slot number, a blob of JSON. A community page whose posts
+ * look like database rows is a database with a headline on it.
+ *
+ * So this reads the chain's own events instead, filtered at the node to the
+ * five post records, newest first, and it keeps reading while the page is open.
+ * What it shows is what somebody wrote, in a bubble, with the date underneath.
+ *
+ * The one thing it cannot do is name the author on its own. An event carries a
+ * record id, not a name, so the names are recovered by matching record ids
+ * against the creation events seen in the same sweep — which works for the
+ * names this page knows and for anything created recently, and quietly does
+ * not for the rest. A post with no name attached is still a post; inventing an
+ * author would be the one unforgivable thing here.
+ */
+const blog = {
+  addresses: null,
+  width: null,
+  head: null,
+  items: [],
+  names: new Map(),   // namehash → name, for the names we can put a face to
+  found: new Map(),   // record id → name
+  when: new Map(),    // block → YYYY-MM-DD
+  filling: false,
+  gen: 0,
+}
+
+/** Namehashes of every name this page may legitimately name. */
+const knownNames = () => {
+  const all = [...new Set([...ALLOW, ...POOL.map((l) => `${l}.${PARENT}`),
+                           ...session, ...(asked() ? [asked()] : [])])]
+  for (const n of all) {
+    try { blog.names.set(namehash(n).toLowerCase(), n) } catch { /* not a name */ }
+  }
+}
+
+const blogAddresses = async () => {
+  const seen = new Map()
+  const add = (a) => {
+    if (!a || /^0x0+$/i.test(a) || !/^0x[0-9a-f]{40}$/i.test(a)) return
+    if (!seen.has(a.toLowerCase())) seen.set(a.toLowerCase(), a)
+  }
+  for (const a of FEED_RESOLVERS) add(a)
+  add(POOL_RESOLVER)
+  const found = await Promise.all(ALLOW.slice(0, 3).map((name) =>
+    reader.getEnsResolver({ name }).catch(() => null)))
+  for (const a of found) add(a)
+  return [...seen.values()]
+}
+
+/** One window: the posts in it, and any names it lets us attach to them. */
+const blogWindow = async (from, to) => {
+  const [writes, created] = await Promise.all([
+    logsWith({ address: blog.addresses, topics: [TEXT_UPDATED_TOPIC, null, POST_TOPICS],
+               fromBlock: from, toBlock: to }),
+    logsWith({ address: blog.addresses, topics: [TOPIC_RECORD], fromBlock: from, toBlock: to })
+      .catch(() => []),
+  ])
+  for (const c of created) {
+    if (String(c.topics[0] ?? '').toLowerCase() !== TOPIC_RECORD) continue
+    const who = blog.names.get(String(c.topics[2] ?? '').toLowerCase())
+    if (who) blog.found.set(String(c.topics[1]).toLowerCase(), who)
+  }
+  const out = []
+  for (const log of writes) {
+    const w = asWrite(log)
+    if (!w || !w.value) continue          // an emptied post is a post taken down
+    const p = parsePost(null, w.key, w.value)
+    if (!p) continue
+    out.push({ ...p, record: String(w.record).toLowerCase(),
+               block: w.block, tx: w.tx, index: w.index, seen: 0 })
+  }
+  return out
+}
+
+/**
+ * The names the sweep missed.
+ *
+ * A record's creation event is where its name lives, and that event is as old
+ * as the name — usually older than the stretch a post search walks. So after
+ * the posts are in, every record still without a name gets one narrow query of
+ * its own: the creation event for that record id, which the node can select on
+ * its own and which therefore reaches back much further.
+ *
+ * It can still come back empty, and then the post stays unattributed. That is
+ * the honest end of it: a namehash does not run backwards, so a name this page
+ * has never been told about cannot be recovered from the chain at all.
+ */
+const NAME_WINDOWS = 8
+
+const resolveNames = async () => {
+  const missing = [...new Set(blog.items.map((p) => p.record))]
+    .filter((r) => !blog.found.has(r)).slice(0, 8)
+  if (!missing.length || !blog.width) return
+  let touched = false
+  for (const record of missing) {
+    let to = blog.head ?? await reader.getBlockNumber({ cacheTime: 0 })
+    for (let i = 0; i < NAME_WINDOWS && to > 0n; i++) {
+      const from = to > blog.width ? to - blog.width + 1n : 0n
+      let hit = []
+      try {
+        hit = await logsWith({ address: blog.addresses, topics: [TOPIC_RECORD, record],
+                               fromBlock: from, toBlock: to })
+      } catch { /* a refused window is one we simply do not learn from */ }
+      // The filter asked for this record, but the answer is checked anyway. A
+      // node that ignores a topic — or a proxy in front of one — would
+      // otherwise hand this page somebody else's creation event, and it would
+      // print a name under a post that is not theirs. Of all the mistakes on
+      // this page, that is the one that must not happen.
+      const mine = hit.find((l) => String(l.topics[1] ?? '').toLowerCase() === record)
+      if (mine) {
+        const who = blog.names.get(String(mine.topics[2] ?? '').toLowerCase())
+        if (who) { blog.found.set(record, who); touched = true }
+        break
+      }
+      if (from === 0n) break
+      to = from - 1n
+    }
+  }
+  if (touched) render()
+}
+
+const blogSort = () => {
+  blog.items.sort((a, b) => (a.block === b.block ? b.index - a.index : (a.block > b.block ? -1 : 1)))
+  const seen = new Set()
+  blog.items = blog.items.filter((p) => {
+    const id = `${p.tx}:${p.index}`
+    if (seen.has(id)) return false
+    seen.add(id)
+    return true
+  })
+}
+
+const blogStatus = () => {
+  $('blog-live').innerHTML = `<span class="dot"></span>${esc(t('x.feed.living', 'Live'))}`
+}
+
+/**
+ * A post, as a post.
+ *
+ * Title and body run together as one piece of text, because that is how it
+ * reads aloud and because the split is an artefact of the record format, not
+ * something the author meant. Underneath, small: who wrote it when we know, the
+ * day it was written according to the chain rather than according to the post,
+ * and one link out.
+ */
+const render = () => {
+  const out = $('posts')
+  if (!blog.items.length) return say(out, '', `
     <p>${t('b.none', 'No posts on those names yet.')}</p>
     <p class="note">${t('b.nonenote', 'Nothing is wrong: a name carries a post only once somebody writes one. Write the first one below.')}</p>`,
     { posts: 0 })
 
-  say($('posts'), 'ok', posts.map((p) => `
-    <article style="margin:0 0 1.6rem">
-      ${p.title ? `<h3 style="margin:0 0 .2rem;font-size:1.05rem;font-weight:640">${esc(p.title)}</h3>` : ''}
-      <p class="note" style="margin:0 0 .5rem">
-        <span class="mono">${esc(p.name)}</span>${p.at ? ` · ${esc(String(p.at).slice(0, 10))}` : ''}${p.key !== RECORD_POST ? ` · <span class="mono">${esc(p.key.slice(RECORD_POST.length + 1))}</span>` : ''}
-        ${p.unchecked ? ` · <strong>${esc(t('b.unchecked', 'not on this page’s list — read because you asked for it'))}</strong>` : ''}
-      </p>
-      <div class="postbody">${esc(p.body)}</div>
-    </article>`).join('') + (extra ?? ''),
-    { posts: posts.length, names: posts.map((p) => p.name) })
+  const now = Date.now()
+  const shown = blog.items.slice(0, FEED_SHOW)
+  say(out, 'ok', `
+    ${shown.map((p) => {
+      const who = blog.found.get(p.record) ?? null
+      const day = blog.when.get(String(p.block)) ?? (p.at ? String(p.at).slice(0, 10) : '')
+      const text = [p.title, p.body].filter(Boolean).join(' ')
+      return `
+      <article class="post">
+        <div class="bubble${now - p.seen < FRESH_FOR ? ' fresh' : ''}">
+          <p class="bubbletext">${esc(text)}</p>
+        </div>
+        <p class="bubblemeta">
+          ${who
+            ? `<a class="mono" href="${esc(ENS_APP)}/${encodeURIComponent(who)}" target="_blank" rel="noopener noreferrer">${esc(who)}</a>`
+            : `<span class="mono">${esc(t('b.noname', 'a name this page cannot name'))}</span>`}
+          ${day ? ` · ${esc(day)}` : ''}
+          · <a href="https://sepolia.etherscan.io/tx/${esc(p.tx)}" target="_blank" rel="noopener noreferrer">${t('x.log.tx', 'transaction')}</a>
+        </p>
+      </article>`
+    }).join('')}
+    ${blog.items.length > FEED_SHOW ? `<p class="note">${t('x.feed.showing', 'showing the newest')} ${FEED_SHOW} ${t('x.feed.of', 'of')} ${blog.items.length}.</p>` : ''}`,
+    { posts: blog.items.length })
 }
 
-$('load').addEventListener('click', async () => {
+/** Dates come from the block, not from the post, because a post can claim anything. */
+const blogDates = async () => {
+  const need = [...new Set(blog.items.slice(0, FEED_SHOW).map((p) => String(p.block)))]
+    .filter((b) => !blog.when.has(b)).slice(0, 25)
+  if (!need.length) return
+  await Promise.all(need.map(async (b) => {
+    try {
+      const blk = await reader.getBlock({ blockNumber: BigInt(b) })
+      blog.when.set(b, new Date(Number(blk.timestamp) * 1000).toISOString().slice(0, 10))
+    } catch { /* the post's own claim stands in */ }
+  }))
+  render()
+}
+
+const blogFill = async () => {
+  const mine = ++blog.gen
+  const mineStill = () => blog.gen === mine
+  blog.filling = true
   const out = $('posts')
-  const extra = asked()
-  const names = [...new Set([...ALLOW, ...session, ...(extra ? [extra] : [])])]
   try {
     say(out, 'busy', `<p>${t('b.loading', 'Reading those names from Sepolia…')}</p>`)
-    // Five at a time: a phone on a hotel network cannot open twenty sockets,
-    // and a public RPC rate-limits long before this gets interesting.
-    const found = []
-    for (let i = 0; i < names.length; i += 3) {
-      const batch = await Promise.all(names.slice(i, i + 3).map(readPost))
-      for (const posts of batch) found.push(...posts)
+    knownNames()
+    if (!blog.addresses) blog.addresses = await blogAddresses()
+
+    const head = await reader.getBlockNumber({ cacheTime: 0 })
+    if (!blog.width) {
+      const probe = await probeWidth(logsWith, {
+        address: blog.addresses, topics: [TEXT_UPDATED_TOPIC, null, POST_TOPICS], head })
+      blog.width = probe.width
+      if (!probe.width) return say(out, 'bad', `
+        <p>${t('x.log.norange', 'The node refused every block range this page asked for.')}</p>
+        <p class="note mono">${esc(plain(probe.error))}</p>
+        <p class="note">${t('x.feed.norangenote', 'That is a limit of the public endpoint, not a statement about NextKey. Nothing here is broken and nothing is missing — this one node will not serve log queries at the moment. Press Refresh in a minute.')}</p>`,
+        { posts: null, error: 'ranges-refused' })
     }
-    for (const p of found) if (!ALLOW.includes(p.name)) p.unchecked = true
-    render(newestFirst(found), `<p class="note">${t('b.readnote', 'Read live from the hackathon deployment:')} <span class="mono break">${esc(names.join(', '))}</span></p>`)
+
+    blog.items = []
+    let to = head
+    for (let i = 0; i < FEED_WINDOWS && to > 0n && blog.items.length < FEED_SHOW; i++) {
+      if (!mineStill()) return
+      const from = to > blog.width ? to - blog.width + 1n : 0n
+      try { blog.items.push(...await blogWindow(from, to)) } catch { /* reported by emptiness */ }
+      blogSort()
+      if (blog.items.length) render()
+      if (from === 0n) break
+      to = from - 1n
+    }
+    if (!mineStill()) return
+    blog.head = head
+    render()
+    blogDates()
+    resolveNames()
   } catch (e) {
     say(out, 'bad', `<p>${t('b.fail', 'Could not read that from the chain.')}</p>
                      <p class="note mono">${esc(plain(e))}</p>`)
+  } finally {
+    if (mineStill()) { blog.filling = false; blogStatus() }
   }
-})
+}
+
+const blogPoll = async () => {
+  if (blog.filling || document.hidden || !blog.addresses || blog.head === null) return
+  blog.filling = true
+  try {
+    const head = await reader.getBlockNumber({ cacheTime: 0 })
+    if (head <= blog.head) return
+    const fresh = await blogWindow(blog.head + 1n, head)
+    blog.head = head
+    if (!fresh.length) return
+    const at = Date.now()
+    for (const p of fresh) p.seen = at
+    blog.items.push(...fresh)
+    blogSort()
+    render()
+    blogDates()
+  } catch { /* the next one tries again */ } finally { blog.filling = false }
+}
+
+// No refresh and no pause here. On the explorer they earn their place — that
+// page is a tool, and somebody reading a long list wants it to hold still. A
+// community page is not read that way: it is looked at, and it should simply be
+// current. What is left is the one thing worth saying, which is that it is.
+
+setInterval(blogPoll, FEED_EVERY)
+document.addEventListener('visibilitychange', () => { if (!document.hidden) blogPoll() })
 
 // ─── Writing ───────────────────────────────────────────────────────────────
 // Names published in this session, so an author sees their own post on the
@@ -249,10 +479,10 @@ const wrote = (out, name, hash, note, slot = RECORD_POST) => {
     <dl>
       <dt>${t('b.onname', 'on')}</dt><dd class="mono break">${esc(name)}</dd>
       <dt class="mono">${esc(slot)}</dt>
-      <dd class="mono break"><a href="https://sepolia.etherscan.io/tx/${esc(hash)}" rel="noopener">${esc(clip(hash, 26))}</a></dd>
+      <dd class="mono break"><a href="https://sepolia.etherscan.io/tx/${esc(hash)}" target="_blank" rel="noopener noreferrer">${esc(clip(hash, 26))}</a></dd>
     </dl>
     <p class="note">${note}</p>
-    <p class="note"><a href="https://hackathon-deployment-portal-app.ens-cf.workers.dev/" rel="noopener">${t('b.explorer', 'See it in the ENS explorer')}</a></p>`,
+    <p class="note"><a href="https://hackathon-deployment-portal-app.ens-cf.workers.dev/${encodeURIComponent(name)}" target="_blank" rel="noopener noreferrer">${t('b.explorer', 'See it in the ENS explorer')}</a></p>`,
     { published: name, tx: hash })
 }
 
@@ -320,7 +550,7 @@ $('post-lent').addEventListener('click', async () => {
     await reader.waitForTransactionReceipt({ hash })
 
     wrote(out, name, hash, t('b.lentnote',
-      'This name is ours and we lent it to you along with the gas. Your post is on chain and anybody can read it — but it is not on this page’s list, so it appears here for you and not for a stranger arriving later. Press “Load the posts” to see it.'))
+      'This name is ours and we lent it to you along with the gas. Your post is on chain and anybody can read it — it will appear in the window above within a few seconds.'))
     $('write-state').textContent = t('b.spent',
       'Published. Reload the page to write another one.')
   } catch (e) {
@@ -336,7 +566,6 @@ $('post-lent').addEventListener('click', async () => {
 
 let wallet = null
 let account = null
-const walletOut = $('wallet-out')
 
 const announced = []
 window.addEventListener('eip6963:announceProvider', (e) => {
@@ -344,7 +573,7 @@ window.addEventListener('eip6963:announceProvider', (e) => {
 })
 window.dispatchEvent(new Event('eip6963:requestProvider'))
 
-$('connect').addEventListener('click', async () => {
+const connectWallet = async (walletOut) => {
   const eth = announced[0]?.provider ?? window.ethereum
   if (!eth) return say(walletOut, 'bad', `
     <p>${t('b.nowallet', 'This browser carries no wallet — mobile browsers cannot.')}</p>
@@ -370,7 +599,10 @@ $('connect').addEventListener('click', async () => {
   } catch (e) {
     say(walletOut, 'bad', `<p>${esc(plain(e))}</p>`)
   }
-})
+}
+
+$('connect').addEventListener('click', () => connectWallet($('wallet-out')))
+$('edit-connect').addEventListener('click', () => connectWallet($('edit-wallet')))
 
 $('post-own').addEventListener('click', async () => {
   const out = $('own-out')
@@ -420,6 +652,151 @@ $('post-own').addEventListener('click', async () => {
   }
 })
 
+// ─── Editing ───────────────────────────────────────────────────────────────
+//
+// A post is a record, and a record is changed by writing it again. So there is
+// no edit mechanism to build: there is a read, a form, and the same setText the
+// rest of this page uses. What makes it an edit rather than a new post is only
+// that the slot is the one already occupied.
+//
+// Ownership is not checked here, and deliberately so. The resolver decides who
+// may write to a name, and it decides correctly; a page that also guessed would
+// either duplicate that answer or contradict it. What this page does is fail
+// clearly when the chain says no.
+
+let editing = null   // { name, slot, at } — the post the form is holding
+
+const editSlots = async (name) => {
+  const raw = await Promise.all(POST_SLOTS.map((key) =>
+    reader.getEnsText({ name, key }).catch(() => null)))
+  return POST_SLOTS.map((key, i) => ({ key, raw: raw[i] })).filter((r) => r.raw)
+}
+
+const editList = (name, found) => {
+  const out = $('edit-list')
+  if (!found.length) return say(out, '', `
+    <p>${t('b.edit.none', 'Nothing published on that name yet.')}</p>
+    <p class="note">${t('b.edit.nonenote', 'There is nothing to change until there is a post. Write one above, then come back.')}</p>`,
+    { editable: 0 })
+
+  say(out, 'ok', found.map(({ key, raw }) => {
+    const p = parsePost(name, key, raw)
+    const text = [p.title, p.body].filter(Boolean).join(' ')
+    return `
+    <div class="ev">
+      <p style="margin:0 0 .35rem">${esc(clip(text, 160))}</p>
+      <p class="note" style="margin:0">
+        <span class="mono">${esc(key)}</span>
+        <button class="act ghost" type="button" data-slot="${esc(key)}"
+                style="margin-inline-start:.6rem;padding:.25rem .7rem;font-size:.88rem">${t('b.edit.choose', 'Edit this one')}</button>
+      </p>
+    </div>`
+  }).join(''), { editable: found.length })
+
+  for (const b of out.querySelectorAll('button[data-slot]')) {
+    b.addEventListener('click', () => {
+      const { key, raw } = found.find((f) => f.key === b.dataset.slot)
+      const p = parsePost(name, key, raw)
+      editing = { name, slot: key, at: p.at }
+      $('edit-title').value = p.title
+      $('edit-body').value = p.body
+      show($('edit-form'), true)
+      $('edit-out').hidden = true
+      $('edit-title').focus()
+    })
+  }
+}
+
+$('edit-load').addEventListener('click', async () => {
+  const out = $('edit-list')
+  const name = $('edit-name').value.trim().toLowerCase()
+  editing = null
+  show($('edit-form'), false)
+  if (!name) return say(out, 'bad', `<p>${t('b.needname', 'Enter a name you own.')}</p>`)
+  try {
+    say(out, 'busy', `<p>${t('b.edit.reading', 'Reading what is on that name…')}</p>`)
+    editList(name, await editSlots(name))
+  } catch (e) {
+    say(out, 'bad', `<p>${t('b.fail', 'Could not read that from the chain.')}</p>
+                     <p class="note mono">${esc(plain(e))}</p>`)
+  }
+})
+
+/**
+ * One write, to a slot that already holds something.
+ *
+ * `at` keeps whatever the post claimed when it was first published, and an
+ * `edited` stamp is added beside it. Overwriting the original date would make
+ * an edit look like a new post, which is the one thing an edit is not.
+ */
+const editWrite = async (value, busy, done) => {
+  const out = $('edit-out')
+  if (!editing) return say(out, 'bad', `<p>${t('b.edit.needpick', 'Choose a post to change first.')}</p>`)
+  if (!wallet) return say(out, 'bad', `<p>${t('b.edit.needwallet', 'Connect the wallet that holds the name.')}</p>`)
+  if (writing) return
+  writing = true
+  $('edit-save').disabled = true
+  $('edit-empty').disabled = true
+  const { name, slot } = editing
+  try {
+    say(out, 'busy', `<p>${t('b.resolver', 'Finding the resolver for that name…')}</p>`)
+    let resolver
+    try { resolver = await reader.getEnsResolver({ name }) } catch { /* reported below */ }
+    if (!resolver || /^0x0+$/i.test(resolver)) throw new Error(t('b.noresolver',
+      'That name has no resolver on this deployment, so there is nowhere to write.'))
+
+    const node = toHex(packetToBytes(name))
+    say(out, 'busy', `<p>${busy}</p>`)
+    await reader.simulateContract({
+      address: resolver, abi: setTextAbi, functionName: 'setText',
+      args: [node, slot, value], account })
+
+    say(out, 'busy', `<p>${t('b.approve', 'Approve it in your wallet…')}</p>`)
+    const hash = await wallet.writeContract({
+      address: resolver, abi: setTextAbi, functionName: 'setText',
+      args: [node, slot, value], chain: sepolia })
+    await reader.waitForTransactionReceipt({ hash })
+
+    say(out, 'ok', `
+      <p class="found">✓ ${esc(done)}</p>
+      <dl>
+        <dt>${t('b.onname', 'on')}</dt><dd class="mono break">${esc(name)}</dd>
+        <dt class="mono">${esc(slot)}</dt>
+        <dd class="mono break"><a href="https://sepolia.etherscan.io/tx/${esc(hash)}" target="_blank" rel="noopener noreferrer">${esc(clip(hash, 26))}</a></dd>
+      </dl>
+      <p class="note">${t('b.edit.note', 'The change is on chain, and the window above will show it within a few seconds — the old text is not gone from the chain’s history, only from the record. A record keeps what it holds now; the chain keeps what it held before.')}</p>`,
+      { edited: name, slot, tx: hash })
+
+    if (!value) { editing = null; show($('edit-form'), false) }
+    $('edit-load').click()
+  } catch (e) {
+    say(out, 'bad', `<p>${t('b.wfail', 'That did not go through.')}</p>
+                     <p class="note mono">${esc(plain(e))}</p>`)
+  } finally {
+    writing = false
+    $('edit-save').disabled = false
+    $('edit-empty').disabled = false
+  }
+}
+
+$('edit-save').addEventListener('click', () => editWrite(
+  JSON.stringify({
+    v: 1,
+    title: $('edit-title').value.trim(),
+    body: $('edit-body').value.trim(),
+    at: editing?.at ?? new Date().toISOString(),
+    edited: new Date().toISOString(),
+  }),
+  t('b.simulating', 'Checking the write would succeed, before spending anything…'),
+  t('b.edit.saved', 'Changed.')))
+
+// Emptying is the same write with nothing in it. There is no delete on a
+// resolver, and pretending otherwise would be a nicer word for the same act.
+$('edit-empty').addEventListener('click', () => editWrite(
+  '',
+  t('b.simulating', 'Checking the write would succeed, before spending anything…'),
+  t('b.edit.emptied', 'Emptied. The record is still there; it holds nothing.')))
+
 // ─── The agent-facing surface ──────────────────────────────────────────────
 window.NEXTKEY = {
   record: RECORD_POST,
@@ -428,6 +805,14 @@ window.NEXTKEY = {
   version: 1,
 }
 
-window.__nextkeyRerender = () => {}
+// The overlay replaces every data-i18n string on a language change, so the
+// pause button and the posts themselves are redrawn by us.
+window.__nextkeyRerender = () => {
+  blogStatus()
+  if (blog.items.length) render()
+}
 ready()
-if (asked()) $('load').click()
+blogStatus()
+// The window fills itself: a community page that opens empty and waits to be
+// asked is a community page nobody reads.
+blogFill()
