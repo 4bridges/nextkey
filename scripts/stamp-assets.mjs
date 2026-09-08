@@ -42,7 +42,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const WEB = join(dirname(fileURLToPath(import.meta.url)), '..', 'web')
-const PAGES = ['index.html', 'poc.html', 'demo.html', 'blog.html', 'explorer.html']
+const PAGES = ['index.html', 'poc.html', 'demo.html', 'blog.html', 'explorer.html', 'donate.html']
 const check = process.argv.includes('--check')
 
 const hash = (file) =>
