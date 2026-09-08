@@ -275,6 +275,37 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   footer{border-top:1px solid var(--line);padding:2.2rem 0 3.5rem;color:var(--muted);font-size:.95rem}
   footer a{margin-right:1.2rem;display:inline-block}
   kbd,.k{background:var(--code);border-radius:4px;padding:.12em .4em;font-size:.94em}
+  /* ── One header on every page ──
+     The bar keeps the landing page's width even where the text below is set
+     narrower for reading: chrome that changes size between pages reads as a
+     different site, and the reading measure is a decision about paragraphs,
+     not about navigation. */
+  .bar .wrap{max-width:62rem}
+  .barnav{display:flex;align-items:center;gap:1.1rem;margin-inline-start:1.4rem;
+    margin-inline-end:auto;font-size:.95rem;
+    font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .barnav a{color:var(--muted);text-decoration:none;font-weight:600;white-space:nowrap}
+  .barnav a:hover{color:var(--ink)}
+  .barnav a[aria-current="page"]{color:var(--accent)}
+  /* The squashed bar, explained.
+     `.barin` sets a vertical padding, and on these pages the `.wrap` rule comes
+     *after* it in the sheet — its `padding:0 1.5rem` shorthand therefore resets
+     top and bottom to zero, and the header loses 22px it was meant to have.
+     The landing page declares `.wrap` first and keeps its padding, which is why
+     one bar looked taller than the others. Restated here, last, so every page
+     gets the height the landing page has. */
+  .bar .barin{padding-top:.7rem;padding-bottom:.7rem}
+
+  /* On a phone the four things in the bar do not fit on one line — brand, three
+     links, theme, language — so the links take a line of their own rather than
+     pushing the controls off the edge. */
+  @media (max-width:34rem){
+    .brand b{display:none}
+    .barin{flex-wrap:wrap}
+    .barnav{order:3;flex-basis:100%;margin:.45rem 0 0;gap:1rem;font-size:.9rem;
+      justify-content:flex-start}
+  }
+
 </style>
 </head>
 <body>
@@ -282,6 +313,11 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 <header class="bar">
   <div class="wrap barin">
     <a class="brand" href="./index.html" aria-label="NextKey"><svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M32 4.5 54.8 17.75v26.5L32 57.5 9.2 44.25v-26.5z" stroke="currentColor" stroke-width="5.5" stroke-linejoin="round"/><circle cx="32" cy="27" r="7" stroke="currentColor" stroke-width="5"/><path d="M32 34v13" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg><b>NextKey</b></a>
+    <nav class="barnav" aria-label="Sections">
+      <a href="./demo.html" data-i18n="nav.demo">Demo</a>
+      <a href="./explorer.html" data-i18n="nav.explorer">Explorer</a>
+      <a href="./blog.html" data-i18n="nav.community">Community</a>
+    </nav>
     <div class="barctl">
       <button class="iconbtn" id="themebtn" type="button" aria-live="polite"
               aria-label="Switch to dark theme" title="Switch theme">
@@ -328,6 +364,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     </p>
     <div class="actions">
       <a class="btn btn-primary" href="./demo.html" data-i18n="hero.cta2">Start demo</a>
+      <a class="btn btn-quiet" href="./explorer.html" data-i18n="x.cta">Explore a name</a>
       <a class="btn btn-quiet" href="./poc.html" data-i18n="hero.cta">Proof of concept</a>
       <a class="btn btn-quiet" href="https://github.com/4bridges/nextkey" data-i18n="hero.gh">View on GitHub</a>
     </div>
@@ -396,7 +433,29 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     </figure>
   </section>
 
-  <!-- 2 — The problem -->
+  <!-- 2 — Look one up -->
+  <section class="prose">
+    <h2 data-i18n="x.strip.h">Look a name up</h2>
+    <p data-i18n="x.strip.p">Everything below is checkable. Type a name on this deployment and see what it
+      carries, what it is holding, and — the part worth trying — whether an observer could work out who
+      was granted access.</p>
+    <form id="jump" class="actions" style="gap:.6rem;flex-wrap:wrap;margin-top:1.2rem">
+      <input type="text" id="jump-name" spellcheck="false" autocomplete="off"
+             aria-label="A name on the hackathon deployment"
+             data-i18n-ph="x.ph" placeholder="anna.nextkey.eth"
+             style="flex:1 1 18rem;min-width:0;font-size:1rem;line-height:1.55;color:var(--ink);
+                    background:var(--surface);border:1px solid var(--line);border-radius:8px;
+                    padding:.7rem .85rem">
+      <button class="btn btn-primary" type="submit" data-i18n="x.btn">Look it up</button>
+    </form>
+    <p class="note" style="margin-top:.8rem;font-size:.93rem;color:var(--muted)">
+      <span data-i18n="x.strip.try">Nothing to hand? Try</span>
+      <a href="./explorer.html?name=vault.nextkey.eth"><span class="mono">vault.nextkey.eth</span></a> ·
+      <a href="./explorer.html?name=anna.nextkey.eth"><span class="mono">anna.nextkey.eth</span></a>
+    </p>
+  </section>
+
+  <!-- 3 — The problem -->
   <section class="prose">
     <h2 data-i18n="prob.h">The problem</h2>
     <p data-i18n="prob.p1">
@@ -452,23 +511,25 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     <div class="cards">
       <div class="card">
         <h3 data-i18n="diff.1h">The agent proposes. A person disposes</h3>
-        <p data-i18n="diff.1p">The release agent's ENS role permits one record on one name and nothing else — a
-           boundary the registry enforces, not our code being careful. Before funds move or a
-           permission widens, a person confirms on a hardware device. Automation is useful right
-           up to the moment it can act alone.</p>
+        <p data-i18n="diff.1p">An agent can create a wallet, seal it and write it to ENS on its own. It cannot get
+           the passphrase back on its own. Its ENS role permits one record on one name and
+           nothing else — a boundary the registry enforces, not our code being careful — and
+           before funds move or a permission widens, a person confirms on a hardware device.</p>
       </div>
       <div class="card">
         <h3 data-i18n="diff.2h">We cannot read your secrets, and that is a property of the code</h3>
-        <p data-i18n="diff.2p">The owner is a recipient like any other — no master key, no owner-only path.
-           The honest cost is stated rather than hidden: lose your key file and the secret
-           is gone, because there is nobody who could recover it for you. Keep the key on a
-           Ledger and the device is the backup.</p>
+        <p data-i18n="diff.2p">The owner is a recipient like any other — no master key, no owner-only path. Even
+           the address a grant occupies is derived from a shared secret, so the chain shows
+           that something was granted without showing to whom. The honest cost, stated rather
+           than hidden: lose your key and the secret is gone, because nobody could recover it
+           for you. Keep that key on a Ledger and the device is the backup.</p>
       </div>
       <div class="card">
         <h3 data-i18n="diff.3h">Access is a protocol, not our database</h3>
-        <p data-i18n="diff.3p">Permissions live in an ENSv2 registry you own. Revoke one and it is gone whether
-           or not NextKey still exists. Set an expiry and access ends by itself, with nobody
-           having to remember.</p>
+        <p data-i18n="diff.3p">Permissions live in an ENSv2 registry you own. One secret can be granted to several
+           people, each at their own address, so revoking one leaves the others working — the
+           difference between granting access and handing over a copy. Revoke and it is gone
+           whether or not NextKey still exists; set an expiry and access ends by itself.</p>
       </div>
     </div>
   </section>
@@ -480,31 +541,49 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
       <div class="card">
         <h3>ENSv2</h3>
         <p data-i18n-html="hood.1p">Our own subname registry under <span class="mono">nextkey.eth</span>; each secret
-           a subname with a Permissioned Resolver. Confidentiality comes from cryptography —
-           the record holds ciphertext, and its <em>address</em> is derived from a shared secret,
-           so the chain does not show who was granted what. Control comes from protocol roles:
-           who may write, revoke or delegate, scoped per record.</p>
+           a subname with a Permissioned Resolver. Confidentiality comes from cryptography — the
+           record holds ciphertext, and its <em>address</em> comes out of an X25519 shared secret,
+           so the chain does not show who was granted what. A recipient finds their grant by
+           deriving that address themselves; a read receipt lands at a second address the same
+           two parties can compute. Control comes from protocol roles: who may write, revoke or
+           delegate, scoped per record.</p>
       </div>
       <div class="card">
         <h3>Chainlink CRE</h3>
-        <p data-i18n="hood.2p">The release condition — a guardian quorum and a waiting period — is evaluated
-           inside a Confidential Workflow. Only a verdict crosses back out, carrying the
-           hash of the public request so anyone can check which request it judged.</p>
+        <p data-i18n="hood.2p">The release condition — a waiting period, a long silence, the approvals you asked
+           for — is evaluated inside a Confidential Workflow rather than in public. Only a
+           verdict crosses back out, carrying the hash of the public request, so anyone can
+           check which request it judged without seeing what was weighed.</p>
       </div>
       <div class="card">
         <h3>Ledger</h3>
         <p data-i18n="hood.3p">The human in the loop is a device, not a dialog box. A recipient keeps their key on
            a Ledger instead of in a file; the device performs the key agreement itself and
            refuses without a confirmation, so nothing an agent proposes can complete while
-           nobody is watching. Senders never know the difference — what they read is a public
-           key in an ENS record.</p>
+           nobody is watching. One approval is enough: the same arithmetic yields the address
+           and the key that opens it. Senders never know the difference — what they read is a
+           public key in an ENS record.</p>
       </div>
     </div>
   </section>
 
-  <!-- 6 — FAQ -->
+  <!-- 6 — Community -->
+  <section class="prose">
+    <h2 data-i18n="comm.h">Community</h2>
+    <p data-i18n="comm.p1">
+      A post is a public record on an ENS name — the same names the rest of NextKey uses, and the
+      exact mirror of a sealed secret: written in the open, readable by anyone, and revocable by
+      whoever owns the name. Agents and people publish the same way, with a wallet or with a name
+      we lend you.
+    </p>
+    <p class="actions" style="margin-top:1.4rem">
+      <a class="btn btn-quiet" href="./blog.html" data-i18n="comm.cta">Read and write posts</a>
+    </p>
+  </section>
+
+  <!-- 7 — FAQ -->
   <section>
-    <h2 data-i18n="faq.h">Questions people actually ask</h2>
+    <h2 data-i18n="faq.h">FAQ</h2>
     <div class="faq">
 
       <details>
@@ -512,9 +591,10 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
         <p data-i18n-html="faq.1a1">Encrypt it to a key only that person holds, and put the ciphertext somewhere you
            both can reach.</p>
         <p data-i18n-html="faq.1a2">NextKey does this by name: you name a recipient, it reads the public key they
-           publish in their own ENS records, and wraps the secret's key to it. Nothing
-           readable ever passes through a message, a document, or our servers — and the
-           recipient does not have to sign up anywhere first.</p>
+           publish in their own ENS records, and wraps the secret's key to it. Nothing readable
+           ever passes through a message, a document, or our servers — and the recipient does
+           not have to sign up anywhere first. An agent can do the same for a wallet it just
+           created, and then not be able to open it again.</p>
       </details>
 
       <details>
@@ -537,6 +617,15 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
            read receipt works the same way in reverse: the recipient writes to a second address
            only the two parties can compute, which the sender can check without asking anyone.
            It also makes the moment of reading public, so it is a choice rather than a default.</p>
+      </details>
+
+      <details>
+        <summary data-i18n="faq.8q">Can I share one secret with more than one person?</summary>
+        <p data-i18n-html="faq.8a1">Yes, and each of them can be cut off without touching the others.</p>
+        <p data-i18n-html="faq.8a2">A name publishes one ephemeral key and one ciphertext. Every recipient gets one
+           further record, at an address derived from that key and theirs, so two grants share
+           no key material. Adding somebody weeks later re-encrypts nothing. An observer can
+           count how many grants a name carries; whose they are stays hidden.</p>
       </details>
 
       <details>
@@ -584,6 +673,8 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   <a href="https://github.com/4bridges/nextkey">GitHub</a>
   <a href="./demo.html" data-i18n="foot.try">Start demo</a>
   <a href="./poc.html" data-i18n="foot.demo">Proof of concept</a>
+  <a href="./blog.html" data-i18n="comm.cta">Read and write posts</a>
+  <a href="./explorer.html" data-i18n="x.cta">Explore a name</a>
   <a href="https://github.com/4bridges/nextkey/blob/main/LICENSE" data-i18n="foot.lic">MIT License</a>
   <a href="mailto:hello@4bridges.ch" data-i18n="foot.contact">Contact</a>
 </footer>
@@ -596,6 +687,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     {"@type":"Question","name":"How do I safely pass on my seed phrase to someone?","acceptedAnswer":{"@type":"Answer","text":"Encrypt it to a key only that person holds, and put the ciphertext somewhere you both can reach. NextKey does this by name: it reads the public key the recipient publishes in their own ENS records and wraps the secret's key to it, so nothing readable passes through a message or a server, and the recipient does not have to sign up first."}},
     {"@type":"Question","name":"Can an AI agent hold a wallet safely?","acceptedAnswer":{"@type":"Answer","text":"Not if it holds the key; it can hold a wallet whose passphrase it cannot read back. With NextKey the agent generates the phrase, seals it to a person's published key and writes the ciphertext to ENS. Recovering those words then needs a human confirmation, a time lock or whatever condition was set, so a compromised agent leaks a record anyone could already read."}},
     {"@type":"Question","name":"How does the recipient know a secret is waiting for them?","acceptedAnswer":{"@type":"Answer","text":"They derive it rather than being notified. A recipient reads one public value off a name, does a single scalar multiplication with their own key, and arrives at the record where anything addressed to them would be. There is no server to send a notification, and finding every such name needs an indexer, so today this works on names the recipient knows about. A read receipt works the same way in reverse, at a second address only the two parties can compute."}},
+    {"@type":"Question","name":"Can I share one secret with more than one person?","acceptedAnswer":{"@type":"Answer","text":"Yes, and each of them can be cut off without touching the others. A name publishes one ephemeral key and one ciphertext; every recipient gets one further record, at an address derived from that key and theirs, so two grants share no key material. Adding somebody weeks later re-encrypts nothing. An observer can count how many grants a name carries, but not whose they are."}},
     {"@type":"Question","name":"Can I share a password without both of us using the same password manager?","acceptedAnswer":{"@type":"Answer","text":"Yes. The recipient needs an ENS name and a published key, not an account with NextKey."}},
     {"@type":"Question","name":"Does NextKey ever see my secrets?","acceptedAnswer":{"@type":"Answer","text":"No. Secrets are encrypted before they leave your machine and NextKey holds no key that could open them. The ciphertext on chain is public and useless without a key; the owner reaches their own secret through the same grant mechanism as any other recipient, so there is no administrative path and no way to recover a lost key file."}},
     {"@type":"Question","name":"What is an ENS name and do I need one?","acceptedAnswer":{"@type":"Answer","text":"An ENS name is a readable name that points at things on Ethereum, like anna.eth instead of a long hex address. To receive a secret you need one plus a published key. NextKey stores the permissions themselves in ENS, so they outlive the product."}},
@@ -618,7 +710,18 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 </script>
 
 
-<script src="./i18n.js?v=1d437203"></script>
+<script>
+/* The one piece of behaviour on this page: hand the name to the explorer.
+   Deliberately not a chain read — the landing page carries no viem bundle and
+   should not start carrying one for a text field. */
+document.addEventListener('submit', function (e) {
+  if (e.target.id !== 'jump') return
+  e.preventDefault()
+  var v = document.getElementById('jump-name').value.trim().toLowerCase()
+  location.href = './explorer.html' + (v ? '?name=' + encodeURIComponent(v) : '')
+})
+</script>
+<script src="./i18n.js?v=40521dcf"></script>
 <script>
 /**
  * Translation is applied over the page, not baked into it.

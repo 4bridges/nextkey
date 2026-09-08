@@ -27,6 +27,31 @@
 
 </IfModule>
 
+# ── Addresses without the extension ────────────────────────────────────────
+# /explorer rather than /explorer.html. The pages sit in the document root, so
+# every relative link inside them (./demo.js, ./i18n.js, ./brand/…) still
+# resolves against the root and keeps working — which is why this can be a
+# rewrite and does not need any change to the markup.
+#
+# The rule only fires when the requested path is not a real file or directory,
+# so an existing asset is never rewritten, and .html is still served directly
+# for anyone who types it or follows an older link.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # /explorer.html → /explorer, once, so one address is canonical and search
+  # engines are not offered two spellings of the same page.
+  RewriteCond %{THE_REQUEST} "\s/+([^\s?]+)\.html[\s?]" [NC]
+  RewriteRule ^ /%1 [R=301,L]
+
+  # /explorer → explorer.html, internally.
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{DOCUMENT_ROOT}/$1.html -f
+  RewriteRule ^(.+?)/?$ $1.html [L]
+</IfModule>
+
 # ETags let the revalidation above answer 304 instead of resending the file.
 FileETag MTime Size
 

@@ -142,6 +142,37 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   footer{border-top:1px solid var(--line);padding:2rem 0 3rem;color:var(--muted);font-size:.94rem}
   footer p{max-width:44rem}
   footer a{margin-right:1.1rem}
+  /* ── One header on every page ──
+     The bar keeps the landing page's width even where the text below is set
+     narrower for reading: chrome that changes size between pages reads as a
+     different site, and the reading measure is a decision about paragraphs,
+     not about navigation. */
+  .bar .wrap{max-width:62rem}
+  .barnav{display:flex;align-items:center;gap:1.1rem;margin-inline-start:1.4rem;
+    margin-inline-end:auto;font-size:.95rem;
+    font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .barnav a{color:var(--muted);text-decoration:none;font-weight:600;white-space:nowrap}
+  .barnav a:hover{color:var(--ink)}
+  .barnav a[aria-current="page"]{color:var(--accent)}
+  /* The squashed bar, explained.
+     `.barin` sets a vertical padding, and on these pages the `.wrap` rule comes
+     *after* it in the sheet — its `padding:0 1.5rem` shorthand therefore resets
+     top and bottom to zero, and the header loses 22px it was meant to have.
+     The landing page declares `.wrap` first and keeps its padding, which is why
+     one bar looked taller than the others. Restated here, last, so every page
+     gets the height the landing page has. */
+  .bar .barin{padding-top:.7rem;padding-bottom:.7rem}
+
+  /* On a phone the four things in the bar do not fit on one line — brand, three
+     links, theme, language — so the links take a line of their own rather than
+     pushing the controls off the edge. */
+  @media (max-width:34rem){
+    .brand b{display:none}
+    .barin{flex-wrap:wrap}
+    .barnav{order:3;flex-basis:100%;margin:.45rem 0 0;gap:1rem;font-size:.9rem;
+      justify-content:flex-start}
+  }
+
 </style>
 </head>
 <body>
@@ -149,6 +180,11 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 <header class="bar">
   <div class="wrap barin">
     <a class="brand" href="./index.html" aria-label="NextKey"><svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M32 4.5 54.8 17.75v26.5L32 57.5 9.2 44.25v-26.5z" stroke="currentColor" stroke-width="5.5" stroke-linejoin="round"/><circle cx="32" cy="27" r="7" stroke="currentColor" stroke-width="5"/><path d="M32 34v13" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg><b>NextKey</b></a>
+    <nav class="barnav" aria-label="Sections">
+      <a href="./demo.html" data-i18n="nav.demo">Demo</a>
+      <a href="./explorer.html" data-i18n="nav.explorer">Explorer</a>
+      <a href="./blog.html" data-i18n="nav.community">Community</a>
+    </nav>
     <div class="barctl">
       <button class="iconbtn" id="themebtn" type="button"
               aria-label="Switch to dark theme" title="Switch theme">
@@ -275,7 +311,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   </p>
 </footer>
 
-<script src="./i18n.js?v=1d437203"></script>
+<script src="./i18n.js?v=40521dcf"></script>
 <script>
 /**
  * Same overlay as the landing page, same storage keys, so a language or theme
