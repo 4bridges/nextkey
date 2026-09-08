@@ -50,7 +50,7 @@ import {
   randomX25519Secret, seal, unseal, grantFor, openGrant,
   readRecord, setRecord, shareSecret, signAsOwner,
   ephMessage, ephSecretFromSignature, ephSecretFor, sealEphSecret,
-  grantForV2, grantKeyV2, openOwnGrantV2,
+  grantForV2, grantKeyV2, openOwnGrantV2, padSecret, unpadSecret,
 } from './nextkey-core.mjs'
 
 // Everything above the command list now lives in nextkey-core.mjs, because
@@ -223,7 +223,9 @@ else if (cmd === 'store') {
   }
 
   console.log(`  encrypting ${secret.length} characters with a fresh AES-256-GCM key`)
-  await setRecord(label, RECORD_SECRET, JSON.stringify({ v: 1, alg: 'A256GCM', ...(await seal(contentKey, secret))}))
+  // Padded, so the record's length says nothing about the secret's. See
+  // padSecret in nextkey-core.mjs for what that does and does not hide.
+  await setRecord(label, RECORD_SECRET, JSON.stringify({ v: 1, alg: 'A256GCM', ...(await seal(contentKey, padSecret(secret)))}))
 
   // The owner is a recipient like any other. No special path, no master key —
   // if we kept one, "we cannot read your secrets" would be a lie.
@@ -306,7 +308,7 @@ else if (cmd === 'open') {
     contentKey = await openGrant(grantJson, id)
   }
 
-  const plaintext = await unseal(contentKey, JSON.parse(sealedJson))
+  const plaintext = unpadSecret(await unseal(contentKey, JSON.parse(sealedJson)))
   console.log(`\n  ${name}  opened as ${identity}${id.device ? ' (Ledger)' : ''} · ${scheme}`)
   console.log(`  ${plaintext}\n`)
   if (id.device === 'ledger') (await import('./ledger.mjs')).disconnect()

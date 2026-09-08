@@ -164,6 +164,13 @@ try {
     await page.click('#store-out details.why >> nth=0')
     const s3open = await panel('store-out')
     check('the three records are one tap away', /nextkey\.eph/.test(s3open))
+    // AES-GCM does not pad, so an unpadded ciphertext is exactly as long as the
+    // secret — and it is a public record. Padded to a 256-byte block, every
+    // short secret produces the same 272 bytes, which is 364 characters of
+    // base64 whatever was typed. A number, not an opinion.
+    const ct = [...s3open.matchAll(/"ct":\s*"([A-Za-z0-9+/=]+)"/g)].map((m) => m[1])
+    check('the ciphertext length says nothing about the secret',
+      ct.some((v) => v.length === 364))
     check('and no v1 grant record is written', !/nextkey\.grant\./.test(s3open))
 
     // Sealing settles what was sealed and to whom. Leaving those controls live

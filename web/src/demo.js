@@ -44,7 +44,7 @@ import { DEMO_KEY, POOL, POOL_RESOLVER } from './demo-wallet.js'
 import {
   b64, un64, randomSecret, publicKeyOf,
   seal, unseal,
-  RECORD_EPH, ephMessage, ephSecretFromSignature,
+  RECORD_EPH, ephMessage, ephSecretFromSignature, padSecret, unpadSecret,
   grantForV2, locateGrantV2, openGrantV2,
   locateAckV2, ackKeyForSender,
 } from './nk-crypto.mjs'
@@ -504,7 +504,10 @@ $('go-store').addEventListener('click', async () => {
     // ask for no wallet; step 6 derives one instead, and says so when it does.
     S.eph = (() => { const sk = randomSecret(); return { sk, pk: publicKeyOf(sk) } })()
 
-    S.sealed = { v: 1, alg: 'A256GCM', ...(await seal(S.contentKey, S.phrase)) }
+    // Padded before it is sealed: AES-GCM does not pad, so an unpadded
+    // ciphertext is exactly as long as the secret and a public record would
+    // tell a passphrase from a message without decrypting either.
+    S.sealed = { v: 1, alg: 'A256GCM', ...(await seal(S.contentKey, padSecret(S.phrase))) }
     const g = await grantForV2(S.contentKey, S.eph.sk, S.recipient.pk)
     S.grant = g.value
     S.grantKey = g.key
@@ -694,7 +697,7 @@ const wroteIt = (out, name, hashes, moved, extra = '') => {
       <dt class="mono">${esc(k)}</dt>
       <dd class="mono break"><a href="https://sepolia.etherscan.io/tx/${esc(h)}" rel="noopener">${esc(clip(h, 26))}</a></dd>`).join('')}
     </dl>
-    <p class="note"><a href="https://hackathon-deployment-portal-app.ens-cf.workers.dev/" rel="noopener">${t('t.s6.explorer', 'See them in the ENS explorer')}</a></p>
+    <p class="note"><a href="./explorer.html?name=${encodeURIComponent(name)}">${t('t.s6.explorer', 'See what this name now carries')}</a></p>
     ${why(t('t.why', 'Why this matters'), `
       ${extra}
       ${moved === S.grantKey ? '' : `
@@ -1136,7 +1139,7 @@ $('check-inbox').addEventListener('click', async () => {
     const sealedJson = await fromChain(RECORD_SECRET, hit.name)
     const contentKey = await openGrantV2(
       JSON.parse(hit.grantJson), hit.ephPk, S.recipient.sk, S.recipient.pk)
-    const text = await unseal(JSON.parse(sealedJson), contentKey)
+    const text = unpadSecret(await unseal(JSON.parse(sealedJson), contentKey))
 
     // The receipt is only offered once something has actually been read. An
     // acknowledgement of an unopened message would be a lie with a button.

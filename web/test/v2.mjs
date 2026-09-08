@@ -25,6 +25,7 @@ import {
   b64, un64, unseal, randomX25519Secret,
   ephMessage, ephSecretFromSignature, sealEphSecret, openEphSecret,
   grantForV2, grantKeyV2, wrapKeyV2, tagFor,
+  seal, padSecret, unpadSecret, PAD_BLOCK,
 } from '../../scripts/nextkey-core.mjs'
 
 const results = []
@@ -122,6 +123,44 @@ check('the published tag is not a prefix of the wrapping key',
 // elsewhere, or a grant could be replayed onto another name or recipient.
 check('the derivation is bound to this exact pairing',
   grantKeyV2(annaShared, anna.pk, ephPk) !== toAnna.key)
+
+// ── Padding ────────────────────────────────────────────────────────────────
+// AES-GCM does not pad, so without help the ciphertext is exactly as long as
+// the secret — and the ciphertext is a public record. Anybody could read a
+// twelve-word phrase apart from a two-paragraph message without decrypting
+// either. These checks are about that leak and about not breaking what is
+// already on chain.
+
+const SECRETS = [
+  'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',
+  'Hi how are you? First message we exchange.',
+  '',
+  'ü'.repeat(120),
+]
+
+check('padding lands every short secret in the same block',
+  SECRETS.every((s) => Buffer.byteLength(padSecret(s), 'utf8') === PAD_BLOCK))
+
+check('and a longer one in a higher block, not a bespoke length',
+  Buffer.byteLength(padSecret('x'.repeat(300)), 'utf8') === PAD_BLOCK * 2)
+
+check('unpadding returns exactly what went in',
+  SECRETS.every((s) => unpadSecret(padSecret(s)) === s))
+
+// The property in one line: two different secrets, one ciphertext length.
+{
+  const key = crypto.getRandomValues(new Uint8Array(32))
+  const a = await seal(key, padSecret(SECRETS[0]))
+  const b = await seal(key, padSecret(SECRETS[1]))
+  check('two different secrets produce ciphertexts of the same length',
+    a.ct.length === b.ct.length)
+}
+
+// Records written before padding existed carry no trailing NULs, so unpadding
+// has to be a no-op for them. Anything else would strand every secret already
+// on Sepolia.
+check('a record written before padding existed still comes back whole',
+  unpadSecret('written last week, unpadded') === 'written last week, unpadded')
 
 const failed = results.filter((r) => !r).length
 console.log(failed

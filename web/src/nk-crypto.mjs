@@ -87,6 +87,39 @@ export const openGrant = async (grant, sk, pk) => {
   return un64(await unseal(grant, kek))
 }
 
+const utf8len = (s) => utf8.encode(s).length
+
+// ═══ Padding ═══════════════════════════════════════════════════════════════
+//
+// AES-GCM does not pad, so a ciphertext is exactly as long as its plaintext —
+// and the ciphertext is a public record. Anybody could therefore tell a
+// twelve-word phrase from a two-paragraph message without decrypting either,
+// which is a leak the explorer made visible by printing the length. Removing
+// the number would have hidden the symptom; this removes the cause.
+//
+// Only the secret payload is padded. The other things that get sealed — a
+// wrapped content key, a wrapped ephemeral key — are fixed-length key material
+// already, and padding them would triple three records that leak nothing.
+//
+// What it does not do: a very long secret still lands in a higher bucket, so
+// the length is coarse rather than absent. Blocks of 256 bytes put every
+// passphrase, credential and short message in the same one, which is where the
+// distinction mattered.
+//
+// Backwards compatible in both directions. Unpadding strips trailing NUL
+// bytes, and a record written before this existed has none, so it comes back
+// unchanged. The one thing lost is a secret that deliberately ends in NUL
+// bytes — not something a passphrase, a key or a typed message contains.
+export const PAD_BLOCK = 256
+
+export const padSecret = (text) => {
+  const n = utf8len(text)
+  const to = Math.ceil((n + 1) / PAD_BLOCK) * PAD_BLOCK
+  return text + '\u0000'.repeat(to - n)
+}
+
+export const unpadSecret = (text) => text.replace(/\u0000+$/, '')
+
 // ═══ v2 ════════════════════════════════════════════════════════════════════
 //
 // The counterpart of the v2 section in scripts/nextkey-core.mjs, and the same

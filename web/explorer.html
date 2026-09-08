@@ -8,8 +8,8 @@
 <link rel="apple-touch-icon" href="./brand/apple-touch-icon.png">
 <link rel="manifest" href="./brand/site.webmanifest">
 <meta name="theme-color" content="#9a5218">
-<title>NextKey — playground</title>
-<meta name="description" content="An agent makes a wallet, seals the passphrase to a person, and gets it back on release. The whole loop in your browser, no wallet required.">
+<title>NextKey — explorer</title>
+<meta name="description" content="Read a name on the hackathon ENS deployment and see, in plain words, what it carries and what an observer can learn from it.">
 <meta name="robots" content="noindex">
 <script>
 (function(){try{var t=localStorage.getItem('nextkey.theme')
@@ -321,8 +321,8 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   <div class="wrap barin">
     <a class="brand" href="./index.html" aria-label="NextKey"><svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M32 4.5 54.8 17.75v26.5L32 57.5 9.2 44.25v-26.5z" stroke="currentColor" stroke-width="5.5" stroke-linejoin="round"/><circle cx="32" cy="27" r="7" stroke="currentColor" stroke-width="5"/><path d="M32 34v13" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg><b>NextKey</b></a>
     <nav class="barnav" aria-label="Sections">
-      <a href="./demo.html" data-i18n="nav.demo" aria-current="page">Demo</a>
-      <a href="./explorer.html" data-i18n="nav.explorer">Explorer</a>
+      <a href="./demo.html" data-i18n="nav.demo">Demo</a>
+      <a href="./explorer.html" data-i18n="nav.explorer" aria-current="page">Explorer</a>
       <a href="./blog.html" data-i18n="nav.community">Community</a>
     </nav>
     <div class="barctl">
@@ -361,234 +361,60 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 </header>
 
 <div class="wrap" style="padding-top:2.6rem">
-  <p class="eyebrow" data-i18n="t.eyebrow">Demo</p>
-  <h1 data-i18n="t.h1">Wallet recovery with a human-in-the-loop</h1>
-  <p class="lead" data-i18n="t.lead">
-    Create a wallet here with social recovery to a human-in-the-loop. Only that human can
-    recover the wallet. You can share a secret message the same way — just switch the
-    button below.
+  <p class="eyebrow" data-i18n="x.eyebrow">Explorer</p>
+  <h1 data-i18n="x.h1">What does this name carry?</h1>
+  <p class="lead" data-i18n="x.lead">
+    Type a name on the hackathon deployment and this page reads it from Sepolia, then says in
+    plain words what each record means — what the name can do, what it is holding, and what an
+    observer can and cannot learn from it.
   </p>
-
-  <div class="seg" role="group" aria-label="What to share">
-    <button class="segbtn" id="mode-wallet" type="button" aria-pressed="true"
-            data-i18n="t.mode.wallet">Create wallet</button>
-    <button class="segbtn" id="mode-message" type="button" aria-pressed="false"
-            data-i18n="t.mode.message">Create message</button>
-  </div>
-
   <p class="provenance" data-i18n="hero.prov">Prototype · ENSv2 on Sepolia testnet · Built at ETHGlobal ETHOnline 2026</p>
-
-  <noscript>
-    <div class="fallback">
-      <p data-i18n-html="t.nojs"><strong>This page does its work in JavaScript, which is switched off.</strong>
-        Nothing here is sent anywhere, so there is no server-rendered version to fall back to.
-        <a href="./poc.html">The live view</a> and
-        <a href="https://github.com/4bridges/nextkey#readme">the README</a> explain the same
-        loop without running anything.</p>
-    </div>
-  </noscript>
 </div>
 
 <main class="wrap">
-
-  <!-- 1 ─────────────────────────────────────────────────────────────────── -->
-  <section class="step">
-    <div class="n">1</div>
-    <h2 id="s1-h" data-i18n="t.s1.h">Create wallet</h2>
-    <p id="s1-p" data-i18n="t.s1.p">A fresh twelve-word phrase.</p>
-
-    <div id="pane-wallet">
-      <div class="row">
-        <button class="act" id="gen" type="button" data-i18n="t.s1.gen.btn">New wallet</button>
-      </div>
-      <div class="out" id="wallet-made" hidden></div>
-    </div>
-
-    <div id="pane-message" hidden>
-      <div id="pane-message-box">
-        <textarea id="phrase" spellcheck="false" autocomplete="off"
-          aria-label="The message to send"></textarea>
-      </div>
-      <div class="out" id="message-made" hidden></div>
-      <div class="row" id="msg-edit-row" hidden>
-        <button class="act ghost" id="msg-edit" type="button" data-i18n="t.s1.edit">Edit the message</button>
-      </div>
-    </div>
-
-    <p class="state" id="step1-state"></p>
-  </section>
-
-  <!-- 2 ─────────────────────────────────────────────────────────────────── -->
-  <section class="step">
-    <div class="n">2</div>
-    <h2 id="s2-h" data-i18n="t.s2.h">Choose your grant</h2>
-    <p id="s2-p" data-i18n="t.s2.p">A name on ENS, any public address. Your grant will receive it — no need to
-      register with NextKey.</p>
+  <section class="step" style="padding-left:0;padding-top:2rem">
     <div class="row">
-      <input type="text" id="ens-name" spellcheck="false" autocomplete="off"
+      <input type="text" id="name" spellcheck="false" autocomplete="off"
              aria-label="A name on the hackathon deployment"
-             data-i18n-ph="t.s2.ph" placeholder="anna.nextkey.eth"
+             data-i18n-ph="x.ph" placeholder="anna.nextkey.eth"
              style="flex:1 1 100%;min-width:0">
     </div>
     <div class="row">
-      <button class="act ghost" id="lookup" type="button" data-i18n="t.s2.look.btn">Confirm grant</button>
-      <button class="act ghost" id="gen-recipient" type="button" data-i18n="t.s2.gen.btn">Create a demo grant</button>
+      <button class="act" id="look" type="button" data-i18n="x.btn">Look it up</button>
+      <button class="act ghost" id="try" type="button" data-i18n="x.try">Try an example</button>
     </div>
-    <div class="out" id="r-out" hidden></div>
+    <div class="out" id="verdict" hidden></div>
+    <div class="out" id="records" hidden></div>
   </section>
 
-  <!-- 3 ─────────────────────────────────────────────────────────────────── -->
-  <section class="step">
-    <div class="n">3</div>
-    <h2 data-i18n="t.s3.h">Seal and grant it</h2>
-    <p data-i18n="t.s3.p">One AES-256-GCM key for the content, then wrapped to the recipient with X25519 and
-      HKDF-SHA256. What is sealed here opens there.</p>
+  <section class="step" id="step-check" style="padding-left:0" hidden>
+    <h2 data-i18n="x.check.h">Can an observer tell who has access?</h2>
+    <p data-i18n="x.check.p">Name somebody who publishes a key. This page will do exactly what a
+      stranger watching the chain could do: work out where that person’s grant would live, and look.
+      On a v1 name it finds it. On a v2 name it cannot even compute the address.</p>
     <div class="row">
-      <button class="act" id="go-store" type="button" disabled data-i18n="t.s3.btn">Seal and grant</button>
-    </div>
-    <div class="out" id="store-out" hidden></div>
-  </section>
-
-  <!-- 4 ─────────────────────────────────────────────────────────────────── -->
-  <section class="step" id="step-chain" hidden>
-    <div class="n">4</div>
-    <h2 data-i18n="t.chain.h">Put it on the chain</h2>
-    <p data-i18n="t.chain.p">So far this was arithmetic inside a tab. Writing it to ENS is what lets the
-      recipient find it from another machine, and lets you take it back.</p>
-
-    <div class="lane" id="lane-demo">
-      <h3 data-i18n="t.chain.demo.h">Without a wallet</h3>
-      <p data-i18n="t.chain.demo.p">We lend you one of our names and pay the gas. The key that signs this is
-        published in this page — it owns nothing and may write only to these names, which is why we can
-        hand it to strangers. Works on a phone.</p>
-      <div class="row">
-        <button class="act" id="write-demo" type="button"
-                data-i18n="t.chain.demo.btn">Write it for me</button>
-      </div>
-      <p class="state" id="demo-state"></p>
-      <div class="out" id="demo-out" hidden></div>
-    </div>
-
-    <details class="more" id="lane-own-wrap">
-      <summary data-i18n="t.chain.or">Or write it to a name you hold yourself</summary>
-      <div class="lane" id="lane-own">
-        <h3 data-i18n="t.chain.own.h">With your own wallet, to your own name</h3>
-        <p data-i18n="t.chain.own.p">The real product: your name, your wallet, your gas. Nothing of ours is
-          involved except the arithmetic.</p>
-        <div class="row">
-          <button class="act ghost" id="connect" type="button"
-                  data-i18n="t.s6.connect.btn">Connect a wallet</button>
-        </div>
-        <div class="out" id="wallet-out" hidden></div>
-        <div class="row">
-          <input type="text" id="own-name" spellcheck="false" autocomplete="off"
-                 aria-label="A name you own"
-                 data-i18n-ph="t.s6.ph" placeholder="the name you own, e.g. yourname.eth"
-                 style="flex:1 1 18rem;min-width:0">
-        </div>
-        <div class="row">
-          <button class="act" id="publish" type="button" disabled
-                  data-i18n="t.chain.own.btn">Write to my name</button>
-        </div>
-        <p class="state" data-i18n="t.s6.noname">No name on this deployment? Use the lane above — it needs nothing from you.
-          Getting a name of your own is four transactions, a sixty-second commit–reveal wait and mock USDC,
-          which is the registrar's design and not something to do out of curiosity.
-          scripts/register-name.mjs in the repository walks through it and prints each call.</p>
-      </div>
-    </details>
-
-    <div class="out" id="publish-out" hidden></div>
-  </section>
-
-  <!-- 5 ─────────────────────────────────────────────────────────────────── -->
-  <section class="step" id="step-open" hidden>
-    <div class="n">5</div>
-    <h2 data-i18n="t.s4.h">The inbox</h2>
-    <p data-i18n="t.chain.open.p">The recipient is told nothing — no address, no notification. They read one
-      public value off each name they know and work out for themselves whether anything there is
-      addressed to them.</p>
-    <div class="row">
-      <input type="text" id="inbox-names" spellcheck="false" autocomplete="off"
-             aria-label="Names to scan"
-             data-i18n-ph="t.s4.ph" placeholder="names to scan, separated by commas"
-             style="flex:1 1 20rem;min-width:0">
-    </div>
-    <div class="row">
-      <button class="act" id="check-inbox" type="button" data-i18n="t.s4.btn1">Check the inbox</button>
-      <button class="act ghost" id="open-other" type="button" data-i18n="t.s4.btn2">Try it as a stranger</button>
-    </div>
-    <p class="state" id="open-remote-note" hidden data-i18n="t.s4.remote">You granted it to a name on chain, and their private key is on their machine,
-      not in this browser. So this page cannot open it — and that is the property the
-      whole thing rests on. They would run: nextkey.mjs open &lt;label&gt; &lt;their identity&gt;</p>
-    <div class="out" id="open-out" hidden></div>
-
-    <div id="receipt-row" hidden>
-      <div class="row">
-        <button class="act ghost" id="send-ack" type="button" data-i18n="t.ack.send">Send a read receipt</button>
-        <button class="act ghost" id="check-ack" type="button" data-i18n="t.ack.check">Check for one, as the sender</button>
-      </div>
-      <div class="out" id="ack-out" hidden></div>
-    </div>
-  </section>
-
-  <!-- 6 ─────────────────────────────────────────────────────────────────── -->
-  <section class="step" id="step-more" hidden>
-    <div class="n">6</div>
-    <h2 data-i18n="t.s7.h">Grant to another</h2>
-    <p data-i18n="t.s7.p">The same secret, a second recipient. Nothing is re-encrypted and no record is
-      replaced — one more grant appears at an address only that recipient can compute.</p>
-    <div class="row">
-      <input type="text" id="more-name" spellcheck="false" autocomplete="off"
-             aria-label="Another name on the hackathon deployment"
-             data-i18n-ph="t.s7.ph" placeholder="bob.nextkey.eth"
+      <input type="text" id="who" spellcheck="false" autocomplete="off"
+             aria-label="Somebody who publishes a key"
+             data-i18n-ph="x.check.ph" placeholder="anna.nextkey.eth"
              style="flex:1 1 100%;min-width:0">
     </div>
     <div class="row">
-      <button class="act ghost" id="grant-more" type="button" data-i18n="t.s7.btn">Grant to this name</button>
+      <button class="act ghost" id="check" type="button" data-i18n="x.check.btn">Try to find their grant</button>
     </div>
-    <div class="out" id="more-out" hidden></div>
+    <div class="out" id="check-out" hidden></div>
   </section>
 
-  <!-- 7 ─────────────────────────────────────────────────────────────────── -->
-  <section class="step" id="step-revoke" hidden>
-    <div class="n">7</div>
-    <h2 data-i18n="t.s5.h">Take it back</h2>
-    <p data-i18n="t.chain.revoke.p">A second transaction empties the grant record and leaves the ciphertext
-      untouched. Then check the inbox again.</p>
+  <section class="step" id="step-log" style="padding-left:0" hidden>
+    <h2 data-i18n="x.log.h">Everything ever written to it</h2>
+    <p data-i18n="x.log.p">Every write to this name is an event on the resolver, and every event is a
+      transaction anybody can look up. Below is that history, newest first, with what each write did
+      said in words.</p>
     <div class="row">
-      <button class="act ghost" id="revoke" type="button" data-i18n="t.s5.btn">Revoke the grant</button>
+      <button class="act" id="history" type="button" data-i18n="x.log.btn">Show the history</button>
     </div>
-    <div class="out" id="revoke-out" hidden></div>
+    <div class="out" id="log-out" hidden></div>
   </section>
 
-  <!-- For agents ─────────────────────────────────────────────────────────── -->
-  <details class="more" id="agent-api">
-    <summary data-i18n="t.agent.h">For agents — the same loop without a browser</summary>
-    <p data-i18n="t.agent.p">Every step above has a command-line equivalent, and the page reports what it
-      did in a form a program can read. Nothing here needs a person watching.</p>
-    <pre class="mono">nextkey.mjs new &lt;label&gt;
-nextkey.mjs share &lt;label&gt; &lt;identity&gt; &lt;recipient&gt;
-nextkey.mjs open  &lt;name&gt;  &lt;identity&gt;
-nextkey.mjs revoke &lt;label&gt; &lt;recipient&gt;</pre>
-    <p data-i18n="t.agent.url">This page takes three parameters, so a prepared state is one link:
-      <span class="mono">?mode=message</span> starts on the message side,
-      <span class="mono">?to=anna.nextkey.eth</span> fills in the recipient and reads their key,
-      <span class="mono">?lang=de</span> sets the language. A secret is never accepted in a URL —
-      a URL is written down in more places than anybody expects.</p>
-    <p data-i18n="t.agent.js">In the page, <span class="mono">window.NEXTKEY.state()</span> returns what has happened
-      so far as JSON, and every result panel carries the same thing on a
-      <span class="mono">data-nk</span> attribute. Private keys are not in either.</p>
-  </details>
-
-  <details class="more">
-    <summary data-i18n="t.after1">What just happened, and what it proves</summary>
-    <p data-i18n="t.after2">The ciphertext and the grant were public from the moment they existed. Anyone
-      could read them; nobody could use them. What separated the recipient from everyone else was a
-      private key that was never published, never uploaded and never held by us.</p>
-    <p data-i18n="t.after3">The stranger's failure is the part worth dwelling on. It was not a permission check
-      that a different build could skip: a different key derives a different wrapping key, and AES-GCM
-      refuses. Access control that is arithmetic cannot be configured away.</p>
-  </details>
 </main>
 
 <footer class="wrap">
@@ -596,8 +422,8 @@ nextkey.mjs revoke &lt;label&gt; &lt;recipient&gt;</pre>
     sent to a server. Do not put a phrase here that guards real funds.</p>
   <p>
     <a href="./index.html" data-i18n="t.about">About NextKey</a>
-    <a href="./poc.html" data-i18n="t.live">The live view</a>
-    <a href="https://github.com/4bridges/nextkey" data-i18n="t.source">Source</a>
+    <a href="./demo.html" data-i18n="b.demo">The demo</a>
+    <a href="https://hackathon-deployment-portal-app.ens-cf.workers.dev/" rel="noopener" data-i18n="x.portal">The official ENS explorer</a>
   </p>
 </footer>
 
@@ -748,6 +574,6 @@ nextkey.mjs revoke &lt;label&gt; &lt;recipient&gt;</pre>
   label()
 })()
 </script>
-<script type="module" src="./demo.js?v=0853fc25"></script>
+<script type="module" src="./explorer.js?v=04ad4e95"></script>
 </body>
 </html>
