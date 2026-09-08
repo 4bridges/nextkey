@@ -107,6 +107,15 @@ const INFO_EPH = 'nextkey/v2/eph'
 const INFO_WRAP = 'nextkey/v2/wrap'
 const INFO_TAG = 'nextkey/v2/tag'
 const INFO_SEAL = 'nextkey/v2/eph-seal'
+/**
+ * The fifth info string, and the only one added after v2 shipped.
+ *
+ * It is additive on purpose: the four above address every grant that exists,
+ * and changing any of them would move every v2 record ever written to an
+ * address nobody looks at. A new string derives a new, separate address out of
+ * the same shared secret and touches none of them.
+ */
+const INFO_ACK = 'nextkey/v2/ack'
 
 const hex = (u8) => [...u8].map((b) => b.toString(16).padStart(2, '0')).join('')
 /** A 0x-prefixed signature as bytes. No viem here; the page bundles enough. */
@@ -197,3 +206,33 @@ export const locateGrantV2 = (ephPub, sk, pk) => {
 
 export const openGrantV2 = async (grant, ephPub, sk, pk) =>
   un64(await unseal(grant, locateGrantV2(ephPub, sk, pk).kek))
+
+// ═══ Read receipts ═════════════════════════════════════════════════════════
+//
+// A receipt is a second record derived from the same shared secret as the
+// grant, under INFO_ACK. Two consequences follow from that and both are the
+// point: only the two parties can compute where it lives, and either of them
+// can compute it alone — the recipient after opening, the sender without
+// having to be told anything.
+//
+// What it does not do is prove who wrote it. Anyone able to write records on
+// the name could put something there. It says a receipt exists at an address
+// only two parties could have named, which on a page that lends out its own
+// names is worth stating plainly rather than dressing up as a signature.
+//
+// And it costs privacy: the moment it appears, the chain shows *when* the
+// secret was read. That is the trade for a delivery confirmation without a
+// server, and the page says so where the button is.
+
+export const ackKeyV2 = (shared, ephPub, recipientPub) =>
+  `nextkey.a2.${hex(hkdf(sha256, shared, pairing(ephPub, recipientPub), utf8.encode(INFO_ACK), 16))}`
+
+/** The recipient's side: one scalar multiplication, from the public eph key. */
+export const locateAckV2 = (ephPub, sk, pk) =>
+  ackKeyV2(x25519.getSharedSecret(sk, ephPub), ephPub, pk)
+
+/** The sender's side: the same address, from the ephemeral private key. */
+export const ackKeyForSender = (ephSk, recipientPub) => {
+  const ephPk = x25519.getPublicKey(ephSk)
+  return ackKeyV2(x25519.getSharedSecret(ephSk, recipientPub), ephPk, recipientPub)
+}

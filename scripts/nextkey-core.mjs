@@ -268,6 +268,10 @@ const INFO_EPH = 'nextkey/v2/eph'
 const INFO_WRAP = 'nextkey/v2/wrap'
 const INFO_TAG = 'nextkey/v2/tag'
 const INFO_SEAL = 'nextkey/v2/eph-seal'
+/** Additive, and the only string added after v2 shipped. The four above are
+ *  frozen: changing one moves every grant that exists. See the browser
+ *  counterpart in web/src/nk-crypto.mjs. */
+const INFO_ACK = 'nextkey/v2/ack'
 const utf8 = (s) => new TextEncoder().encode(s)
 const hex = (u8) => Buffer.from(u8).toString('hex')
 
@@ -284,6 +288,19 @@ export const tagFor = (shared, ephPub, recipientPub) =>
 
 export const grantKeyV2 = (shared, ephPub, recipientPub) =>
   `nextkey.g2.${tagFor(shared, ephPub, recipientPub)}`
+
+/**
+ * Where a read receipt for that grant lives.
+ *
+ * The same shared secret under a different info string, so either party can
+ * compute the address alone and nobody else can compute it at all. It proves a
+ * receipt was placed at an address only two parties could name — not who wrote
+ * it, and the page that offers the button says so. It also publishes *when* the
+ * secret was read, which is the price of a delivery confirmation with no server
+ * anywhere in the picture.
+ */
+export const ackKeyV2 = (shared, ephPub, recipientPub) =>
+  `nextkey.a2.${hex(hkdf(sha256, shared, pairing(ephPub, recipientPub), utf8(INFO_ACK), 16))}`
 
 /**
  * The message the owner signs to derive this name's ephemeral key.
