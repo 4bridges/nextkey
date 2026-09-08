@@ -48,7 +48,7 @@ You place a secret: a seed phrase, an API credential, a private message. Then yo
 
 Three independent runs are already on Sepolia, with transaction hashes in [`evidence/v2-onchain.log`](./evidence/v2-onchain.log): a grant written from a phone with no wallet; one written in a browser on a name outside our own registry and opened from a command line by a key that was never in that browser; and a recovery in which two unrelated signer implementations, MetaMask and viem, reconstructed the same 32 bytes and the chain agreed.
 
-**Under what conditions** is answered inside a trusted execution environment. A release agent can propose but never act alone. The condition — a guardian quorum, a time lock, prolonged inactivity — is evaluated in a Chainlink CRE Confidential Workflow on AWS Nitro, and the verdict carries the hash of the on-chain request it judged, so anyone can recompute it and see that the enclave decided *that* request and not a modified one. [`evidence/cre-decision.log`](./evidence/cre-decision.log) has a passing run; [`evidence/release-loop.log`](./evidence/release-loop.log) has one where the binding fails on purpose and the release refuses. What leaves the enclave is the verdict and a coarse reason — never how far a request stood from its threshold. Honest scope: the guardian approvals are fixtures. The request is real and on chain; the people around it are not yet.
+**Under what conditions** is answered inside a trusted execution environment. A release AI-agent can propose but never act alone. The condition — a guardian quorum, a time lock, prolonged inactivity — is evaluated in a Chainlink CRE Confidential Workflow on AWS Nitro, and the verdict carries the hash of the on-chain request it judged, so anyone can recompute it and see that the enclave decided *that* request and not a modified one. [`evidence/cre-decision.log`](./evidence/cre-decision.log) has a passing run; [`evidence/release-loop.log`](./evidence/release-loop.log) has one where the binding fails on purpose and the release refuses. What leaves the enclave is the verdict and a coarse reason — never how far a request stood from its threshold. Honest scope: the guardian approvals are fixtures. The request is real and on chain; the people around it are not yet.
 
 **Where your own key lives** is your decision alone. A file on your machine, or a Ledger — the difference is invisible to whoever shares with you, because what they read is a public key in your ENS record and nothing else. On a device, opening a secret costs a deliberate button press, so software running on your laptop cannot do it while you are away from it.
 
@@ -62,7 +62,7 @@ And when someone has lost everything, recovery is meant to rest on guardians plu
 2. **Share it with a name.** `anna.eth`, not `0x7f3a…`. NextKey reads the public key from her ENS records and wraps this one secret's key to it — that record and nothing else on your account. Whether her key sits in a file or on a Ledger is her business, and changes nothing for you.
 3. **Anna hears about it.** Through whatever channel she declared in her own ENS records. She never signed up for NextKey.
 4. **If she loses everything, she gets back in.** Her guardians confirm, and a liveness proof establishes that a unique, living person is asking. *(Designed; the liveness half is not built — see Prize tracks.)*
-5. **Some releases happen without you.** The agent proposes; an enclave decides, against rules you wrote yourself.
+5. **Some releases happen without you.** The AI-agent proposes; an enclave decides, against rules you wrote yourself.
 
 ---
 
@@ -81,9 +81,9 @@ So NextKey splits the two concerns rather than conflating them. **Confidentialit
 | Share a secret with `anna.eth` | A key blob wrapped to Anna's `nextkey.pubkey` record, written at a record name only she and the owner can compute. Anyone can see the subname holds *something*; nobody can see for whom |
 | Limit access to seven days | The subname's `expiry`. Resolution stops once `block.timestamp >= expiry` — enforced by the registry, not by us. [Watched happen](./evidence/expiry.log): readable at 18s remaining, empty at 2s past, no grace period |
 | Revoke access | Clear the grant record. Only accounts holding the setter role can, so revocation is as strong as the role model. [Executed](./evidence/revocation.log): Anna opens, the owner revokes, Anna cannot. Afterwards she reaches an address that holds nothing, and cannot tell a withdrawn grant from one that never existed |
-| Delegate writing to the release agent | `grantSetterRoles()` for one setter, one key, one name. The agent may propose; it holds no key material and cannot decrypt anything |
+| Delegate writing to the release AI-agent | `grantSetterRoles()` for one setter, one key, one name. The AI-agent may propose; it holds no key material and cannot decrypt anything |
 | Keep control while delegating | Roles and their admins are separate. The delegate's bitmap has no admin half, so it can act and cannot pass the right on |
-| Give the agent an identity | Its own namespace holding that single role — ENS's own bonus criterion for this hackathon: *agents as namespaces, each with their own identity and permissions* |
+| Give the AI-agent an identity | Its own namespace holding that single role — ENS's own bonus criterion for this hackathon: *AI-agents as namespaces, each with their own identity and permissions* |
 | Try it with no wallet at all | A pool of set-aside subnames on a resolver of their own, where a published throwaway key holds root roles. It can write records on those names and nowhere else. [Why not per-record delegation](./FEEDBACK-ENS.md) |
 
 Each user's **notification channel** is a text record too, which is why step 3 above works for people who have never heard of NextKey.
@@ -175,9 +175,9 @@ All three runs, with the transaction data and a section on what they do *not* sh
 | The owner's roles on a subname | [`register-subname.mjs` · `OWNER_ROLES`](https://github.com/4bridges/nextkey/blob/main/scripts/register-subname.mjs) — deliberately without `ROLE_REGISTRAR`: a secret is a leaf |
 | Revoke access | [`nextkey.mjs` · `revoke`](https://github.com/4bridges/nextkey/blob/main/scripts/nextkey.mjs) — recomputes the recipient's address from their published key, clears it, and says plainly what revocation cannot undo |
 | Which scheme is a name on? | [`nextkey.mjs` · `eph`](https://github.com/4bridges/nextkey/blob/main/scripts/nextkey.mjs) — both questions the explorer cannot answer: v1 or v2, and is the ephemeral key still recoverable |
-| Delegate one setter to the agent | [`resolver.mjs` · `grant-setter`](https://github.com/4bridges/nextkey/blob/main/scripts/resolver.mjs) — and why the first argument is calldata, not a name |
+| Delegate one setter to the AI-agent | [`resolver.mjs` · `grant-setter`](https://github.com/4bridges/nextkey/blob/main/scripts/resolver.mjs) — and why the first argument is calldata, not a name |
 | Read the resulting roles | [`resolver.mjs` · `show-roles`](https://github.com/4bridges/nextkey/blob/main/scripts/resolver.mjs) — resource id recovered from the contract's own refusal |
-| Give the agent an identity | [`agent.mjs` · `propose` and `prove-boundary`](https://github.com/4bridges/nextkey/blob/main/scripts/agent.mjs) |
+| Give the AI-agent an identity | [`agent.mjs` · `propose` and `prove-boundary`](https://github.com/4bridges/nextkey/blob/main/scripts/agent.mjs) |
 | Act on a verdict | [`release.mjs`](https://github.com/4bridges/nextkey/blob/main/scripts/release.mjs) — checks the verdict against the live request before writing anything |
 | A key that never leaves a device | [`ledger.mjs`](https://github.com/4bridges/nextkey/blob/main/scripts/ledger.mjs) — EIP-1024 key agreement performed on the Ledger |
 | Resolve through the Universal Resolver | [`resolver.mjs` · `read-text`](https://github.com/4bridges/nextkey/blob/main/scripts/resolver.mjs) — the path a real client takes |
@@ -209,7 +209,7 @@ This project builds against the dedicated ENSv2 hackathon deployment on Sepolia,
 | Registry implementation | `0x47B442d0CF617c41CAbAFf5f02f44DD1e5f72546` |
 | Permissioned Resolver (serves the subnames) | [`0x52A02f288AA5dde082206D85d4001880D64F4101`](https://sepolia.etherscan.io/address/0x52A02f288AA5dde082206D85d4001880D64F4101) |
 | Permissioned Resolver for the lent names only | [`0x04B2DB6567Cc68d059c061215Adf9a99adD1cA65`](https://sepolia.etherscan.io/address/0x04B2DB6567Cc68d059c061215Adf9a99adD1cA65) |
-| Release agent | `0xABCf3893FBe9802343f9b444575250Aa979Fb59c` |
+| Release AI-agent | `0xABCf3893FBe9802343f9b444575250Aa979Fb59c` |
 | The key the playground publishes | `0x45f0b8e270245e356A1760456ea84eDB8712C62b` — root roles on the resolver above, and on nothing else |
 | `nextkeyv2.eth` — v2 outside our registry | resolver [`0x8CC85C123aBC579378A51153aCE7001E00756771`](https://sepolia.etherscan.io/address/0x8CC85C123aBC579378A51153aCE7001E00756771), attached through the `.eth` registry |
 
@@ -257,22 +257,22 @@ The hardest question for a product like this one is how somebody gets back in af
 
 ---
 
-### The release agent, and what stops it
+### The release AI-agent, and what stops it
 
-Automation is useful right up to the moment it can act alone. NextKey's release agent is a **namespace, not a service account**: `agent.nextkey.eth` is a name in our registry, the agent signs with its own key, and that key holds one role on one resource.
+Automation is useful right up to the moment it can act alone. NextKey's release AI-agent is a **namespace, not a service account**: `agent.nextkey.eth` is a name in our registry, the AI-agent signs with its own key, and that key holds one role on one resource.
 
 The permission is finer than "may write to this name". ENSv2 scopes a setter role to a *setter, a key and a name* together, which we measured rather than assumed:
 
 | Account | Name · record | Roles on the name | Roles at the root | May write |
 |---|---|---|---|---|
-| Agent | `agent.nextkey.eth` · `nextkey.request` | `0x10` — bit 4, no admin half | `0x0` | **yes** |
-| Agent | `agent.nextkey.eth` · `nextkey.notify` | `0x0` | `0x0` | no |
-| Agent | `visa.nextkey.eth` · `nextkey.secret` | `0x0` | `0x0` | no |
+| AI-agent | `agent.nextkey.eth` · `nextkey.request` | `0x10` — bit 4, no admin half | `0x0` | **yes** |
+| AI-agent | `agent.nextkey.eth` · `nextkey.notify` | `0x0` | `0x0` | no |
+| AI-agent | `visa.nextkey.eth` · `nextkey.secret` | `0x0` | `0x0` | no |
 | Owner | any of the above | `0x0` | `0x1111…1111` | yes, everywhere |
 
-Three things follow, and none of them depend on our code behaving well. The agent can write exactly one field, on the one name that is its own — a different key on that same name is a different resource where it holds nothing. It cannot delegate, because its bitmap has no admin half. And the owner's authority descends from the root rather than sitting on any single name, which is what makes ownership and delegation different in kind rather than in degree.
+Three things follow, and none of them depend on our code behaving well. The AI-agent can write exactly one field, on the one name that is its own — a different key on that same name is a different resource where it holds nothing. It cannot delegate, because its bitmap has no admin half. And the owner's authority descends from the root rather than sitting on any single name, which is what makes ownership and delegation different in kind rather than in degree.
 
-The boundary is filed on chain as a **rejected transaction**: [`0x6f0e35fd…790e68`](https://sepolia.etherscan.io/tx/0x6f0e35fd5ae0d00cd5d5867bfbe60a78356ca83b3d5644afa2ede46234790e68). The agent, signing with its own key, asked the resolver to overwrite `nextkey.secret` on `visa.nextkey.eth`, and the resolver refused. Same contract as the proposal it is allowed to write; only the name differs. Status `reverted` is the result we wanted.
+The boundary is filed on chain as a **rejected transaction**: [`0x6f0e35fd…790e68`](https://sepolia.etherscan.io/tx/0x6f0e35fd5ae0d00cd5d5867bfbe60a78356ca83b3d5644afa2ede46234790e68). The AI-agent, signing with its own key, asked the resolver to overwrite `nextkey.secret` on `visa.nextkey.eth`, and the resolver refused. Same contract as the proposal it is allowed to write; only the name differs. Status `reverted` is the result we wanted.
 
 A proposal itself is public — [`0x14796928…ea485c`](https://sepolia.etherscan.io/tx/0x14796928813fd4b495c6a3442c0207d719ab98e4154fb205d1ee7601d7ea485c) — so anyone watching the name sees that a release was requested, for which secret and for whom. What stays confidential is the deliberation, and that happens next.
 
@@ -284,7 +284,7 @@ Full output in [`evidence/agent-boundary.log`](./evidence/agent-boundary.log); t
 
 Automation is useful right up to the moment it can act alone. NextKey draws that line twice.
 
-The release agent has its own ENS namespace carrying exactly one role: *propose* a release. It cannot read a secret and it cannot release one — that boundary is enforced cryptographically by Enhanced Access Control, not by our code being polite about it.
+The release AI-agent has its own ENS namespace carrying exactly one role: *propose* a release. It cannot read a secret and it cannot release one — that boundary is enforced cryptographically by Enhanced Access Control, not by our code being polite about it.
 
 The second boundary is the enclave. A proposal is evaluated inside a **Chainlink CRE Confidential Workflow**: the key material and the set of guardian approvals go in via `cre.handlerInTee(...)`, the release condition is evaluated there, and only a `RELEASE` or `DENY` verdict crosses back to the DON through `runtime.usingTheDons()`. The value nobody may see is precisely the one that never comes out.
 
@@ -306,7 +306,7 @@ An enclave's inputs are invisible by design, and that creates a gap: *the enclav
  bound to 0xb74ac566…, secret in enclave: true)"
 ```
 
-That hash is of the record the agent wrote at `agent.nextkey.eth · nextkey.request` in [`0x14796928…ea485c`](https://sepolia.etherscan.io/tx/0x14796928813fd4b495c6a3442c0207d719ab98e4154fb205d1ee7601d7ea485c). Read the record, hash it, compare — `bun test` does exactly that against the live fixture. The enclave hashes the stored bytes before parsing them, because re-serialising a parsed object reorders keys and would produce a hash matching nothing on chain.
+That hash is of the record the AI-agent wrote at `agent.nextkey.eth · nextkey.request` in [`0x14796928…ea485c`](https://sepolia.etherscan.io/tx/0x14796928813fd4b495c6a3442c0207d719ab98e4154fb205d1ee7601d7ea485c). Read the record, hash it, compare — `bun test` does exactly that against the live fixture. The enclave hashes the stored bytes before parsing them, because re-serialising a parsed object reorders keys and would produce a hash matching nothing on chain.
 
 What crosses back out: request id, verdict, coarse reason, and a hash of something already public. What does not: the guardians, the approval count, the policy, and the credential. `quorum_not_met` reports that a threshold was missed without reporting by how much, because the distance to a threshold is itself useful to an attacker.
 
@@ -375,9 +375,9 @@ git clone https://github.com/4bridges/nextkey.git
 cd nextkey
 npm install                       # viem, @noble/curves, @noble/hashes
 
-node scripts/agent.mjs   show                              # the agent's open release request
+node scripts/agent.mjs   show                              # the AI-agent's open release request
 node scripts/resolver.mjs read-text visa nextkey.secret   # the ciphertext, read through the Universal Resolver
-node scripts/resolver.mjs show-roles agent 0xABCf3893FBe9802343f9b444575250Aa979Fb59c
+node scripts/resolver.mjs show-roles AI-agent 0xABCf3893FBe9802343f9b444575250Aa979Fb59c
 node scripts/spike-read-ens.mjs                           # plumbing check — see below
 ```
 
@@ -490,7 +490,7 @@ Sponsor qualification evidence is collected in [`evidence/`](./evidence) as it i
 |---|---|
 | [`cre-simulation.log`](./evidence/cre-simulation.log) | A Confidential Workflow running to completion, with the secret reaching the enclave |
 | [`encryption-loop.log`](./evidence/encryption-loop.log) | `store` → `share` → `open`, against the hackathon deployment, with transaction hashes |
-| [`agent-boundary.log`](./evidence/agent-boundary.log) | The agent's role state read from the resolver, and its forbidden write being refused |
+| [`agent-boundary.log`](./evidence/agent-boundary.log) | The AI-agent's role state read from the resolver, and its forbidden write being refused |
 | [`cre-decision.log`](./evidence/cre-decision.log) | The verdict, bound by hash to the request on chain, and how to check it yourself |
 | [`revocation.log`](./evidence/revocation.log) | Access withdrawn and the recipient locked out, with what revocation cannot undo |
 | [`expiry.log`](./evidence/expiry.log) | A name expiring in real time, read through the Universal Resolver until it stops answering |
@@ -514,7 +514,7 @@ This project is submitted to three partner prizes:
 |---|---|
 | ENS | Best Use of ENSv2 |
 | Chainlink | Best Confidential Workflow |
-| Ledger | AI Agents × Ledger |
+| Ledger | AI AI-agents × Ledger |
 
 **On World.** Selfie Check is designed into the recovery flow and described below, but it is **not built**: Sandbox access was requested at the start of the event and has not arrived, and other teams report the same wait. ETHGlobal allows three partner prizes, so Ledger takes the third slot. If access arrives before submission we will choose the three strongest then — but nothing in this repository claims a World integration that exists.
 

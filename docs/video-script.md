@@ -188,7 +188,7 @@ node --env-file=.env scripts/nextkey.mjs open vault alice
 
 ---
 
-## Take 6 — the agent and its limits (2:40–3:05)
+## Take 6 — the AI-agent and its limits (2:40–3:05)
 
 **On screen:** terminal.
 
@@ -230,7 +230,7 @@ transaction.**
 > So the verdict carries the hash of the request. Read the record off the chain,
 > hash it yourself, compare."
 
-**Switch to the demo page, "The agent's proposal", where the two hashes sit one
+**Switch to the demo page, "The AI-agent's proposal", where the two hashes sit one
 above the other:**
 
 > "Hashed in the browser. Returned by the enclave. Same value."

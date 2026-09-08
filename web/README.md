@@ -94,7 +94,7 @@ otherwise resolve silently against production):
 | The secret | `visa.nextkey.eth · nextkey.secret` — the ciphertext |
 | The recipient | `anna.nextkey.eth · nextkey.pubkey`, then fingerprints that key **in the browser** to find her grant |
 | The owner | the owner's grant, to show it has the same shape and there is no privileged path |
-| The agent's proposal | `agent.nextkey.eth · nextkey.request`, hashed in the browser and compared with the hash the enclave returned |
+| The AI-agent's proposal | `agent.nextkey.eth · nextkey.request`, hashed in the browser and compared with the hash the enclave returned |
 
 The recipient panel is the one worth watching during a demo: nothing tells the
 page where Anna's grant lives. It derives the address from the key she publishes

@@ -9,9 +9,9 @@ Format: **what was decided** · why · what was rejected and why not.
 ## 2026-09-04 — Kickoff
 
 **Slot 3 goes to Chainlink Confidential Workflows, not Ledger.**
-Ledger's AI Agents track pays more ($3,500 vs $2,000) and fits the motto well — it rewards a clear boundary between autonomous and approved actions. It was dropped once Chainlink Labs confirmed in Discord that `cre workflow simulate` runs confidential workflows without beta access, and the prize accepts a CLI simulation as evidence. Rationale: solo developer, nine days left. Ledger meant an agent stack, DMK, a hardware flow and a second developer-experience feedback document; Chainlink encodes the release condition, which is core product logic we are building anyway. Execution risk outweighed the larger pot.
+Ledger's AI AI-agents track pays more ($3,500 vs $2,000) and fits the motto well — it rewards a clear boundary between autonomous and approved actions. It was dropped once Chainlink Labs confirmed in Discord that `cre workflow simulate` runs confidential workflows without beta access, and the prize accepts a CLI simulation as evidence. Rationale: solo developer, nine days left. Ledger meant an AI-agent stack, DMK, a hardware flow and a second developer-experience feedback document; Chainlink encodes the release condition, which is core product logic we are building anyway. Execution risk outweighed the larger pot.
 
-**The release agent survives that reversal.** It keeps its own ENS namespace holding exactly one role — propose a release, never read, never release. This also satisfies ENS's stated bonus criterion for the hackathon (*agents as namespaces, each with their own identity and permissions*), so the agent now pays into two slots instead of one.
+**The release AI-agent survives that reversal.** It keeps its own ENS namespace holding exactly one role — propose a release, never read, never release. This also satisfies ENS's stated bonus criterion for the hackathon (*AI-agents as namespaces, each with their own identity and permissions*), so the AI-agent now pays into two slots instead of one.
 
 **CRE secrets resolve from the local environment, not the Vault DON.**
 Storing secrets on the Vault DON requires the same beta grant we do not have. Resolving `runtime.getSecret()` against local `.env` values keeps the demo reproducible for anyone with the CRE CLI and removes the last dependency on an access grant. The template does it this way regardless.
@@ -167,7 +167,7 @@ The refactor cost a regression check (`open visa anna` and `open visa alice`, bo
 
 **Ledger replaces World as the third partner slot.** World's Sandbox access was requested at the start of the event and has not arrived; other teams report the same wait. Waiting produced nothing for three days, so the slot went to something we could build. World is not deleted — it is marked in the README as designed and not built, and if access lands before submission we pick the three strongest then.
 
-**Ledger's track asks for exactly what this project already is.** *"Real user value with clear autonomous/approval boundaries. Practical demos showing why device-backed trust matters."* We had built the agent with one role and an on-chain rejected transaction before knowing anyone was asking for it.
+**Ledger's track asks for exactly what this project already is.** *"Real user value with clear autonomous/approval boundaries. Practical demos showing why device-backed trust matters."* We had built the AI-agent with one role and an on-chain rejected transaction before knowing anyone was asking for it.
 
 **The device is a recipient, not an integration.** This is the part worth recording. NextKey addresses a recipient by the X25519 public key in their ENS record; where the private half lives was never part of that interface. So the whole feature reduced to one line in `openGrant`:
 
@@ -201,13 +201,13 @@ Entries that record a *reversal* are the most valuable ones — they are what ma
 
 ---
 
-## 2026-09-05 (late) — the agent gets a namespace, and a limit
+## 2026-09-05 (late) — the AI-agent gets a namespace, and a limit
 
-**The release agent is a namespace, not a service account.** `agent.nextkey.eth` is a name in our own registry; the agent signs with its own key, funded separately, and holds one role on one resource. An agent that signs with the owner's key is not an agent with a permission — it is the owner with extra steps, and every claim about the boundary would be theatre.
+**The release AI-agent is a namespace, not a service account.** `agent.nextkey.eth` is a name in our own registry; the AI-agent signs with its own key, funded separately, and holds one role on one resource. An AI-agent that signs with the owner's key is not an AI-agent with a permission — it is the owner with extra steps, and every claim about the boundary would be theatre.
 
 **The boundary is demonstrated, not asserted.** `agent.mjs prove-boundary --onchain` files the forbidden call as a real transaction so it can be opened on Etherscan: [`0x6f0e35fd…790e68`](https://sepolia.etherscan.io/tx/0x6f0e35fd5ae0d00cd5d5867bfbe60a78356ca83b3d5644afa2ede46234790e68), status `reverted`. Gas estimation refuses to send a call it knows will fail, so the script sets the gas limit explicitly. A rejected transaction anyone can inspect is worth more than a paragraph of prose about least privilege.
 
-**The permission turned out finer than we designed for.** We expected `grantSetterRoles` to mean "may write to this name". It means "may call this setter, with this key, on this name": `setText(nextkey.request)` on `agent.nextkey.eth` is resource `0x4fc08dd2…c9bc0d`, while `setText(nextkey.notify)` on the *same* name is `0x85d07a57…33cfee`, where the agent holds nothing. Measured, not assumed — and the README now claims per-record scoping because we checked it.
+**The permission turned out finer than we designed for.** We expected `grantSetterRoles` to mean "may write to this name". It means "may call this setter, with this key, on this name": `setText(nextkey.request)` on `agent.nextkey.eth` is resource `0x4fc08dd2…c9bc0d`, while `setText(nextkey.notify)` on the *same* name is `0x85d07a57…33cfee`, where the AI-agent holds nothing. Measured, not assumed — and the README now claims per-record scoping because we checked it.
 
 **Two corrections to my own tooling, both recorded because both were the kind that produce confident wrong answers.**
 
@@ -217,7 +217,7 @@ Entries that record a *reversal* are the most valuable ones — they are what ma
 
 And it reported per-resource roles only, which told us the *owner* had no permissions on a name he can freely write. Authority also descends from `ROOT_RESOURCE`, and a tool that shows one half of a two-half model is not incomplete, it is misleading. Both halves are printed now.
 
-**Still open.** The workflow does not yet evaluate this request. The agent writes a proposal and a `requestHash`; binding a confidential verdict to that hash is the next piece, and it is what turns the Chainlink slot from qualified into earned.
+**Still open.** The workflow does not yet evaluate this request. The AI-agent writes a proposal and a `requestHash`; binding a confidential verdict to that hash is the next piece, and it is what turns the Chainlink slot from qualified into earned.
 
 ---
 
@@ -236,7 +236,7 @@ The gap it closes is specific. An enclave's inputs are invisible by design, so "
 
 **The fixture is generated, not written.** `agent.mjs fixture` reads the record off the chain and wraps the confidential half around it. Only the guardian approvals are invented, and the file's first field says so. A fixture that quietly hand-copies the request would make the whole binding circular.
 
-**What this changes for the Chainlink slot.** The substantive criterion is that the workflow is a meaningful part of the product rather than an isolated example. Until tonight our honest answer was *not yet*: the rule was tested, the simulation ran, but it judged invented data. It now judges a request an independent agent filed on chain under a scoped ENS role, and its verdict is checkable against that request. Qualified became earned.
+**What this changes for the Chainlink slot.** The substantive criterion is that the workflow is a meaningful part of the product rather than an isolated example. Until tonight our honest answer was *not yet*: the rule was tested, the simulation ran, but it judged invented data. It now judges a request an independent AI-agent filed on chain under a scoped ENS role, and its verdict is checkable against that request. Qualified became earned.
 
 **Still deliberately out of scope.** Delivering the signed report to a contract via `evmClient.writeReport` — so a RELEASE would write the grant itself. The decision path is complete; the actuation path is one step short, and saying so is better than implying otherwise.
 ---

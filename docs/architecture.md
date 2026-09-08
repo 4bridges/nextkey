@@ -243,7 +243,7 @@ this fallback rests on, measured rather than cited.
 ```mermaid
 flowchart TB
   eth["nextkey.eth"] --> reg["UserRegistry<br/>0x6120…7908"]
-  reg --> subs["visa · vault · anna · bob · agent"]
+  reg --> subs["visa · vault · anna · bob · AI-agent"]
   reg --> pool["hero01 … hero20"]
 
   subs --> r1["Permissioned Resolver<br/>0x52A0…4101"]
@@ -252,7 +252,7 @@ flowchart TB
   owner["Registrar 0x9780…dd0B"] -->|"root roles"| r1
   owner -->|"root roles"| r2
   demo["Key published in the page<br/>0x45f0…C62b"] -->|"root roles"| r2
-  agent["Release agent 0xABCf…b59c"] -->|"one setter, one key, one name"| r1
+  AI-agent["Release AI-agent 0xABCf…b59c"] -->|"one setter, one key, one name"| r1
 ```
 
 Each secret is a subname: an ERC-1155 token with one owner, its own resolver,
@@ -346,7 +346,7 @@ README marks it the same way.
 **The notification channel** is a text record and a small local notifier, run by
 hand for the demo. It is not a deployed service and is not described as one.
 
-**The release agent** runs locally. Its ENS namespace, its single delegated role
+**The release AI-agent** runs locally. Its ENS namespace, its single delegated role
 and the boundary it cannot cross are real and on chain; the process that drives
 them is a script on a laptop.
 
