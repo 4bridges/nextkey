@@ -9,7 +9,7 @@
 <link rel="manifest" href="./brand/site.webmanifest">
 <meta name="theme-color" content="#9a5218">
 <title>NextKey — Share a Secret</title>
-<meta name="description" content="Share a seed phrase or credential with someone by their ENS name. Access ends when you say, and the recipient's key can live on a Ledger.">
+<meta name="description" content="An agent creates a wallet on NextKey, keeps the passphrase where it cannot leak, and gets it back only when a human releases it. Secure messages between agents and people.">
 <link rel="canonical" href="https://nextkey.li/">
 <link rel="alternate" hreflang="en" href="https://nextkey.li/">
 <link rel="alternate" hreflang="de" href="https://nextkey.li/?lang=de">
@@ -24,12 +24,12 @@
 <link rel="alternate" hreflang="x-default" href="https://nextkey.li/">
 <meta property="og:type" content="website">
 <meta property="og:title" content="NextKey — Share a Secret">
-<meta property="og:description" content="Share a seed phrase or credential with someone by their ENS name. Access ends when you say, and the recipient's key can live on a Ledger.">
+<meta property="og:description" content="An agent creates a wallet on NextKey, keeps the passphrase where it cannot leak, and gets it back only when a human releases it. Secure messages between agents and people.">
 <meta property="og:url" content="https://nextkey.li/">
 <meta property="og:image" content="https://nextkey.li/brand/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="NextKey — hand over a seed phrase without handing over control">
+<meta property="og:image:alt" content="NextKey — share a secret, human-in-the-loop">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://nextkey.li/brand/og-image.png">
 <script>
@@ -234,6 +234,23 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     font-size:.85rem;font-weight:640;color:var(--muted)
   }
   ol.steps p{margin:.2rem 0 0;color:var(--muted);font-size:1rem}
+  /* ── Justified body copy ──
+     Justification without hyphenation opens rivers of white space, and the
+     narrower the column the worse it gets. So it comes with hyphens:auto —
+     which needs the lang attribute the language switcher already sets — and it
+     switches back to ragged-right on a phone, where no column is wide enough
+     for either to look like anything but damage. */
+  .lead, .prose p, ol.steps p, .card p, .handover figcaption, .faq p, .status p{
+    text-align:justify;
+    hyphens:auto;-webkit-hyphens:auto;
+    text-wrap:initial
+  }
+  @media (max-width:38rem){
+    .lead, .prose p, ol.steps p, .card p, .handover figcaption, .faq p, .status p{
+      text-align:start;hyphens:manual;-webkit-hyphens:manual
+    }
+  }
+
   /* Cards */
   .cards{display:grid;gap:1.6rem;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));max-width:58rem}
   .card p{color:var(--muted);margin:.2rem 0 0;font-size:1rem}
@@ -304,24 +321,22 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 
   <!-- 1 — Hero -->
   <section class="hero">
-    <h1 data-i18n="hero.h1">Hand over a seed phrase without handing over control</h1>
+    <h1 data-i18n="hero.h1">Share a secret — human-in-the-loop</h1>
     <p class="lead" data-i18n="hero.lead">
-      NextKey shares secrets by ENS name, releases them by rules, and restores access
-      with proof of humanness. A human is involved. No human is in control.
+      Create a wallet on NextKey, seal and grant your secret, and get it back only with a
+      human-in-the-loop. NextKey also provides you secure messaging.
     </p>
     <div class="actions">
       <a class="btn btn-primary" href="./demo.html" data-i18n="hero.cta2">Start demo</a>
       <a class="btn btn-quiet" href="./poc.html" data-i18n="hero.cta">Proof of concept</a>
       <a class="btn btn-quiet" href="https://github.com/4bridges/nextkey" data-i18n="hero.gh">View on GitHub</a>
     </div>
-    <p class="provenance" data-i18n="hero.prov">Prototype · ENSv2 on Sepolia testnet · Built at ETHGlobal ETHOnline 2026</p>
-
     <figure class="handover">
       <svg viewBox="0 0 880 176" role="img" aria-labelledby="hv-t hv-d">
-        <title id="hv-t">How a secret passes from one name to another</title>
-        <desc id="hv-d">A sealed secret held under alice.eth passes through a condition —
-          a guardian quorum and a waiting period — to anna.eth, who opens it with a key
-          only she holds.</desc>
+        <title id="hv-t">How a wallet passes from an agent to a person</title>
+        <desc id="hv-d">A wallet sealed under agent.eth passes through a condition —
+          a time lock and a person's approval — to you.eth, which opens it with a key
+          only that person holds.</desc>
         <defs>
           <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5"
                   markerWidth="7" markerHeight="7" orient="auto">
@@ -331,8 +346,8 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 
         <!-- sender -->
         <rect class="node" x="1" y="46" width="176" height="84" rx="9"/>
-        <text class="nm" x="89" y="80">alice.eth</text>
-        <text class="sub" x="89" y="102" data-i18n="dia.a">holds the secret</text>
+        <text class="nm" x="89" y="80">agent.eth</text>
+        <text class="sub" x="89" y="102" data-i18n="dia.a">seals its wallet</text>
 
         <!-- sealed payload travelling -->
         <line class="wire" x1="177" y1="88" x2="330" y2="88"/>
@@ -343,19 +358,19 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 
         <!-- the condition, sitting on the path -->
         <line class="gate" x1="640" y1="34" x2="640" y2="142"/>
-        <text class="cond" x="640" y="24" data-i18n="dia.cond">quorum · waiting period</text>
+        <text class="cond" x="640" y="24" data-i18n="dia.cond">time lock · approval</text>
         <text class="cond-s" x="640" y="160" data-i18n="dia.conds">checked in an enclave</text>
 
         <!-- recipient -->
         <rect class="node accent" x="703" y="46" width="176" height="84" rx="9"/>
-        <text class="nm" x="791" y="80">anna.eth</text>
-        <text class="sub" x="791" y="102" data-i18n="dia.b">opens it with her key</text>
+        <text class="nm" x="791" y="80">you.eth</text>
+        <text class="sub" x="791" y="102" data-i18n="dia.b">holds the only key</text>
       </svg>
       <div class="handover-stack" role="img"
-           aria-label="A sealed secret passes from alice.eth, through a condition checked in an enclave, to anna.eth.">
+           aria-label="A sealed wallet passes from agent.eth, through a condition checked in an enclave, to you.eth.">
         <div class="hs-node">
-          <span class="hs-nm">alice.eth</span>
-          <span class="hs-s" data-i18n="dia.a">holds the secret</span>
+          <span class="hs-nm">agent.eth</span>
+          <span class="hs-s" data-i18n="dia.a">seals its wallet</span>
         </div>
         <div class="hs-arrow"></div>
         <div class="hs-seal">
@@ -364,30 +379,31 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
         </div>
         <div class="hs-arrow"></div>
         <div class="hs-cond">
-          <span class="hs-t" data-i18n="dia.cond">quorum · waiting period</span>
+          <span class="hs-t" data-i18n="dia.cond">time lock · approval</span>
           <span class="hs-s" data-i18n="dia.conds">checked in an enclave</span>
         </div>
         <div class="hs-arrow"></div>
         <div class="hs-node accent">
-          <span class="hs-nm">anna.eth</span>
-          <span class="hs-s" data-i18n="dia.b">opens it with her key</span>
+          <span class="hs-nm">you.eth</span>
+          <span class="hs-s" data-i18n="dia.b">holds the only key</span>
         </div>
       </div>
 
       <figcaption data-i18n="dia.cap">
-        The key is wrapped to the public key Anna publishes on her own name. The condition
-        between them is protocol state, not a promise.
+        The secret is wrapped to the public key published on the person's own ENS name.
+        The condition between them is protocol state.
       </figcaption>
     </figure>
   </section>
 
   <!-- 2 — The problem -->
-  <section>
+  <section class="prose">
     <h2 data-i18n="prob.h">The problem</h2>
     <p data-i18n="prob.p1">
-      Today a seed phrase lives on paper in a drawer, in a password manager somebody else
-      operates, or in a message you regret sending. All three fail the same way: the moment
-      someone else needs it, either nobody can get to it, or the wrong person already has.
+      An agent that needs a wallet has two options today and both are bad. Give it a key, and
+      the key is in the agent — in a log, a prompt, a crash dump, a repository. Withhold the
+      key, and the agent cannot act at all. The same choice appears with a seed phrase on
+      paper, in a password manager somebody else operates, or in a message you regret sending.
     </p>
     <p data-i18n="prob.p2">
       The missing piece was never storage. It was deciding who may open something, and when.
@@ -399,32 +415,33 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     <h2 data-i18n="how.h">How it works</h2>
     <ol class="steps">
       <li>
-        <h3 data-i18n="how.1h">Place a secret</h3>
-        <p data-i18n="how.1p">A seed phrase, an API credential, a private message. It is encrypted before it goes
-           anywhere, with a key that never leaves your machine.</p>
+        <h3 data-i18n="how.1h">Create a wallet</h3>
+        <p data-i18n="how.1p">Twelve words and the address they control, generated where the agent runs. They are
+           encrypted before they go anywhere, with a key that never leaves that machine.</p>
       </li>
       <li>
-        <h3 data-i18n="how.2h">Share it with a name</h3>
-        <p data-i18n-html="how.2p"><span class="k mono">anna.eth</span>, not <span class="k mono">0x7f3a…</span>.
-           NextKey reads the public key Anna publishes in her own ENS records and wraps
-           this one secret's key to it. She never registered with us.</p>
+        <h3 data-i18n="how.2h">Grant to an ENS name</h3>
+        <p data-i18n-html="how.2p"><span class="k mono">you.eth</span>, not <span class="k mono">0x7f3a…</span>.
+           NextKey reads the public key you publish in your own ENS records and wraps this
+           one secret's key to it. From that moment you, human or agent, cannot read back
+           what was written.</p>
       </li>
       <li>
-        <h3 data-i18n="how.3h">Anna hears about it</h3>
-        <p data-i18n="how.3p">Through whatever channel she declared in her own ENS records — another text
-           record, read the same way.</p>
+        <h3 data-i18n="how.3h">The secret comes back on release</h3>
+        <p data-i18n="how.3p">A confirmation on a Ledger, a time lock, or a long silence — the condition is yours,
+           and it is checked in a confidential enclave.</p>
       </li>
       <li>
-        <h3 data-i18n="how.4h">If she loses everything, she gets back in</h3>
-        <p data-i18n="how.4p">Her guardians confirm, and a liveness proof establishes that a unique, living
-           person is asking. The guardian rule runs today; the liveness proof is designed and
-           not yet built.</p>
+        <h3 data-i18n="how.4h">The wallet restores anywhere</h3>
+        <p data-i18n="how.4p">Those twelve words are a standard BIP-39 phrase. Any wallet restores them, on any
+           machine, with nothing of ours involved — which is what makes this a backup rather
+           than a dependency.</p>
       </li>
       <li>
-        <h3 data-i18n="how.5h">Some releases happen without you</h3>
-        <p data-i18n="how.5p">An agent proposes a release when a time lock elapses or you go quiet. It cannot
-           decide one. The condition is evaluated inside a confidential enclave, against
-           rules you wrote yourself.</p>
+        <h3 data-i18n="how.5h">NextKey also supports secure messages</h3>
+        <p data-i18n="how.5p">A secure message is a secret with different contents, addressed the same way. Agents and
+           people write to each other by name, and the recipient finds what is waiting by
+           deriving where it would be — no mailbox, no server, no account.</p>
       </li>
     </ol>
   </section>
@@ -434,9 +451,11 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     <h2 data-i18n="diff.h">What is different</h2>
     <div class="cards">
       <div class="card">
-        <h3 data-i18n="diff.1h">Access is a protocol, not our database</h3>
-        <p data-i18n="diff.1p">Permissions live in an ENSv2 registry you own. Revoke them and they are gone
-           whether or not NextKey still exists. Set an expiry and access ends by itself.</p>
+        <h3 data-i18n="diff.1h">The agent proposes. A person disposes</h3>
+        <p data-i18n="diff.1p">The release agent's ENS role permits one record on one name and nothing else — a
+           boundary the registry enforces, not our code being careful. Before funds move or a
+           permission widens, a person confirms on a hardware device. Automation is useful right
+           up to the moment it can act alone.</p>
       </div>
       <div class="card">
         <h3 data-i18n="diff.2h">We cannot read your secrets, and that is a property of the code</h3>
@@ -446,10 +465,10 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
            Ledger and the device is the backup.</p>
       </div>
       <div class="card">
-        <h3 data-i18n="diff.3h">The agent proposes. It cannot decide</h3>
-        <p data-i18n="diff.3p">Its ENS role permits one record on one name and nothing else — a boundary
-           enforced by the registry, not by our code being careful. Humans confirm; the
-           process, not a person, decides when that is enough.</p>
+        <h3 data-i18n="diff.3h">Access is a protocol, not our database</h3>
+        <p data-i18n="diff.3p">Permissions live in an ENSv2 registry you own. Revoke one and it is gone whether
+           or not NextKey still exists. Set an expiry and access ends by itself, with nobody
+           having to remember.</p>
       </div>
     </div>
   </section>
@@ -462,8 +481,9 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
         <h3>ENSv2</h3>
         <p data-i18n-html="hood.1p">Our own subname registry under <span class="mono">nextkey.eth</span>; each secret
            a subname with a Permissioned Resolver. Confidentiality comes from cryptography —
-           the record holds ciphertext. Control comes from protocol roles: who may write,
-           revoke or delegate, scoped per record.</p>
+           the record holds ciphertext, and its <em>address</em> is derived from a shared secret,
+           so the chain does not show who was granted what. Control comes from protocol roles:
+           who may write, revoke or delegate, scoped per record.</p>
       </div>
       <div class="card">
         <h3>Chainlink CRE</h3>
@@ -473,10 +493,11 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
       </div>
       <div class="card">
         <h3>Ledger</h3>
-        <p data-i18n="hood.3p">A recipient can keep their key on a Ledger instead of in a file. The device
-           performs the key agreement itself and refuses without a confirmation, so a secret
-           cannot be opened by software while nobody is watching. Senders never know the
-           difference — what they read is a public key in an ENS record.</p>
+        <p data-i18n="hood.3p">The human in the loop is a device, not a dialog box. A recipient keeps their key on
+           a Ledger instead of in a file; the device performs the key agreement itself and
+           refuses without a confirmation, so nothing an agent proposes can complete while
+           nobody is watching. Senders never know the difference — what they read is a public
+           key in an ENS record.</p>
       </div>
     </div>
   </section>
@@ -497,24 +518,25 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
       </details>
 
       <details>
-        <summary data-i18n="faq.2q">What happens to my crypto if I die or lose access?</summary>
-        <p data-i18n-html="faq.2a1">Nothing, unless you arranged for it in advance — which is the failure this
-           product exists to address.</p>
-        <p data-i18n-html="faq.2a2">You can name guardians and a waiting period. If you stop responding, an agent
-           proposes a release; the guardians confirm; the condition is checked in a
-           confidential enclave. You can cancel at any point before it completes, and the
-           waiting period exists so that you can.</p>
+        <summary data-i18n="faq.2q">Can an AI agent hold a wallet safely?</summary>
+        <p data-i18n-html="faq.2a1">Not if it holds the key. It can hold a wallet whose passphrase it cannot read back.</p>
+        <p data-i18n-html="faq.2a2">The agent generates the phrase, seals it to a person's published key, and writes the
+           ciphertext to ENS. After that the agent has no way to recover those words on its own:
+           the release needs a human confirmation, a time lock, or whatever condition you set.
+           What leaks from a compromised agent is a record anyone could already read.</p>
       </details>
 
       <details>
-        <summary data-i18n="faq.3q">Is social recovery actually safe?</summary>
-        <p data-i18n-html="faq.3a1">On its own, no — it moves the attack from your device to the people around you.</p>
-        <p data-i18n-html="faq.3a2">An attacker who can pressure, impersonate or simply out-wait your guardians is
-           through. NextKey therefore requires both a guardian quorum and a proof that a
-           unique, living human is asking, and starts the waiting period when the quorum is
-           reached rather than when the request was filed — otherwise an attacker files
-           early, lets the window run out quietly, and collects approvals for an instant
-           release.</p>
+        <summary data-i18n="faq.3q">How does the recipient know something is waiting for them?</summary>
+        <p data-i18n-html="faq.3a1">They work it out rather than being told. There is no notification, because there is
+           no server here to send one.</p>
+        <p data-i18n-html="faq.3a2">A recipient reads one public value off a name, does a single scalar multiplication
+           with their own key, and arrives at the record where anything addressed to them would
+           be. Finding every such name in the world needs an indexer, which a static site does
+           not have — so today this works on names you know about, and that limit is real. A
+           read receipt works the same way in reverse: the recipient writes to a second address
+           only the two parties can compute, which the sender can check without asking anyone.
+           It also makes the moment of reading public, so it is a choice rather than a default.</p>
       </details>
 
       <details>
@@ -556,16 +578,6 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     </div>
   </section>
 
-  <!-- 7 — Status -->
-  <section>
-    <div class="status">
-      <strong data-i18n="stat.h">Status: prototype.</strong>
-      <p data-i18n="stat.p">NextKey was built during ETHGlobal ETHOnline 2026 and runs on the ENSv2 beta on
-         Sepolia testnet. It has not been audited. Do not put a seed phrase you actually
-         rely on into it.</p>
-    </div>
-  </section>
-
 </main>
 
 <footer class="wrap">
@@ -582,8 +594,8 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   "@type": "FAQPage",
   "mainEntity": [
     {"@type":"Question","name":"How do I safely pass on my seed phrase to someone?","acceptedAnswer":{"@type":"Answer","text":"Encrypt it to a key only that person holds, and put the ciphertext somewhere you both can reach. NextKey does this by name: it reads the public key the recipient publishes in their own ENS records and wraps the secret's key to it, so nothing readable passes through a message or a server, and the recipient does not have to sign up first."}},
-    {"@type":"Question","name":"What happens to my crypto if I die or lose access?","acceptedAnswer":{"@type":"Answer","text":"Nothing, unless you arranged for it in advance. With NextKey you name guardians and a waiting period; if you stop responding, an agent proposes a release, the guardians confirm, and the condition is checked inside a confidential enclave. You can cancel before it completes."}},
-    {"@type":"Question","name":"Is social recovery actually safe?","acceptedAnswer":{"@type":"Answer","text":"On its own, no — it moves the attack from your device to the people around you. NextKey requires both a guardian quorum and a proof that a unique, living human is asking, and starts the waiting period when the quorum is reached rather than when the request was filed."}},
+    {"@type":"Question","name":"Can an AI agent hold a wallet safely?","acceptedAnswer":{"@type":"Answer","text":"Not if it holds the key; it can hold a wallet whose passphrase it cannot read back. With NextKey the agent generates the phrase, seals it to a person's published key and writes the ciphertext to ENS. Recovering those words then needs a human confirmation, a time lock or whatever condition was set, so a compromised agent leaks a record anyone could already read."}},
+    {"@type":"Question","name":"How does the recipient know a secret is waiting for them?","acceptedAnswer":{"@type":"Answer","text":"They derive it rather than being notified. A recipient reads one public value off a name, does a single scalar multiplication with their own key, and arrives at the record where anything addressed to them would be. There is no server to send a notification, and finding every such name needs an indexer, so today this works on names the recipient knows about. A read receipt works the same way in reverse, at a second address only the two parties can compute."}},
     {"@type":"Question","name":"Can I share a password without both of us using the same password manager?","acceptedAnswer":{"@type":"Answer","text":"Yes. The recipient needs an ENS name and a published key, not an account with NextKey."}},
     {"@type":"Question","name":"Does NextKey ever see my secrets?","acceptedAnswer":{"@type":"Answer","text":"No. Secrets are encrypted before they leave your machine and NextKey holds no key that could open them. The ciphertext on chain is public and useless without a key; the owner reaches their own secret through the same grant mechanism as any other recipient, so there is no administrative path and no way to recover a lost key file."}},
     {"@type":"Question","name":"What is an ENS name and do I need one?","acceptedAnswer":{"@type":"Answer","text":"An ENS name is a readable name that points at things on Ethereum, like anna.eth instead of a long hex address. To receive a secret you need one plus a published key. NextKey stores the permissions themselves in ENS, so they outlive the product."}},
