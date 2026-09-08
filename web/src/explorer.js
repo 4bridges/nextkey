@@ -21,11 +21,20 @@
  * Read-only throughout. No wallet, no signing, no key material.
  */
 
-import { createPublicClient, http, namehash, decodeEventLog } from 'viem'
+import { createPublicClient, http, namehash, decodeEventLog, keccak256, stringToHex, numberToHex } from 'viem'
 import { sepolia } from 'viem/chains'
 import { un64, fingerprint } from './nk-crypto.mjs'
+import { TOPIC_RECORD, TEXT_UPDATED_TOPIC, TEXT_UPDATED, logReader } from './nk-logs.mjs'
 
 const UNIVERSAL_RESOLVER = '0xd26f2040d083af1cd2962ba303f4bea0c4faf142'
+
+// Etherscan and the ENS explorer answer different questions, so both are here
+// and each is used where it is the better answer. A transaction hash is a
+// question about the chain — the ENS explorer has no page for one. A name is a
+// question about ENS, and there the official explorer is plainly better than
+// anything this page could show, so wherever a name is known it is offered.
+const ENS_APP = 'https://hackathon-deployment-portal-app.ens-cf.workers.dev'
+const ensLink = (name) => `${ENS_APP}/${encodeURIComponent(name)}`
 const RPC = 'https://ethereum-sepolia-rpc.publicnode.com'
 
 const RECORD_PUBKEY = 'nextkey.pubkey'
@@ -79,6 +88,8 @@ const REQUIRED_ELEMENTS = [
   'name', 'look', 'try', 'verdict', 'records',
   'step-check', 'who', 'check', 'check-out',
   'step-log', 'history', 'log-out',
+  'step-feed', 'feed-refresh', 'feed-pause', 'feed-live', 'feed-out',
+  'feed-chips', 'feed-namerow', 'feed-name', 'feed-namego',
 ]
 
 // ═══ The history of a name ═════════════════════════════════════════════════
@@ -88,37 +99,10 @@ const REQUIRED_ELEMENTS = [
 // it here rather than sending a visitor away is the point: they came to see
 // what NextKey did, not to learn what a topic hash is.
 //
-// The two events were read off the deployment rather than guessed, because a
-// wrong topic hash matches nothing and an empty panel looks exactly like a name
-// that was never written to. scripts/probe-events.mjs is what produced them.
-//
-//   0x66fd1d4e…  a record being created. Its signature is not published
-//                anywhere we could find, and we do not need it: topic1 is the
-//                record id and topic2 is the namehash, which is the whole
-//                lookup. Decoding its data would only tell us the name we
-//                already typed.
-//
-//   0x14cf4389…  TextUpdated(uint256 recordId, string indexed key,
-//                            string key, string value)
-//                Confirmed by hashing the signature, and by topic2 matching
-//                keccak256("nextkey.eph") on the eph writes.
-//
-// The second one settles the question the feature hung on: `key` also sits in
-// the data, unindexed. Had it only been indexed, the chain would carry its hash
-// and no page could ever show `nextkey.g2.…` — it could only confirm a name it
-// had already guessed. It is there in full, so the history reads as prose.
-const TOPIC_RECORD = '0x66fd1d4edf16fc35ee08adaecfdf6fd5f75283da903b50f642558d6e0ba630ff'
-const TEXT_UPDATED_TOPIC = '0x14cf4389d9a790cb32a054e033d7e3d3b78119dee4fea3c0983aac1db3f54015'
-const TEXT_UPDATED = {
-  type: 'event',
-  name: 'TextUpdated',
-  inputs: [
-    { name: 'recordId', type: 'uint256', indexed: true },
-    { name: 'indexedKey', type: 'string', indexed: true },
-    { name: 'key', type: 'string' },
-    { name: 'value', type: 'string' },
-  ],
-}
+// The events themselves, and the reason they are read with a hand-made request
+// rather than viem's getLogs, live in nk-logs.mjs — the blog reads the same
+// ones, and a constant that two pages must agree on belongs in one place.
+const logsWith = logReader(reader)
 
 {
   const missing = REQUIRED_ELEMENTS.filter((id) => !document.getElementById(id))
@@ -306,7 +290,8 @@ const lookup = async (name) => {
       <p class="found">${esc(name)}</p>
       <p>${esc(said.line)}</p>
       ${said.note ? `<p class="note">${esc(said.note)}</p>` : ''}
-      <p class="note"><a href="https://sepolia.etherscan.io/address/${esc(resolver)}" rel="noopener">${t('x.resolver', 'its resolver')}: ${esc(clip(resolver, 20))}</a></p>`,
+      <p class="note"><a href="${esc(ensLink(name))}" target="_blank" rel="noopener noreferrer">${t('b.explorer', 'See it in the ENS explorer')}</a>
+        · <a href="https://sepolia.etherscan.io/address/${esc(resolver)}" target="_blank" rel="noopener noreferrer">${t('x.resolver', 'its resolver')}: ${esc(clip(resolver, 20))}</a></p>`,
       { name, resolver, role,
         has: { pubkey: !!r.pubkey, eph: !!r.eph, sealed: !!r.sealed, secret: !!r.secret, post: !!r.post } })
 
@@ -442,7 +427,7 @@ const BUDGET = 45          // requests, so a phone is not left spinning
 const widthFor = async (address, head) => {
   for (const w of WIDTHS) {
     try {
-      await reader.getLogs({ address, fromBlock: head > w ? head - w : 0n, toBlock: head })
+      await logsWith({ address, topics: [], fromBlock: head > w ? head - w : 0n, toBlock: head })
       return w
     } catch { /* refused — try a narrower one */ }
   }
@@ -457,7 +442,7 @@ const walkBack = async (address, topics, head, width) => {
   for (let i = 0; i < BUDGET && to > 0n; i++) {
     const from = to > width ? to - width + 1n : 0n
     try {
-      const found = await reader.getLogs({ address, topics, fromBlock: from, toBlock: to })
+      const found = await logsWith({ address, topics, fromBlock: from, toBlock: to })
       scanned += to - from + 1n
       if (found.length) return { found, scanned, refused: null }
     } catch (e) { refused = e }
@@ -502,7 +487,7 @@ $('history').addEventListener('click', async () => {
     for (let i = 0; i < BUDGET && to >= created.found[0].blockNumber; i++) {
       const from = to > width ? to - width + 1n : 0n
       let logs = []
-      try { logs = await reader.getLogs({ address: current.resolver, topics: [null, recordId], fromBlock: from, toBlock: to }) } catch { /* keep walking */ }
+      try { logs = await logsWith({ address: current.resolver, topics: [TEXT_UPDATED_TOPIC, recordId], fromBlock: from, toBlock: to }) } catch { /* keep walking */ }
       scanned += to - from + 1n
       for (const log of logs) {
         if (log.topics[0] !== TEXT_UPDATED_TOPIC) continue
@@ -539,12 +524,12 @@ $('history').addEventListener('click', async () => {
         <p class="note" style="margin:0">
           <span class="mono break">${esc(w.key)}</span> ·
           ${t('x.log.block', 'block')} ${esc(String(w.block))}${when.has(w.block) ? ` · ${esc(when.get(w.block))} UTC` : ''} ·
-          <a href="https://sepolia.etherscan.io/tx/${esc(w.tx)}" rel="noopener">${t('x.log.tx', 'transaction')}</a>
+          <a href="https://sepolia.etherscan.io/tx/${esc(w.tx)}" target="_blank" rel="noopener noreferrer">${t('x.log.tx', 'transaction')}</a>
         </p>
         ${w.value ? `<pre class="mono" style="margin-top:.4rem">${esc(clip(w.value, 220))}</pre>` : ''}
       </div>`).join('')}
       <p class="note">${t('x.log.window', 'Searched')} ${esc(String(scanned))} ${t('x.log.blocks', 'blocks on')} <span class="mono break">${esc(current.resolver)}</span>${writes.length > 20 ? ` · ${t('x.log.more', 'showing the twenty most recent of')} ${writes.length}` : ''}.</p>
-      ${why(t('x.log.how', 'How this is read'), `
+          ${why(t('x.log.how', 'How this is read'), `
         <p>${t('x.log.hownote', 'Two log filters and no server: one finds the record id by the name’s namehash, the other reads every text write against that id. The key sits unindexed in the event, so it can be shown in full — which is the only reason a line like “granted access to somebody” can name the record it happened on.')}</p>`)}`,
       { name: current.name, writes: writes.length, scanned: String(scanned) })
   } catch (e) {
@@ -553,19 +538,524 @@ $('history').addEventListener('click', async () => {
   }
 })
 
+// ═══ The live window ═══════════════════════════════════════════════════════
+//
+// Everything above starts from a name. This does not: it is every NextKey
+// record on the resolver, newest first, and it keeps arriving while the page is
+// open. Same two log filters, one address, no name.
+//
+// Which is also the honest part. A TextUpdated event carries a record id, not a
+// name, and the creation event that ties the two together carries the namehash
+// — one-way by construction. So the feed can say what happened and when, and
+// cannot say to whom. That is not a gap in the page; it is the property the
+// rest of the site claims, visible in the raw.
+//
+// Which address to watch turned out to be the whole question, and the first
+// version got it wrong in the way that is hardest to see: it guessed one
+// resolver from one anchor name, found nothing, and reported an empty chain.
+// Nothing was empty. It was looking at the wrong contract, and — worse — it did
+// not print which one, so the panel said "nothing happened" when it meant "I
+// asked somewhere else".
+//
+// On ENSv2 a name's resolver is a property of the name, not of the deployment,
+// so there is no single right answer to guess. Every candidate is watched at
+// once instead: eth_getLogs takes a list of addresses, so this costs the same
+// one request. And whatever the result, the addresses are printed — an empty
+// list that cannot say where it looked is not a finding, it is a shrug.
+const FEED_ANCHORS = ['vault.nextkey.eth', 'nextkeyv2.eth', 'anna.nextkey.eth']
+const FEED_RESOLVERS = ['0x04B2DB6567Cc68d059c061215Adf9a99adD1cA65']
+const FEED_SHOW = 30          // entries on screen
+const FEED_KEEP = 90          // entries in memory, so a poll has somewhere to go
+const FEED_WINDOWS = 8        // log queries for a filter we sort ourselves
+const FEED_WINDOWS_DEEP = 24  // and for one the node can answer on its own
+const FEED_STAMPS = 24        // block timestamps fetched per render
+const FEED_EVERY = 20_000     // how often a poll asks for new blocks
+const FRESH_FOR = 6_000       // how long an arrival stays marked
+
+const feed = {
+  addresses: null,   // every resolver this page watches, discovered and given
+  width: null,
+  head: null,        // the newest block this page has already read
+  items: [],
+  scanned: 0n,
+  when: new Map(),   // block → "YYYY-MM-DD HH:MM"
+  paused: false,
+  timer: null,
+  filling: false,
+  refused: null,     // the last window the node would not serve
+  filter: 'all',
+  name: '',          // the name behind the ENS-name filter
+  recordId: null,    // and its record id, once found
+  cache: new Map(),  // filter → what was found for it, so a second click is free
+  gen: 0,            // which read is the current one
+}
+
+const isNextkey = (key) => typeof key === 'string' && key.startsWith('nextkey.')
+const isGrant = (key) => key.startsWith('nextkey.g2.') || key.startsWith('nextkey.grant.')
+
+/**
+ * The filters, and why they are not all the same shape.
+ *
+ * TextUpdated indexes the key as well as carrying it in the data, so a record
+ * with a fixed name can be asked for directly: topic2 is keccak256 of the key,
+ * the node does the selecting, and the search reaches much further back for the
+ * same one request. That covers posts and ciphertexts.
+ *
+ * A grant cannot work that way. Its record is named nextkey.g2.<derived tag>,
+ * so every grant hashes to a different topic and there is no value to ask for —
+ * the same property that keeps a grant unattributable also keeps it
+ * unindexable. Those filters read the window and sort afterwards, and the page
+ * says so rather than letting a short list pass for a complete one.
+ *
+ * The name filter is the exception that proves it: a name's record id is not
+ * public knowledge either, but it is discoverable — the creation event carries
+ * the namehash, which we can compute. One lookup, then an exact filter.
+ */
+const POST_KEYS = [RECORD_POST, `${RECORD_POST}.2`, `${RECORD_POST}.3`,
+                   `${RECORD_POST}.4`, `${RECORD_POST}.5`]
+const topicOf = (key) => keccak256(stringToHex(key))
+
+const FILTERS = {
+  all:     { deep: false, topics: () => [TEXT_UPDATED_TOPIC],
+             keep: (w) => isNextkey(w.key) },
+  post:    { deep: true,  topics: () => [TEXT_UPDATED_TOPIC, null, POST_KEYS.map(topicOf)],
+             keep: (w) => w.key.startsWith(RECORD_POST) },
+  secret:  { deep: true,  topics: () => [TEXT_UPDATED_TOPIC, null, [topicOf(RECORD_SECRET)]],
+             keep: (w) => w.key === RECORD_SECRET },
+  granted: { deep: false, topics: () => [TEXT_UPDATED_TOPIC],
+             keep: (w) => isGrant(w.key) && !!w.value },
+  revoked: { deep: false, topics: () => [TEXT_UPDATED_TOPIC],
+             keep: (w) => isGrant(w.key) && !w.value },
+  name:    { deep: true,  topics: () => [TEXT_UPDATED_TOPIC, feed.recordId],
+             keep: (w) => isNextkey(w.key) },
+}
+const active = () => FILTERS[feed.filter] ?? FILTERS.all
+
+/**
+ * Every resolver worth watching.
+ *
+ * Three sources, none of them trusted alone: the anchors, resolved live, so a
+ * redeployed chain is followed; the constant, so the page still works when the
+ * anchors are gone; and whatever the visitor is looking at right now, which is
+ * the one address we know for certain carries NextKey records. A ?resolver=
+ * parameter is appended for a chain we have never met.
+ */
+const feedAddresses = async () => {
+  const seen = new Map()   // lowercase → the address as first written
+  const add = (a) => {
+    if (!a || /^0x0+$/i.test(a) || !/^0x[0-9a-f]{40}$/i.test(a)) return
+    if (!seen.has(a.toLowerCase())) seen.set(a.toLowerCase(), a)
+  }
+  for (const a of FEED_RESOLVERS) add(a)
+  add(new URLSearchParams(location.search).get('resolver'))
+  add(current?.resolver)
+  const found = await Promise.all(
+    FEED_ANCHORS.map((name) => reader.getEnsResolver({ name }).catch(() => null)))
+  for (const a of found) add(a)
+  return [...seen.values()]
+}
+
+/**
+ * The widest window this node will serve — and, when it serves none, why.
+ *
+ * widthFor above throws its refusals away, which is right for the history: the
+ * name's records are on screen either way. Here there is nothing else on
+ * screen, so the reason is the whole message.
+ */
+const feedWidth = async (head) => {
+  let last = null
+  for (const w of WIDTHS) {
+    try {
+      await logsWith({ address: feed.addresses, topics: active().topics(),
+                       fromBlock: head > w ? head - w : 0n, toBlock: head })
+      return { width: w, error: null }
+    } catch (e) { last = e }
+  }
+  return { width: null, error: last }
+}
+
+/** Decode one window of resolver logs into feed entries. */
+const feedLogs = async (from, to) => {
+  const logs = await logsWith({
+    address: feed.addresses, topics: active().topics(), fromBlock: from, toBlock: to,
+  })
+  const out = []
+  for (const log of logs) {
+    try {
+      const { args } = decodeEventLog({ abi: [TEXT_UPDATED], data: log.data, topics: log.topics })
+      if (!active().keep({ key: args.key, value: args.value })) continue
+      out.push({
+        key: args.key, value: args.value,
+        block: log.blockNumber, tx: log.transactionHash,
+        index: log.logIndex ?? 0,
+        seen: 0,
+      })
+    } catch { /* an event shape we do not know is skipped, not guessed at */ }
+  }
+  return out
+}
+
+/** Newest first, and stable when two writes share a block. */
+const feedSort = () => {
+  feed.items.sort((a, b) =>
+    a.block === b.block ? b.index - a.index : (a.block > b.block ? -1 : 1))
+  const seen = new Set()
+  feed.items = feed.items.filter((w) => {
+    const id = `${w.tx}:${w.index}`
+    if (seen.has(id)) return false
+    seen.add(id)
+    return true
+  }).slice(0, FEED_KEEP)
+}
+
+/** Where it looked — printed whether or not it found anything. */
+const feedWhere = () => (feed.addresses ?? [])
+  .map((a) => `<a class="mono break" href="https://sepolia.etherscan.io/address/${esc(a)}" target="_blank" rel="noopener noreferrer">${esc(a)}</a>`)
+  .join(', ')
+
+const feedStatus = () => {
+  const el = $('feed-live')
+  if (!feed.addresses) { el.textContent = ''; return }
+  el.innerHTML = feed.paused
+    ? `<span class="dot off"></span>${esc(t('x.feed.paused', 'Paused'))}`
+    : `<span class="dot"></span>${esc(t('x.feed.living', 'Live'))}`
+}
+
+const feedRender = () => {
+  const out = $('feed-out')
+  const shown = feed.items.slice(0, FEED_SHOW)
+  const now = Date.now()
+
+  say(out, 'ok', `
+    ${feed.filter === 'name' && feed.name ? `<p class="note" style="margin:0 0 .4rem">
+      <span class="mono break">${esc(feed.name)}</span> ·
+      <a href="${esc(ensLink(feed.name))}" target="_blank" rel="noopener noreferrer">${t('b.explorer', 'See it in the ENS explorer')}</a></p>` : ''}
+    ${shown.map((w) => `
+    <div class="ev${now - w.seen < FRESH_FOR ? ' fresh' : ''}">
+      <p style="margin:0 0 .2rem">${esc(meaning(w.key, w.value))}</p>
+      <p class="note" style="margin:0">
+        <span class="mono break">${esc(w.key)}</span> ·
+        ${t('x.log.block', 'block')} ${esc(String(w.block))}${feed.when.has(String(w.block)) ? ` · ${esc(feed.when.get(String(w.block)))} UTC` : ''} ·
+        <a href="https://sepolia.etherscan.io/tx/${esc(w.tx)}" target="_blank" rel="noopener noreferrer">${t('x.log.tx', 'transaction')}</a>
+      </p>
+      ${w.value ? `<pre class="mono">${esc(clip(w.value, 220))}</pre>` : ''}
+    </div>`).join('')}
+    <p class="note">${t('x.log.window', 'Searched')} ${esc(String(feed.scanned))} ${t('x.log.blocks', 'blocks on')} ${feedWhere()}${feed.items.length > FEED_SHOW ? ` · ${t('x.feed.showing', 'showing the newest')} ${FEED_SHOW} ${t('x.feed.of', 'of')} ${feed.items.length}` : ''}.</p>
+    ${feed.filter === 'granted' || feed.filter === 'revoked' ? `<p class="note">${t('x.feed.partial', 'A grant’s record name is derived, so the node cannot select these — they were picked out of the range above by hand. This is therefore what is in that range, not what exists.')}</p>` : ''}
+    ${active().deep && feed.filter !== 'all' ? `<p class="note">${t('x.feed.exact', 'This filter is asked of the node directly, so it reaches back as far as the search went and misses nothing inside it.')}</p>` : ''}
+    ${why(t('x.log.how', 'How this is read'), `
+      <p>${t('x.feed.hownote', 'One log filter on one resolver, and no server: every text write it has made, kept if the record name begins with nextkey. The value is shown as it stands on the chain, because it is public either way.')}</p>
+      <p>${t('x.feed.noname', 'What is missing here is deliberate. The event carries a record id, not a name, and the event that ties the two together carries a namehash, which does not run backwards. So this list can say a grant was given and cannot say to whom — which is the claim the rest of this page makes, seen from outside.')}</p>`)}`,
+    { feed: feed.items.length, resolvers: feed.addresses, scanned: String(feed.scanned) })
+}
+
+/** Timestamps are a nicety, so they are fetched after the list is already up. */
+const feedStamps = async () => {
+  const need = [...new Set(feed.items.slice(0, FEED_SHOW).map((w) => String(w.block)))]
+    .filter((b) => !feed.when.has(b))
+    .slice(0, FEED_STAMPS)
+  if (!need.length) return
+  await Promise.all(need.map(async (b) => {
+    try {
+      const blk = await reader.getBlock({ blockNumber: BigInt(b) })
+      feed.when.set(b, new Date(Number(blk.timestamp) * 1000).toISOString().replace('T', ' ').slice(0, 16))
+    } catch { /* leave it blank rather than invent one */ }
+  }))
+  feedRender()
+}
+
+/**
+ * Read the active filter from the chain.
+ *
+ * A fill takes several seconds and several requests, and a visitor will press
+ * another chip in the middle of it — the first version answered that by doing
+ * nothing at all, because a fill was already running. Silently ignoring a
+ * button is worse than being slow.
+ *
+ * So a fill is cancellable: each one takes a number, and the moment a newer one
+ * starts, the older stops writing to the page. Its requests may still be in
+ * flight, and their answers are simply dropped.
+ */
+const feedFill = async () => {
+  const mine = ++feed.gen
+  const mineStill = () => feed.gen === mine
+  feed.filling = true
+  const out = $('feed-out')
+  try {
+    say(out, 'busy', `<p>${t('x.feed.reading', 'Reading everything NextKey has written…')}</p>`)
+
+    if (!feed.addresses) feed.addresses = await feedAddresses()
+
+    const head = await reader.getBlockNumber()
+    if (!feed.width) {
+      const probe = await feedWidth(head)
+      feed.width = probe.width
+      if (!probe.width) return say(out, 'bad', `
+        <p>${t('x.log.norange', 'The node refused every block range this page asked for.')}</p>
+        <p class="note mono">${esc(plain(probe.error))}</p>
+        <p class="note">${t('x.feed.norangenote', 'That is a limit of the public endpoint, not a statement about NextKey. Nothing here is broken and nothing is missing — this one node will not serve log queries at the moment. Press Refresh in a minute.')}</p>
+        <p class="note">${t('x.feed.where', 'On')} ${feedWhere()}.</p>`,
+        { feed: null, error: 'ranges-refused', resolvers: feed.addresses })
+    }
+
+    let to = head
+    feed.scanned = 0n
+    feed.refused = null
+    // A filter the node can answer costs almost nothing per window, so it is
+    // allowed to reach much further back. A filter we have to sort ourselves
+    // reads every write in the range, so it stays modest — and says how far it
+    // got, which is the difference between a short list and a complete one.
+    const budget = active().deep ? FEED_WINDOWS_DEEP : FEED_WINDOWS
+    for (let i = 0; i < budget && to > 0n && feed.items.length < FEED_SHOW; i++) {
+      if (!mineStill()) return
+      const from = to > feed.width ? to - feed.width + 1n : 0n
+      try {
+        feed.items.push(...await feedLogs(from, to))
+        feed.scanned += to - from + 1n
+      } catch (e) {
+        // Kept, not swallowed. A window the node would not serve and a window
+        // with nothing in it produce the same empty list, and only one of them
+        // means the chain was quiet. This page has already made that mistake
+        // once, in the per-name history, and it read as a lie.
+        feed.refused = e
+      }
+      feedSort()
+      // Drawn as it arrives. The newest window almost always holds something,
+      // and a visitor should not watch a spinner for eleven more queries that
+      // only reach further back than they were going to read anyway.
+      if (feed.items.length) feedRender()
+      if (from === 0n) break
+      to = from - 1n
+    }
+    if (!mineStill()) return
+    feed.head = head
+
+    if (!feed.items.length) return say(out, feed.refused ? 'bad' : '', `
+      <p>${feed.refused
+        ? t('x.log.refused', 'The node stopped answering partway through.')
+        : (feed.filter === 'all'
+            ? t('x.feed.none', 'Nothing yet in the stretch this page could search.')
+            : t('x.feed.nonehere', 'Nothing of this kind in the stretch this page could search.'))}</p>
+      ${feed.refused ? `<p class="note mono">${esc(plain(feed.refused))}</p>
+      <p class="note">${t('x.feed.refusednote', 'So this is not a quiet chain — it is a request that came back empty-handed. A public endpoint will refuse a range that matches too much, and the fix is to press Refresh, which starts again from the current head.')}</p>` : ''}
+      <p class="note">${t('x.log.scanned', 'Searched back')} ${esc(String(feed.scanned))} ${t('x.log.blocksfrom', 'blocks from the current head, in steps of')} ${esc(String(feed.width))}.</p>
+      <p class="note">${t('x.feed.where', 'On')} ${feedWhere()}.</p>
+      <p class="note">${t('x.feed.nonenote', 'If NextKey has written somewhere else on this deployment, this is where to say so: look a name up above, then press Refresh, and the resolver that name actually uses is watched too.')}</p>`,
+      { feed: 0, scanned: String(feed.scanned), resolvers: feed.addresses })
+
+    feed.cache.set(feedKey(), { items: feed.items, head: feed.head, addresses: feed.addresses })
+    feedRender()
+    feedStamps()
+  } catch (e) {
+    say(out, 'bad', `<p>${t('x.log.fail', 'Could not read the events.')}</p>
+                     <p class="note mono">${esc(plain(e))}</p>`)
+  } finally {
+    if (mineStill()) { feed.filling = false; feedStatus() }
+  }
+}
+
+/**
+ * One poll: only the blocks that appeared since the last one.
+ *
+ * A failure here is silent on purpose. The list on screen is still true — it
+ * was read from the chain — and replacing it with an error because a single
+ * twenty-second poll timed out would throw away something correct to report
+ * something temporary.
+ */
+const feedPoll = async () => {
+  if (feed.paused || feed.filling || document.hidden || !feed.addresses || feed.head === null) return
+  feed.filling = true
+  const mine = feed.gen
+  try {
+    // cacheTime 0, or this asks a cache how new the chain is. viem holds the
+    // last height for as long as its polling interval, which is shorter than
+    // the poll below and long enough to make a poll answer "nothing new" from
+    // memory — a live window that goes quiet because it stopped asking.
+    const head = await reader.getBlockNumber({ cacheTime: 0 })
+    if (head <= feed.head) return
+    const fresh = await feedLogs(feed.head + 1n, head)
+    feed.scanned += head - feed.head
+    feed.head = head
+    if (!fresh.length || feed.gen !== mine) return
+    const at = Date.now()
+    for (const w of fresh) w.seen = at
+    feed.items.push(...fresh)
+    feedSort()
+    feed.cache.set(feedKey(), { items: feed.items, head: feed.head, addresses: feed.addresses })
+    feedRender()
+    feedStamps()
+  } catch { /* the next poll tries again */ } finally { feed.filling = false }
+}
+
+// ─── Filters ───────────────────────────────────────────────────────────────
+
+/** A filter and its subject, which is what a cached answer belongs to. */
+const feedKey = () => (feed.filter === 'name' ? `name:${feed.name}` : feed.filter)
+
+const feedChips = () => {
+  for (const b of $('feed-chips').querySelectorAll('button'))
+    b.setAttribute('aria-pressed', String(b.dataset.f === feed.filter))
+  show($('feed-namerow'), feed.filter === 'name')
+}
+
+/**
+ * The record id behind a name.
+ *
+ * A TextUpdated event says which record changed, not which name owns it, so a
+ * name filter needs the missing half — and it is discoverable rather than
+ * secret: the creation event carries the namehash, and a namehash is something
+ * this page can compute from a name it was given. One walk to find it, then an
+ * exact filter for everything after.
+ *
+ * While this filter is on, the page watches that name's own resolver and no
+ * other. A record id is only unique to the contract that issued it.
+ */
+const feedFindName = async (name) => {
+  const out = $('feed-out')
+  feed.name = name
+  feed.recordId = null
+  say(out, 'busy', `<p>${t('x.feed.finding', 'Finding that name’s record…')}</p>`)
+
+  let resolver = null
+  try { resolver = await reader.getEnsResolver({ name }) } catch { /* reported below */ }
+  if (!resolver || /^0x0+$/i.test(resolver)) return say(out, 'bad', `
+    <p>${t('x.noresolver', 'That name has no resolver on this deployment.')}</p>
+    <p class="note">${t('x.noresolvernote', 'Either it is not registered here, or nothing has been attached to it yet. A name you hold on production ENS will not do — this is the hackathon deployment, and it is a separate world.')}</p>`,
+    { filter: 'name', name, resolver: null })
+
+  const head = await reader.getBlockNumber({ cacheTime: 0 })
+  const width = await widthFor(resolver, head)
+  if (!width) return say(out, 'bad', `
+    <p>${t('x.log.norange', 'The node refused every block range this page asked for.')}</p>
+    <p class="note">${t('x.feed.norangenote', 'That is a limit of the public endpoint, not a statement about NextKey. Nothing here is broken and nothing is missing — this one node will not serve log queries at the moment. Press Refresh in a minute.')}</p>`,
+    { filter: 'name', name, error: 'ranges-refused' })
+
+  const created = await walkBack(resolver, [TOPIC_RECORD, null, namehash(name)], head, width)
+  if (!created.found.length) return say(out, created.refused ? 'bad' : '', `
+    <p>${created.refused
+      ? t('x.log.refused', 'The node stopped answering partway through.')
+      : t('x.log.notinrange', 'No record-creation event in the stretch this page could search.')}</p>
+    <p class="note">${t('x.log.scanned', 'Searched back')} ${esc(String(created.scanned))} ${t('x.log.blocksfrom', 'blocks from the current head, in steps of')} ${esc(String(width))}.</p>
+    <p class="note">${created.refused
+      ? t('x.feed.refusednote', 'So this is not a quiet chain — it is a request that came back empty-handed. A public endpoint will refuse a range that matches too much, and the fix is to press Refresh, which starts again from the current head.')
+      : t('x.feed.oldname', 'The name resolves, so it was created — just further back than a public endpoint will let a browser walk. Without that one event there is no record id, and without a record id this filter has nothing exact to ask for.')}</p>`,
+    { filter: 'name', name, recordId: null, scanned: String(created.scanned) })
+
+  feed.recordId = created.found[0].topics[1]
+  feed.addresses = [resolver]
+  feed.width = width
+  feed.items = []
+  feed.head = null
+  await feedFill()
+}
+
+/** Switch filters. Each one is its own question, so each gets its own answer. */
+const feedSelect = async (which, name) => {
+  feed.filter = FILTERS[which] ? which : 'all'
+  feedChips()
+  feed.width = null
+  feed.refused = null
+
+  if (feed.filter === 'name') {
+    const wanted = (name ?? $('feed-name').value).trim().toLowerCase()
+    $('feed-name').value = wanted
+    if (!wanted) {
+      feed.items = []
+      return say($('feed-out'), '', `<p>${t('x.feed.needname', 'Type a name to see only its writes.')}</p>`)
+    }
+    if (feed.cache.has(`name:${wanted}`)) {
+      const kept = feed.cache.get(`name:${wanted}`)
+      Object.assign(feed, { name: wanted, ...kept })
+      feedChips(); feedRender(); return feedStamps()
+    }
+    return feedFindName(wanted)
+  }
+
+  // Leaving the name filter gives the resolvers back: a record id belongs to
+  // one contract, the rest of the feed belongs to all of them.
+  feed.recordId = null
+  feed.addresses = null
+
+  const kept = feed.cache.get(feedKey())
+  if (kept) {
+    feed.items = kept.items
+    feed.head = kept.head
+    feed.addresses = kept.addresses
+    feedRender()
+    return feedStamps()
+  }
+  feed.items = []
+  feed.head = null
+  await feedFill()
+}
+
+for (const b of $('feed-chips').querySelectorAll('button'))
+  b.addEventListener('click', () => feedSelect(b.dataset.f))
+
+$('feed-namego').addEventListener('click', () => feedSelect('name'))
+$('feed-name').addEventListener('keydown', (e) => { if (e.key === 'Enter') feedSelect('name') })
+
+$('feed-refresh').addEventListener('click', () => {
+  feed.width = null
+  feed.cache.delete(feedKey())
+  feed.items = []
+  feed.head = null
+  if (feed.filter !== 'name') feed.addresses = null
+  if (feed.filter === 'name') return feedFindName(feed.name)
+  feedFill()
+})
+
+$('feed-pause').addEventListener('click', () => {
+  feed.paused = !feed.paused
+  $('feed-pause').textContent = feed.paused
+    ? t('x.feed.resume', 'Resume')
+    : t('x.feed.pause', 'Pause')
+  feedStatus()
+})
+
+feed.timer = setInterval(feedPoll, FEED_EVERY)
+// A tab in the background is not a tab anybody is watching, and a page that
+// keeps polling in one spends a phone's battery to show nobody anything.
+document.addEventListener('visibilitychange', () => { if (!document.hidden) feedPoll() })
+
 // ─── The agent-facing surface, and the opening state ───────────────────────
 window.NEXTKEY = {
   records: { pubkey: RECORD_PUBKEY, eph: RECORD_EPH, sealed: RECORD_EPH_SEALED,
              secret: RECORD_SECRET, post: RECORD_POST },
   inspect,
-  version: 1,
+  feed: () => feed.items.map((w) => ({
+    key: w.key, value: w.value, block: String(w.block), tx: w.tx,
+  })),
+  version: 2,
 }
-window.__nextkeyRerender = () => {}
+
+// The overlay swaps every data-i18n string when the language changes, which
+// would put "Pause" back on a button that is paused. The list and the live line
+// are ours to redraw.
+window.__nextkeyRerender = () => {
+  if (feed.paused) $('feed-pause').textContent = t('x.feed.resume', 'Resume')
+  feedStatus()
+  if (feed.items.length) feedRender()
+}
 
 {
   const asked = new URLSearchParams(location.search).get('name')
   if (asked) {
     $('name').value = asked.trim().toLowerCase()
     $('look').click()
+  }
+  // The live window fills itself. It is the one thing on this page that needs
+  // no question asked first, and a visitor who arrives with nothing to type
+  // should still see the chain moving.
+  feedStatus()
+  // ?show=post, ?show=granted, ?show=name:vault.nextkey.eth — so a filtered
+  // view is a link somebody can send, which is the whole reason the state is in
+  // the address rather than only in the page.
+  const show0 = (new URLSearchParams(location.search).get('show') ?? 'all').split(':')
+  if (show0[0] === 'name' && show0[1]) {
+    $('feed-name').value = show0[1].trim().toLowerCase()
+    feedSelect('name')
+  } else {
+    feedSelect(FILTERS[show0[0]] ? show0[0] : 'all')
   }
 }

@@ -228,6 +228,36 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   .reclabel .mono{overflow-wrap:anywhere}
   .out dd,.out dt{overflow-wrap:anywhere}
 
+  /* ── The live window ── */
+  /* The chips scroll sideways on a phone rather than stacking into a wall of
+     buttons: a filter row that is four rows tall is a menu with extra steps. */
+  .chips{display:flex;gap:.45rem;margin:.9rem 0 .2rem;overflow-x:auto;
+    padding-bottom:.35rem;scrollbar-width:thin}
+  .chips button{
+    font:inherit;font-size:.92rem;font-weight:600;white-space:nowrap;
+    color:var(--ink);background:var(--surface);
+    border:1px solid var(--line);border-radius:999px;
+    padding:.35rem .85rem;cursor:pointer
+  }
+  .chips button:hover{border-color:var(--muted)}
+  .chips button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .chips button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);
+    border-color:var(--accent)}
+  .ev{border-top:1px solid var(--line);padding:.7rem 0}
+  .ev pre{margin-top:.4rem}
+  /* An arrival is marked for a moment and then stops shouting: a page that
+     keeps twenty things highlighted has highlighted nothing. */
+  .ev.fresh{animation:arrive 6s ease-out 1 forwards}
+  @keyframes arrive{
+    0%{background:var(--warnbg);box-shadow:inset 3px 0 0 var(--accent)}
+    70%{background:var(--warnbg);box-shadow:inset 3px 0 0 var(--accent)}
+    100%{background:transparent;box-shadow:inset 3px 0 0 transparent}
+  }
+  @media (prefers-reduced-motion:reduce){.ev.fresh{animation:none;box-shadow:inset 3px 0 0 var(--accent)}}
+  .dot{display:inline-block;width:.5rem;height:.5rem;border-radius:50%;
+    background:var(--ok);margin-right:.35rem;vertical-align:baseline}
+  .dot.off{background:var(--muted)}
+
   /* What is finished stops inviting a second press. */
   .step.done > p,.step.done .row,.step.done textarea,.step.done input{opacity:.55}
   .step.done .out{opacity:1}
@@ -292,6 +322,13 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     margin-inline-end:auto;font-size:.95rem;
     font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
   .barnav a{color:var(--muted);text-decoration:none;font-weight:600;white-space:nowrap}
+  /* The way back, as a house rather than a word: it is the one item in this bar
+     that needs no reading, and on a phone it costs a fifth of the width of
+     "Home". The label is still there for anybody not looking at pixels. */
+  .barnav .navhome{display:inline-flex;align-items:center}
+  .barnav .navhome svg{width:1.15rem;height:1.15rem}
+  .vh{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
+    clip-path:inset(50%);white-space:nowrap;border:0}
   .barnav a:hover{color:var(--ink)}
   .barnav a[aria-current="page"]{color:var(--accent)}
   /* The squashed bar, explained.
@@ -321,9 +358,11 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   <div class="wrap barin">
     <a class="brand" href="./index.html" aria-label="NextKey"><svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M32 4.5 54.8 17.75v26.5L32 57.5 9.2 44.25v-26.5z" stroke="currentColor" stroke-width="5.5" stroke-linejoin="round"/><circle cx="32" cy="27" r="7" stroke="currentColor" stroke-width="5"/><path d="M32 34v13" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg><b>NextKey</b></a>
     <nav class="barnav" aria-label="Sections">
+      <a class="navhome" href="./index.html" data-i18n-title="nav.home" title="Home"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.75 20v-5.5h4.5V20"/></svg><span class="vh" data-i18n="nav.home">Home</span></a>
       <a href="./demo.html" data-i18n="nav.demo">Demo</a>
       <a href="./explorer.html" data-i18n="nav.explorer" aria-current="page">Explorer</a>
-      <a href="./blog.html" data-i18n="nav.community">Community</a>
+      <a href="./blog.html" data-i18n="nav.blog">Blog</a>
+      <a href="./donate.html" data-i18n="nav.donate">Donate</a>
     </nav>
     <div class="barctl">
       <button class="iconbtn" id="themebtn" type="button"
@@ -415,6 +454,51 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     <div class="out" id="log-out" hidden></div>
   </section>
 
+  <!--
+    The live window.
+
+    Everything above answers a question about one name. This one answers none:
+    it is simply everything NextKey has written, newest first, arriving while
+    you watch. It shows the two facts the rest of the page rests on without a
+    question attached — that every write is public, and that a public write
+    still does not say who anybody is.
+
+    It sits last so the name flow above stays together, which also puts it
+    directly under the lookup box on an untouched page, where the eye lands.
+  -->
+  <section class="step" id="step-feed" style="padding-left:0">
+    <h2 data-i18n="x.feed.h">Everything happening on NextKey</h2>
+    <p data-i18n="x.feed.p">Every record NextKey writes, newest first, read straight from the
+      resolver on Sepolia. New ones appear here on their own while this page is open — a grant, a
+      withdrawal, a post, a secret sealed. Nothing is filtered, and nothing is kept.</p>
+    <!--
+      One filter at a time, and each is a fresh question to the node rather than
+      a sieve over what is already on screen — which is why these are buttons
+      that reload and not checkboxes that hide.
+    -->
+    <div class="chips" id="feed-chips" role="group" aria-label="Filter">
+      <button type="button" data-f="all" aria-pressed="true" data-i18n="x.f.all">Everything</button>
+      <button type="button" data-f="post" aria-pressed="false" data-i18n="x.f.post">Blog posts</button>
+      <button type="button" data-f="secret" aria-pressed="false" data-i18n="x.f.secret">Secrets</button>
+      <button type="button" data-f="granted" aria-pressed="false" data-i18n="x.f.granted">Access given</button>
+      <button type="button" data-f="revoked" aria-pressed="false" data-i18n="x.f.revoked">Taken back</button>
+      <button type="button" data-f="name" aria-pressed="false" data-i18n="x.f.name">One name</button>
+    </div>
+    <div class="row" id="feed-namerow" hidden>
+      <input type="text" id="feed-name" spellcheck="false" autocomplete="off"
+             aria-label="A name to filter by"
+             data-i18n-ph="x.ph" placeholder="anna.nextkey.eth"
+             style="flex:1 1 14rem;min-width:0">
+      <button class="act ghost" id="feed-namego" type="button" data-i18n="x.f.namego">Show its writes</button>
+    </div>
+    <div class="row">
+      <span class="note" id="feed-live" style="align-self:center;margin-inline-end:.35rem"></span>
+      <button class="act ghost" id="feed-refresh" type="button" data-i18n="x.feed.btn">Refresh</button>
+      <button class="act ghost" id="feed-pause" type="button" data-i18n="x.feed.pause">Pause</button>
+    </div>
+    <div class="out" id="feed-out" hidden></div>
+  </section>
+
 </main>
 
 <footer class="wrap">
@@ -423,11 +507,11 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   <p>
     <a href="./index.html" data-i18n="t.about">About NextKey</a>
     <a href="./demo.html" data-i18n="b.demo">The demo</a>
-    <a href="https://hackathon-deployment-portal-app.ens-cf.workers.dev/" rel="noopener" data-i18n="x.portal">The official ENS explorer</a>
+    <a href="https://hackathon-deployment-portal-app.ens-cf.workers.dev/" target="_blank" rel="noopener noreferrer" data-i18n="x.portal">The official ENS explorer</a>
   </p>
 </footer>
 
-<script src="./i18n.js?v=40521dcf"></script>
+<script src="./i18n.js?v=43190522"></script>
 <script>
 /**
  * The same overlay as the other two pages, same storage keys, so a language or
@@ -443,11 +527,16 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
                 cn:'zh-Hans', ua:'uk', ru:'ru', fa:'fa' }
   var RTL   = { fa: true }
 
-  var nodes = document.querySelectorAll('[data-i18n], [data-i18n-html], [data-i18n-ph]')
+  var nodes = document.querySelectorAll('[data-i18n], [data-i18n-html], [data-i18n-ph], [data-i18n-title]')
   var base = {}
   nodes.forEach(function (el) {
     if (el.hasAttribute('data-i18n-ph')) {
       base[el.getAttribute('data-i18n-ph')] = el.getAttribute('placeholder')
+    }
+    // A title is the tooltip on an icon that carries no words of its own, so it
+    // is the only text some visitors will ever see for it.
+    if (el.hasAttribute('data-i18n-title')) {
+      base[el.getAttribute('data-i18n-title')] = el.getAttribute('title')
     }
     var html = el.hasAttribute('data-i18n-html')
     var key = el.getAttribute(html ? 'data-i18n-html' : 'data-i18n')
@@ -470,6 +559,10 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
       if (el.hasAttribute('data-i18n-ph')) {
         var pv = pick(el.getAttribute('data-i18n-ph'))
         if (pv != null) el.setAttribute('placeholder', pv)
+      }
+      if (el.hasAttribute('data-i18n-title')) {
+        var tv = pick(el.getAttribute('data-i18n-title'))
+        if (tv != null) el.setAttribute('title', tv)
       }
       var html = el.hasAttribute('data-i18n-html')
       var key = el.getAttribute(html ? 'data-i18n-html' : 'data-i18n')
@@ -574,6 +667,6 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   label()
 })()
 </script>
-<script type="module" src="./explorer.js?v=04ad4e95"></script>
+<script type="module" src="./explorer.js?v=4b0ca188"></script>
 </body>
 </html>
