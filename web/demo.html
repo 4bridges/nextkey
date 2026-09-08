@@ -8,8 +8,8 @@
 <link rel="apple-touch-icon" href="./brand/apple-touch-icon.png">
 <link rel="manifest" href="./brand/site.webmanifest">
 <meta name="theme-color" content="#9a5218">
-<title>NextKey — try it yourself</title>
-<meta name="description" content="Encrypt a passphrase, grant it to an ENS name, open it, revoke it — the whole loop in your browser, no wallet required.">
+<title>NextKey — playground</title>
+<meta name="description" content="An agent makes a wallet, seals the passphrase to a person, and gets it back on release. The whole loop in your browser, no wallet required.">
 <meta name="robots" content="noindex">
 <script>
 (function(){try{var t=localStorage.getItem('nextkey.theme')
@@ -128,10 +128,14 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   .step > p{color:var(--muted);margin:0 0 1rem;max-width:40rem;
     font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
   .step[hidden]{display:none}
+  /* On a narrow screen the number used to drop above the heading, which broke
+     the one thing it is there for: saying that this is step two of six, at a
+     glance, without reading. It stays beside the heading and shrinks instead. */
   @media (max-width:34rem){
-    .step{padding-left:0;padding-top:2.2rem}
-    [dir="rtl"] .step{padding-right:0}
-    .step .n{position:static;margin-bottom:.6rem}
+    .step{padding-left:2.9rem;padding-top:2.2rem}
+    [dir="rtl"] .step{padding-left:0;padding-right:2.9rem}
+    .step .n{top:2.2rem;width:1.95rem;height:1.95rem;font-size:.92rem}
+    .step h2{font-size:1.15rem}
   }
 
   textarea,input[type=text]{
@@ -168,6 +172,76 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   .lane .row{margin-bottom:.2rem}
   .or{font-size:.9rem;color:var(--muted);text-align:center;margin:.9rem 0 0;
     font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+
+  .provenance{font-size:.92rem;color:var(--muted);margin:.9rem 0 0}
+
+  /* ── Justified body copy ──
+     With hyphens:auto, because justification on its own opens rivers of white
+     space; and ragged-right again on a phone, where the column is too narrow
+     for either to be an improvement. The lang attribute the switcher sets is
+     what makes the hyphenation right per language. */
+  .lead, .step > p, details.more p{
+    text-align:justify;
+    hyphens:auto;-webkit-hyphens:auto;
+    text-wrap:initial
+  }
+  @media (max-width:38rem){
+    .lead, .step > p, details.more p{
+      text-align:start;hyphens:manual;-webkit-hyphens:manual
+    }
+  }
+
+  /* ── The wallet / message switch ── */
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;
+    background:var(--surface);margin:.4rem 0 .2rem}
+  .segbtn{font:inherit;font-weight:620;font-size:.95rem;
+    font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:transparent;color:var(--muted);border:0;padding:.55rem 1.1rem;cursor:pointer}
+  .segbtn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+  .segbtn:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+
+  /* ── A passphrase is not something to leave lying on a screen ── */
+  .covered{letter-spacing:.12em;color:var(--muted)}
+  .eyerow{display:flex;justify-content:flex-end;margin-top:.2rem}
+  .eyebtn{font:inherit;font-size:.9rem;color:var(--muted);background:transparent;
+    border:1px solid var(--line);border-radius:6px;padding:.35rem .6rem;cursor:pointer;
+    display:inline-flex;align-items:center;gap:.4rem;
+    font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .eyebtn:hover{border-color:var(--muted);color:var(--ink)}
+  .eyebtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .eyebtn svg{width:1.05rem;height:1.05rem}
+
+  /* ── The reasoning, folded away ──
+     Every panel used to end in three or four paragraphs of argument. They are
+     the best part of this page and they are also why nobody reached step four:
+     on a phone the button was two screens below the result. The argument stays,
+     one tap away. */
+  details.why{margin-top:.7rem;border-top:1px solid var(--line);padding-top:.55rem}
+  details.why > summary{cursor:pointer;font-size:.92rem;color:var(--muted);font-weight:600;
+    font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  details.why > summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  details.why p{font-size:.93rem;color:var(--muted);margin-top:.55rem}
+  details.why dl{margin-top:.55rem}
+
+  /* A record name is one unbroken token and longer than a phone. */
+  .reclabel{overflow-wrap:anywhere}
+  .reclabel .mono{overflow-wrap:anywhere}
+  .out dd,.out dt{overflow-wrap:anywhere}
+
+  /* What is finished stops inviting a second press. */
+  .step.done > p,.step.done .row,.step.done textarea,.step.done input{opacity:.55}
+  .step.done .out{opacity:1}
+
+  /* ── Anything a reader may skip ── */
+  details.more{border:1px solid var(--line);border-radius:9px;background:var(--surface);
+    padding:.8rem 1.2rem;margin:1.6rem 0}
+  details.more > summary{cursor:pointer;font-weight:620;color:var(--ink);
+    font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  details.more > summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  details.more p{color:var(--muted);font-size:.96rem;max-width:40rem;
+    font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  details.more .lane{margin-top:.8rem}
+  details.more pre{margin-top:.8rem}
 
   .state{font-size:.92rem;color:var(--muted);margin:.4rem 0 0;
     font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
@@ -251,21 +325,22 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 </header>
 
 <div class="wrap" style="padding-top:2.6rem">
-  <p class="eyebrow" data-i18n="t.eyebrow">Try it yourself</p>
-  <h1 data-i18n="t.h1">Hand over a passphrase, then take it back</h1>
+  <p class="eyebrow" data-i18n="t.eyebrow">Demo</p>
+  <h1 data-i18n="t.h1">Wallet recovery with a human-in-the-loop</h1>
   <p class="lead" data-i18n="t.lead">
-    The whole NextKey loop, running in this tab: encrypt a passphrase, grant it to a
-    recipient, open it as them, watch a stranger fail, then revoke. No wallet, no
-    account, no ether. The last step is optional and puts it on Sepolia under a name
-    you own.
+    Create a wallet here with social recovery to a human-in-the-loop. Only that human can
+    recover the wallet. You can share a secret message the same way — just switch the
+    button below.
   </p>
 
-  <div class="warn">
-    <p data-i18n-html="t.warn1"><strong>Never type a seed phrase that guards anything — here or anywhere else.</strong></p>
-    <p data-i18n="t.warn2">A box on a web page asking for your recovery phrase is the oldest theft in
-      this industry, and NextKey exists because of it. Use the generator below. It
-      makes a real twelve-word phrase that has never held a coin and never will.</p>
+  <div class="seg" role="group" aria-label="What to share">
+    <button class="segbtn" id="mode-wallet" type="button" aria-pressed="true"
+            data-i18n="t.mode.wallet">Create wallet</button>
+    <button class="segbtn" id="mode-message" type="button" aria-pressed="false"
+            data-i18n="t.mode.message">Create message</button>
   </div>
+
+  <p class="provenance" data-i18n="hero.prov">Prototype · ENSv2 on Sepolia testnet · Built at ETHGlobal ETHOnline 2026</p>
 
   <noscript>
     <div class="fallback">
@@ -283,64 +358,57 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   <!-- 1 ─────────────────────────────────────────────────────────────────── -->
   <section class="step">
     <div class="n">1</div>
-    <h2 data-i18n="t.s1.h">The secret</h2>
-    <p data-i18n="t.s1.p">Anything at all — a passphrase, a note, a throwaway seed phrase. It stays in
-      this tab until you choose otherwise.</p>
-    <textarea id="phrase" spellcheck="false" autocomplete="off"
-      aria-label="The secret to protect"
-      data-i18n-ph="t.s1.ph" placeholder="twelve words, or anything else you would rather not email"></textarea>
-    <div class="row">
-      <button class="act ghost" id="gen" type="button" data-i18n="t.s1.gen.btn">Generate a throwaway phrase</button>
+    <h2 id="s1-h" data-i18n="t.s1.h">Create wallet</h2>
+    <p id="s1-p" data-i18n="t.s1.p">A fresh twelve-word phrase.</p>
+
+    <div id="pane-wallet">
+      <div class="row">
+        <button class="act" id="gen" type="button" data-i18n="t.s1.gen.btn">New wallet</button>
+      </div>
+      <div class="out" id="wallet-made" hidden></div>
     </div>
+
+    <div id="pane-message" hidden>
+      <div id="pane-message-box">
+        <textarea id="phrase" spellcheck="false" autocomplete="off"
+          aria-label="The message to send"></textarea>
+      </div>
+      <div class="out" id="message-made" hidden></div>
+      <div class="row" id="msg-edit-row" hidden>
+        <button class="act ghost" id="msg-edit" type="button" data-i18n="t.s1.edit">Edit the message</button>
+      </div>
+    </div>
+
     <p class="state" id="step1-state"></p>
-    <div class="out bad" id="own-phrase-warn" hidden>
-      <p data-i18n="t.s1.risk">That looks like a real recovery phrase, and it was not generated here.</p>
-      <p class="note" data-i18n="t.s1.risknote">If it protects anything, clear the box now and press the button instead.
-        Steps 1 to 5 never leave this tab — but step 6 writes to a public chain, and
-        a chain does not forget.</p>
-    </div>
   </section>
 
   <!-- 2 ─────────────────────────────────────────────────────────────────── -->
   <section class="step">
     <div class="n">2</div>
-    <h2 data-i18n="t.s2.h">Who it is for</h2>
-    <p data-i18n="t.s2.p">A recipient is a public key. It can be one made here so you can finish the
-      loop, or a real one read off a name on the hackathon ENS deployment.</p>
-    <div class="choice">
-      <label><input type="radio" name="rmode" value="local" checked>
-        <span data-i18n="t.s2.opt1">Someone made here</span></label>
-      <label><input type="radio" name="rmode" value="ens">
-        <span data-i18n="t.s2.opt2">A name on chain</span></label>
+    <h2 id="s2-h" data-i18n="t.s2.h">Choose your grant</h2>
+    <p id="s2-p" data-i18n="t.s2.p">A name on ENS, any public address. Your grant will receive it — no need to
+      register with NextKey.</p>
+    <div class="row">
+      <input type="text" id="ens-name" spellcheck="false" autocomplete="off"
+             aria-label="A name on the hackathon deployment"
+             data-i18n-ph="t.s2.ph" placeholder="anna.nextkey.eth"
+             style="flex:1 1 100%;min-width:0">
     </div>
-
-    <div id="r-local">
-      <div class="row">
-        <button class="act ghost" id="gen-recipient" type="button" data-i18n="t.s2.gen.btn">Make a recipient</button>
-      </div>
-      <div class="out" id="r-local-out" hidden></div>
+    <div class="row">
+      <button class="act ghost" id="lookup" type="button" data-i18n="t.s2.look.btn">Confirm grant</button>
+      <button class="act ghost" id="gen-recipient" type="button" data-i18n="t.s2.gen.btn">Create a demo grant</button>
     </div>
-
-    <div id="r-ens" hidden>
-      <div class="row">
-        <input type="text" id="ens-name" value="anna.nextkey.eth" spellcheck="false"
-               autocomplete="off" aria-label="An ENS name on the hackathon deployment"
-               style="flex:1 1 16rem;min-width:0">
-        <button class="act ghost" id="lookup" type="button" data-i18n="t.s2.look.btn">Read their key</button>
-      </div>
-      <div class="out" id="r-ens-out" hidden></div>
-    </div>
+    <div class="out" id="r-out" hidden></div>
   </section>
 
   <!-- 3 ─────────────────────────────────────────────────────────────────── -->
   <section class="step">
     <div class="n">3</div>
-    <h2 data-i18n="t.s3.h">Encrypt it, and grant it</h2>
-    <p data-i18n="t.s3.p">One AES-256-GCM key for the secret, then that key wrapped to the recipient
-      with X25519 and HKDF-SHA256. Identical to what the command-line tool does —
-      a grant made here opens there.</p>
+    <h2 data-i18n="t.s3.h">Seal and grant it</h2>
+    <p data-i18n="t.s3.p">One AES-256-GCM key for the content, then wrapped to the recipient with X25519 and
+      HKDF-SHA256. What is sealed here opens there.</p>
     <div class="row">
-      <button class="act" id="go-store" type="button" disabled data-i18n="t.s3.btn">Encrypt and grant</button>
+      <button class="act" id="go-store" type="button" disabled data-i18n="t.s3.btn">Seal and grant</button>
     </div>
     <div class="out" id="store-out" hidden></div>
   </section>
@@ -349,14 +417,8 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   <section class="step" id="step-chain" hidden>
     <div class="n">4</div>
     <h2 data-i18n="t.chain.h">Put it on the chain</h2>
-    <p data-i18n="t.chain.p">So far this was arithmetic inside a tab. Writing it to ENS is what makes it
-      real: three public records on Sepolia that anybody can read, and only your recipient can open.</p>
-
-    <label class="check">
-      <input type="checkbox" id="confirm-fake">
-      <span data-i18n="t.s6.confirm">I confirm this phrase guards nothing. It is a throwaway, and I understand
-        that what I write to a public chain stays there.</span>
-    </label>
+    <p data-i18n="t.chain.p">So far this was arithmetic inside a tab. Writing it to ENS is what lets the
+      recipient find it from another machine, and lets you take it back.</p>
 
     <div class="lane" id="lane-demo">
       <h3 data-i18n="t.chain.demo.h">Without a wallet</h3>
@@ -364,39 +426,40 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
         published in this page — it owns nothing and may write only to these names, which is why we can
         hand it to strangers. Works on a phone.</p>
       <div class="row">
-        <button class="act" id="write-demo" type="button" disabled
+        <button class="act" id="write-demo" type="button"
                 data-i18n="t.chain.demo.btn">Write it for me</button>
       </div>
       <p class="state" id="demo-state"></p>
       <div class="out" id="demo-out" hidden></div>
     </div>
 
-    <p class="or" data-i18n="t.chain.or">or, if you hold a name on this deployment yourself</p>
-
-    <div class="lane" id="lane-own">
-      <h3 data-i18n="t.chain.own.h">With your own wallet, to your own name</h3>
-      <p data-i18n="t.chain.own.p">The real product: your name, your wallet, your gas. Nothing of ours is
-        involved except the arithmetic.</p>
-      <div class="row">
-        <button class="act ghost" id="connect" type="button"
-                data-i18n="t.s6.connect.btn">Connect a wallet</button>
+    <details class="more" id="lane-own-wrap">
+      <summary data-i18n="t.chain.or">Or write it to a name you hold yourself</summary>
+      <div class="lane" id="lane-own">
+        <h3 data-i18n="t.chain.own.h">With your own wallet, to your own name</h3>
+        <p data-i18n="t.chain.own.p">The real product: your name, your wallet, your gas. Nothing of ours is
+          involved except the arithmetic.</p>
+        <div class="row">
+          <button class="act ghost" id="connect" type="button"
+                  data-i18n="t.s6.connect.btn">Connect a wallet</button>
+        </div>
+        <div class="out" id="wallet-out" hidden></div>
+        <div class="row">
+          <input type="text" id="own-name" spellcheck="false" autocomplete="off"
+                 aria-label="A name you own"
+                 data-i18n-ph="t.s6.ph" placeholder="the name you own, e.g. yourname.eth"
+                 style="flex:1 1 18rem;min-width:0">
+        </div>
+        <div class="row">
+          <button class="act" id="publish" type="button" disabled
+                  data-i18n="t.chain.own.btn">Write to my name</button>
+        </div>
+        <p class="state" data-i18n="t.s6.noname">No name on this deployment? Use the lane above — it needs nothing from you.
+          Getting a name of your own is four transactions, a sixty-second commit–reveal wait and mock USDC,
+          which is the registrar's design and not something to do out of curiosity.
+          scripts/register-name.mjs in the repository walks through it and prints each call.</p>
       </div>
-      <div class="out" id="wallet-out" hidden></div>
-      <div class="row">
-        <input type="text" id="own-name" spellcheck="false" autocomplete="off"
-               aria-label="A name you own"
-               data-i18n-ph="t.s6.ph" placeholder="the name you own, e.g. yourname.eth"
-               style="flex:1 1 18rem;min-width:0">
-      </div>
-      <div class="row">
-        <button class="act" id="publish" type="button" disabled
-                data-i18n="t.chain.own.btn">Write to my name</button>
-      </div>
-      <p class="state" data-i18n="t.s6.noname">No name on this deployment? Use the lane above — it needs nothing from you.
-        Getting a name of your own is four transactions, a sixty-second commit–reveal wait and mock USDC,
-        which is the registrar's design and not something to do out of curiosity.
-        scripts/register-name.mjs in the repository walks through it and prints each call.</p>
-    </div>
+    </details>
 
     <div class="out" id="publish-out" hidden></div>
   </section>
@@ -404,47 +467,92 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   <!-- 5 ─────────────────────────────────────────────────────────────────── -->
   <section class="step" id="step-open" hidden>
     <div class="n">5</div>
-    <h2 data-i18n="t.s4.h">Open it</h2>
-    <p data-i18n="t.chain.open.p">Now from the chain, not from this tab’s memory. Once as the recipient,
-      who holds the key. Once as somebody who does not.</p>
+    <h2 data-i18n="t.s4.h">The inbox</h2>
+    <p data-i18n="t.chain.open.p">The recipient is told nothing — no address, no notification. They read one
+      public value off each name they know and work out for themselves whether anything there is
+      addressed to them.</p>
     <div class="row">
-      <button class="act" id="open-as" type="button" data-i18n="t.s4.btn1">Open as the recipient</button>
+      <input type="text" id="inbox-names" spellcheck="false" autocomplete="off"
+             aria-label="Names to scan"
+             data-i18n-ph="t.s4.ph" placeholder="names to scan, separated by commas"
+             style="flex:1 1 20rem;min-width:0">
+    </div>
+    <div class="row">
+      <button class="act" id="check-inbox" type="button" data-i18n="t.s4.btn1">Check the inbox</button>
       <button class="act ghost" id="open-other" type="button" data-i18n="t.s4.btn2">Try it as a stranger</button>
     </div>
     <p class="state" id="open-remote-note" hidden data-i18n="t.s4.remote">You granted it to a name on chain, and their private key is on their machine,
       not in this browser. So this page cannot open it — and that is the property the
       whole thing rests on. They would run: nextkey.mjs open &lt;label&gt; &lt;their identity&gt;</p>
     <div class="out" id="open-out" hidden></div>
+
+    <div id="receipt-row" hidden>
+      <div class="row">
+        <button class="act ghost" id="send-ack" type="button" data-i18n="t.ack.send">Send a read receipt</button>
+        <button class="act ghost" id="check-ack" type="button" data-i18n="t.ack.check">Check for one, as the sender</button>
+      </div>
+      <div class="out" id="ack-out" hidden></div>
+    </div>
   </section>
 
   <!-- 6 ─────────────────────────────────────────────────────────────────── -->
-  <section class="step" id="step-revoke" hidden>
+  <section class="step" id="step-more" hidden>
     <div class="n">6</div>
+    <h2 data-i18n="t.s7.h">Grant to another</h2>
+    <p data-i18n="t.s7.p">The same secret, a second recipient. Nothing is re-encrypted and no record is
+      replaced — one more grant appears at an address only that recipient can compute.</p>
+    <div class="row">
+      <input type="text" id="more-name" spellcheck="false" autocomplete="off"
+             aria-label="Another name on the hackathon deployment"
+             data-i18n-ph="t.s7.ph" placeholder="bob.nextkey.eth"
+             style="flex:1 1 100%;min-width:0">
+    </div>
+    <div class="row">
+      <button class="act ghost" id="grant-more" type="button" data-i18n="t.s7.btn">Grant to this name</button>
+    </div>
+    <div class="out" id="more-out" hidden></div>
+  </section>
+
+  <!-- 7 ─────────────────────────────────────────────────────────────────── -->
+  <section class="step" id="step-revoke" hidden>
+    <div class="n">7</div>
     <h2 data-i18n="t.s5.h">Take it back</h2>
     <p data-i18n="t.chain.revoke.p">A second transaction empties the grant record and leaves the ciphertext
-      untouched. Then try opening it again.</p>
+      untouched. Then check the inbox again.</p>
     <div class="row">
       <button class="act ghost" id="revoke" type="button" data-i18n="t.s5.btn">Revoke the grant</button>
     </div>
     <div class="out" id="revoke-out" hidden></div>
   </section>
 
-  <div class="fallback">
-    <p data-i18n-html="t.after1"><strong>What just happened, and what it proves.</strong></p>
-    <p data-i18n="t.after2">The ciphertext and the grant were both public from the moment they existed.
-      Anyone could read them; nobody could use them. What separated the recipient from
-      everyone else was a private key that was never published, never uploaded and
-      never held by us — so there is no server here to subpoena, breach or shut down,
-      and no version of NextKey that could read your secret if it wanted to.</p>
-    <p data-i18n="t.after3">The stranger's failure is the part worth dwelling on. It was not a permission
-      check that a different build could skip. A different key derives a different
-      wrapping key, and AES-GCM refuses. Access control that is arithmetic cannot be
-      configured away.</p>
-    <p data-i18n="t.after4">Revocation is where the chain earns its place. On this page it was a variable
-      set to null. On chain it is a write to a name, and who may perform that write is
-      decided by ENS roles rather than by us — which is the difference between a
-      promise and a rule.</p>
-  </div>
+  <!-- For agents ─────────────────────────────────────────────────────────── -->
+  <details class="more" id="agent-api">
+    <summary data-i18n="t.agent.h">For agents — the same loop without a browser</summary>
+    <p data-i18n="t.agent.p">Every step above has a command-line equivalent, and the page reports what it
+      did in a form a program can read. Nothing here needs a person watching.</p>
+    <pre class="mono">nextkey.mjs new &lt;label&gt;
+nextkey.mjs share &lt;label&gt; &lt;identity&gt; &lt;recipient&gt;
+nextkey.mjs open  &lt;name&gt;  &lt;identity&gt;
+nextkey.mjs revoke &lt;label&gt; &lt;recipient&gt;</pre>
+    <p data-i18n="t.agent.url">This page takes three parameters, so a prepared state is one link:
+      <span class="mono">?mode=message</span> starts on the message side,
+      <span class="mono">?to=anna.nextkey.eth</span> fills in the recipient and reads their key,
+      <span class="mono">?lang=de</span> sets the language. A secret is never accepted in a URL —
+      a URL is written down in more places than anybody expects.</p>
+    <p data-i18n="t.agent.js">In the page, <span class="mono">window.NEXTKEY.state()</span> returns what has happened
+      so far as JSON, and every result panel carries the same thing on a
+      <span class="mono">data-nk</span> attribute. Private keys are not in either.</p>
+  </details>
+
+  <details class="more">
+    <summary data-i18n="t.after1">What just happened, and what it proves</summary>
+    <p data-i18n="t.after2">The ciphertext and the grant were public from the moment they existed. Anyone
+      could read them; nobody could use them. What separated the recipient from everyone else was a
+      private key that was never published, never uploaded and never held by us.</p>
+    <p data-i18n="t.after3">The stranger's failure is the part worth dwelling on. It was not a permission check
+      that a different build could skip: a different key derives a different wrapping key, and AES-GCM
+      refuses. Access control that is arithmetic cannot be configured away.</p>
+  </details>
 </main>
 
 <footer class="wrap">
@@ -604,6 +712,6 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   label()
 })()
 </script>
-<script type="module" src="./demo.js?v=f3cce55a"></script>
+<script type="module" src="./demo.js?v=86e28fc2"></script>
 </body>
 </html>

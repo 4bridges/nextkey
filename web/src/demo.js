@@ -33,7 +33,7 @@ import { createPublicClient, createWalletClient, custom, http, toHex, namehash }
 import { privateKeyToAccount } from 'viem/accounts'
 import { packetToBytes } from 'viem/ens'
 import { sepolia } from 'viem/chains'
-import { generateMnemonic, english } from 'viem/accounts'
+import { generateMnemonic, english, mnemonicToAccount } from 'viem/accounts'
 // The key this page lends to visitors, and the names it may write to. Its own
 // file, with the reasoning for publishing a private key at all.
 import { DEMO_KEY, POOL, POOL_RESOLVER } from './demo-wallet.js'
@@ -46,6 +46,7 @@ import {
   seal, unseal,
   RECORD_EPH, ephMessage, ephSecretFromSignature,
   grantForV2, locateGrantV2, openGrantV2,
+  locateAckV2, ackKeyForSender,
 } from './nk-crypto.mjs'
 
 // ─── The deployment ────────────────────────────────────────────────────────
@@ -117,11 +118,46 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) =>
 const show = (el, on) => { el.hidden = !on }
 const clip = (s, n) => (s.length > n ? `${s.slice(0, n)}…` : s)
 
-const say = (el, kind, html) => {
+/**
+ * A result panel, and the same result in a form a program can read.
+ *
+ * The fourth argument is the machine-readable half: it lands on a `data-nk`
+ * attribute beside the prose. An agent driving this page — or a test — reads
+ * that instead of scraping sentences that exist in ten languages. Nothing
+ * private goes in it; see nkState().
+ */
+const say = (el, kind, html, data) => {
   el.className = `out ${kind}`
   el.innerHTML = html
+  if (data === undefined) el.removeAttribute('data-nk')
+  else el.setAttribute('data-nk', JSON.stringify(data))
   el.hidden = false
 }
+
+/**
+ * The argument, folded away.
+ *
+ * Each panel used to end in three or four paragraphs explaining why the result
+ * matters. They are worth keeping — a judge who reads them is the judge who
+ * understands the design — but with all of them open the button for the next
+ * step sat two screens below the result on a phone, and people stopped there
+ * believing nothing had happened. So the reasoning goes behind one line.
+ */
+const why = (label, html) =>
+  `<details class="why"><summary>${esc(label)}</summary>${html}</details>`
+
+/** The reveal control, used by both the passphrase and the message. */
+const eye = (label) => `
+  <div class="eyerow">
+    <button class="eyebtn" id="reveal" type="button"
+            title="${esc(label)}" aria-label="${esc(label)}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M1.8 12S5.4 5.4 12 5.4 22.2 12 22.2 12 18.6 18.6 12 18.6 1.8 12 1.8 12z"/>
+        <circle cx="12" cy="12" r="3.1"/>
+      </svg>
+    </button>
+  </div>`
 
 /**
  * Does this page match this bundle?
@@ -138,12 +174,17 @@ const say = (el, kind, html) => {
  * finding out immediately.
  */
 const REQUIRED_ELEMENTS = [
-  'phrase', 'gen', 'step1-state', 'own-phrase-warn',
-  'gen-recipient', 'r-local', 'r-local-out', 'r-ens', 'r-ens-out', 'ens-name', 'lookup',
+  'mode-wallet', 'mode-message', 'pane-wallet', 'pane-message',
+  'phrase', 'gen', 'wallet-made', 'message-made', 'pane-message-box',
+  'msg-edit', 'msg-edit-row', 'step1-state',
+  's1-h', 's1-p', 's2-h', 's2-p',
+  'gen-recipient', 'r-out', 'ens-name', 'lookup',
   'go-store', 'store-out',
-  'step-chain', 'confirm-fake', 'write-demo', 'demo-out', 'demo-state',
+  'step-chain', 'write-demo', 'demo-out', 'demo-state',
   'connect', 'wallet-out', 'own-name', 'publish', 'publish-out',
-  'step-open', 'open-as', 'open-other', 'open-out', 'open-remote-note',
+  'step-open', 'inbox-names', 'check-inbox', 'open-other', 'open-out', 'open-remote-note',
+  'receipt-row', 'send-ack', 'check-ack', 'ack-out',
+  'step-more', 'more-name', 'grant-more', 'more-out',
   'step-revoke', 'revoke', 'revoke-out',
 ]
 
@@ -185,7 +226,9 @@ const plain = (e) => {
  * said out loud in the interface rather than left as a surprise.
  */
 const S = {
+  mode: 'wallet',     // 'wallet' — a passphrase we generated · 'message' — typed
   phrase: '',
+  address: null,      // the address the generated phrase controls, in wallet mode
   generated: false,   // did the phrase come from our generator?
   owner: null,        // { sk, pk } — the visitor
   recipient: null,    // { sk?, pk, label, local }
@@ -207,24 +250,163 @@ const S = {
   eph: null,          // { sk, pk }
   grant: null,        // the grant object, or null once revoked
   grantKey: null,     // nextkey.g2.<tag> — derived, not a function of any public value
+  ackKey: null,       // nextkey.a2.<tag> — where a read receipt would go
+  opened: null,       // { name, ephPk, text } once the inbox has found something
+  extra: [],          // further recipients granted after the write
 }
 
-// ─── Step 1 · the secret ───────────────────────────────────────────────────
+// ═══ Which of the two things is being shared ═══════════════════════════════
+//
+// One loop, two contents. A wallet is a phrase this page generates; a message
+// is text somebody types. Everything from step 2 on is identical — which is
+// the honest reason a "messenger" is not a second product here, and why it is
+// a switch rather than a second page.
+//
+// The generator is the default, and in wallet mode there is no box to paste a
+// real seed phrase into. That is what removed the standing warning this page
+// used to carry: a warning is a poor substitute for not offering the hazard.
 
 const phraseBox = $('phrase')
 
+const MODE_TEXT = {
+  wallet: {
+    h1: ['t.s1.h', 'Create wallet'],
+    p1: ['t.s1.p', 'A fresh twelve-word phrase.'],
+    h2: ['t.s2.h', 'Choose your grant'],
+    p2: ['t.s2.p', 'A name on ENS, any public address. Your grant will receive it — no need to register with NextKey.'],
+  },
+  message: {
+    h1: ['t.s1.h.msg', 'The message'],
+    p1: ['t.s1.p.msg', 'Anything you would rather not put in an email.'],
+    h2: ['t.s2.h.msg', 'Who it is addressed to'],
+    p2: ['t.s2.p.msg', 'A name on ENS, any public address.'],
+  },
+}
+
+function setMode(next) {
+  S.mode = next === 'message' ? 'message' : 'wallet'
+  $('mode-wallet').setAttribute('aria-pressed', String(S.mode === 'wallet'))
+  $('mode-message').setAttribute('aria-pressed', String(S.mode === 'message'))
+  show($('pane-wallet'), S.mode === 'wallet')
+  show($('pane-message'), S.mode === 'message')
+
+  const txt = MODE_TEXT[S.mode]
+  $('s1-h').textContent = t(...txt.h1)
+  $('s1-p').textContent = t(...txt.p1)
+  $('s2-h').textContent = t(...txt.h2)
+  $('s2-p').textContent = t(...txt.p2)
+
+  // Switching throws away what the other side held. Sealing a phrase the
+  // visitor can no longer see would be worse than making them press the
+  // button again.
+  clearTimeout(revealTimer)
+  phraseBox.value = ''
+  S.phrase = ''
+  S.address = null
+  S.generated = false
+  // Emptied, not just hidden. A hidden panel keeps its markup, and both
+  // panels use the same ids for the covered text and the eye — so leaving one
+  // in place makes the other one's reveal act on an invisible element, which
+  // looks exactly like a broken button.
+  $('wallet-made').hidden = true
+  $('wallet-made').innerHTML = ''
+  $('message-made').hidden = true
+  $('message-made').innerHTML = ''
+  show($('pane-message-box'), true)
+  show($('msg-edit-row'), false)
+  syncPhrase()
+}
+
+$('mode-wallet').addEventListener('click', () => setMode('wallet'))
+$('mode-message').addEventListener('click', () => setMode('message'))
+
+// ─── Step 1 · a wallet, or a message ───────────────────────────────────────
+
 /**
- * A throwaway phrase, generated properly.
+ * A throwaway wallet, generated properly.
  *
- * It is a valid BIP-39 mnemonic, because an invalid one would let a sceptical
- * judge dismiss the demonstration as a toy. It is also worth nothing and must
- * stay that way: no address is derived from it anywhere in this page, and the
- * warning above the box says what it says for a reason.
+ * It is a valid BIP-39 mnemonic and the address really is the one those words
+ * control — that is the whole claim being made, that the same phrase restores
+ * the same wallet in any tool that speaks BIP-39, with nothing of ours
+ * involved. An invalid phrase, or an address that did not match, would let a
+ * sceptical judge dismiss the demonstration as a toy.
+ *
+ * It is also worth nothing, and this page never funds it.
  */
 $('gen').addEventListener('click', () => {
-  phraseBox.value = generateMnemonic(english)
+  const phrase = generateMnemonic(english)
+  const account = mnemonicToAccount(phrase)
+  phraseBox.value = phrase
   S.generated = true
+  S.address = account.address
   syncPhrase()
+
+  say($('wallet-made'), 'ok', `
+    <dl>
+      <dt>${t('t.s1.addr', 'address')}</dt><dd class="mono break">${esc(account.address)}</dd>
+      <dt>${t('t.s1.phrase', 'passphrase')}</dt>
+      <dd class="mono break" id="phrase-shown"><span class="covered">${esc(cover(phrase))}</span></dd>
+    </dl>
+    ${eye(t('t.s1.reveal', 'Show for five seconds'))}`,
+    { step: 1, mode: 'wallet', address: account.address })
+})
+
+/**
+ * Twelve words, shown as their shape rather than themselves.
+ *
+ * A passphrase left on screen is read by whoever walks past, by the projector
+ * in the room, and by every screenshot taken of the page afterwards. Covering
+ * it costs one press and removes all three. The words are never re-fetched
+ * from the DOM — the real phrase lives in the textarea and in S, and the panel
+ * only ever borrows it for five seconds.
+ */
+const cover = (phrase) => phrase.split(/\s+/).map((w) => '•'.repeat(w.length)).join(' ')
+
+let revealTimer = null
+const wireReveal = (panel) => panel.addEventListener('click', (e) => {
+  if (!e.target.closest('#reveal')) return
+  const dd = $('phrase-shown')
+  if (!dd) return
+  clearTimeout(revealTimer)
+  dd.textContent = S.phrase
+  // Back to covered on its own. A reveal that waits for a second press stays
+  // open, because the person who pressed it has already moved on.
+  revealTimer = setTimeout(() => {
+    dd.innerHTML = `<span class="covered">${esc(cover(S.phrase))}</span>`
+  }, 5000)
+})
+wireReveal($('wallet-made'))
+wireReveal($('message-made'))
+
+/**
+ * A typed message is covered as soon as the typing stops.
+ *
+ * The reasoning is the same as for the passphrase, and so is the objection to
+ * doing it while somebody types: a box that hides what you are writing is a
+ * password field, and this is prose. So the box stays plain until it loses
+ * focus, and then the text goes behind the same eye. "Edit" brings it back.
+ */
+const showMessageCovered = () => {
+  if (!S.phrase) return
+  show($('pane-message-box'), false)
+  say($('message-made'), 'ok', `
+    <dl>
+      <dt>${t('t.s1.msg', 'message')}</dt>
+      <dd class="mono break" id="phrase-shown"><span class="covered">${esc(cover(S.phrase))}</span></dd>
+    </dl>
+    ${eye(t('t.s1.reveal', 'Show for five seconds'))}`,
+    { step: 1, mode: 'message', length: S.phrase.length })
+  show($('msg-edit-row'), true)
+}
+
+phraseBox.addEventListener('blur', () => { if (S.mode === 'message') showMessageCovered() })
+
+$('msg-edit').addEventListener('click', () => {
+  clearTimeout(revealTimer)
+  $('message-made').hidden = true
+  $('message-made').innerHTML = ''
+  show($('msg-edit-row'), false)
+  show($('pane-message-box'), true)
   phraseBox.focus()
 })
 
@@ -232,43 +414,32 @@ phraseBox.addEventListener('input', () => { S.generated = false; syncPhrase() })
 
 function syncPhrase() {
   S.phrase = phraseBox.value.trim()
-  const words = S.phrase ? S.phrase.split(/\s+/).length : 0
-  const risky = !S.generated && (words === 12 || words === 15 || words === 18 || words === 24)
-
-  // Typing twelve words that were not generated here is the one moment on this
-  // page where a person could hurt themselves. It gets a warning that does not
-  // go away, rather than a checkbox they will click past.
-  show($('own-phrase-warn'), risky)
-  $('step1-state').textContent = S.phrase
-    ? (S.generated
-        ? t('t.s1.gen', 'Generated here. Worth nothing, and never funded.')
-        : t('t.s1.typed', 'Your own text — this page keeps it in memory only.'))
+  $('step1-state').textContent = S.phrase && S.mode === 'message'
+    ? t('t.s1.typed', 'Your own text — this page keeps it in memory only.')
     : ''
-  $('go-store').disabled = !S.phrase
+  refreshReady()
 }
 
 // ─── Step 2 · the recipient ────────────────────────────────────────────────
-
-const mode = () => document.querySelector('input[name="rmode"]:checked').value
-
-document.querySelectorAll('input[name="rmode"]').forEach((r) =>
-  r.addEventListener('change', () => {
-    show($('r-local'), mode() === 'local')
-    show($('r-ens'), mode() === 'ens')
-  }))
+//
+// One field and two buttons, rather than a radio pair that made a visitor
+// choose between two things before either had been explained. Typing a name
+// and pressing "use this name" reads a real key off the chain; pressing "make
+// one here" ignores the field and produces a keypair in the browser, which is
+// the only way somebody with no name on this deployment can finish the loop.
 
 /** A recipient who exists only here, so the loop can be finished by anyone. */
 $('gen-recipient').addEventListener('click', () => {
   const sk = randomSecret()
   const pk = publicKeyOf(sk)
   S.recipient = { sk, pk, label: t('t.s2.you', 'the recipient (you, in a moment)'), local: true }
-  say($('r-local-out'), 'ok', `
+  say($('r-out'), 'ok', `
     <dl>
       <dt>${t('t.pubkey', 'public key')}</dt><dd class="mono break">${esc(b64(pk))}</dd>
-      <dt>${t('t.grantaddr', 'their grant will live at')}</dt>
-      <dd class="mono">${t('t.grantaddr.unknown', 'not computable from this key alone — see step 3')}</dd>
     </dl>
-    <p class="note">${t('t.s2.localnote', 'This keypair was made in your browser a second ago. The private half never leaves it, and reloading the page destroys it — which is exactly what happens to a real recipient who loses their key.')}</p>`)
+    ${why(t('t.why', 'Why this matters'), `
+      <p>${t('t.s2.localnote', 'This keypair was made in your browser a second ago. The private half never leaves it, and reloading the page destroys it.')}</p>`)}`,
+    { step: 2, recipient: 'local', publicKey: b64(pk) })
   refreshReady()
 })
 
@@ -283,8 +454,9 @@ $('gen-recipient').addEventListener('click', () => {
  */
 $('lookup').addEventListener('click', async () => {
   const name = $('ens-name').value.trim().toLowerCase()
-  const out = $('r-ens-out')
-  if (!name) return
+  const out = $('r-out')
+  if (!name) return say(out, 'bad', `
+    <p>${t('t.s2.needname', 'Type a name first, or make a recipient here instead.')}</p>`)
   say(out, 'busy', `<p>${t('t.s2.looking', 'Reading their key from the chain…')}</p>`)
   try {
     const pub = await reader.getEnsText({ name, key: RECORD_PUBKEY })
@@ -304,8 +476,10 @@ $('lookup').addEventListener('click', async () => {
         <dt>${t('t.grantaddr', 'their grant will live at')}</dt>
         <dd class="mono">${t('t.grantaddr.unknown', 'not computable from this key alone — see step 3')}</dd>
       </dl>
-      <p class="note">${t('t.s2.ensnote', 'Read live from the hackathon deployment. They never registered with NextKey and were not asked for permission — publishing a key is the whole of the opt-in.')}</p>
-      <p class="note">${t('t.s2.addrnote', 'Note what is missing: the record their grant will occupy. Everything on this line is public, and from public values alone that address cannot be worked out — not by this page, and not by anyone watching the chain. It takes one of the two private keys, which is why the next step is where it appears.')}</p>`)
+      ${why(t('t.why', 'Why this matters'), `
+        <p>${t('t.s2.ensnote', 'Read live from the hackathon deployment. They never registered with NextKey and were not asked for permission — publishing a key is the whole of the opt-in.')}</p>
+        <p>${t('t.s2.addrnote', 'Note what is missing: the record their grant will occupy. Everything on this line is public, and from public values alone that address cannot be worked out — not by this page, and not by anyone watching the chain. It takes one of the two private keys, which is why the next step is where it appears.')}</p>`)}`,
+      { step: 2, recipient: 'ens', name, publicKey: pub })
   } catch (e) {
     S.recipient = null
     say(out, 'bad', `<p>${t('t.chainfail', 'Could not read that from the chain.')}</p>
@@ -334,28 +508,64 @@ $('go-store').addEventListener('click', async () => {
     const g = await grantForV2(S.contentKey, S.eph.sk, S.recipient.pk)
     S.grant = g.value
     S.grantKey = g.key
+    S.ackKey = ackKeyForSender(S.eph.sk, S.recipient.pk)
 
     say(out, 'ok', `
-      <p class="found">✓ ${t('t.s3.done', 'Encrypted, and granted to one recipient.')}</p>
-      <p class="reclabel"><span class="mono">${esc(RECORD_EPH)}</span> — ${t('t.s3.rec0', 'one ephemeral public key for this secret, written once')}</p>
-      <pre class="mono">${esc(b64(S.eph.pk))}</pre>
-      <p class="reclabel"><span class="mono">${esc(RECORD_SECRET)}</span> — ${t('t.s3.rec1', 'the ciphertext, public by design')}</p>
-      <pre class="mono">${esc(JSON.stringify(S.sealed, null, 2))}</pre>
-      <p class="reclabel"><span class="mono">${esc(S.grantKey)}</span> — ${t('t.s3.rec2', 'the content key, wrapped so only they can unwrap it')}</p>
-      <pre class="mono">${esc(JSON.stringify(S.grant, null, 2))}</pre>
-      <p class="note">${t('t.s3.note', 'Three records, all readable by anyone. The ciphertext is AES-256-GCM under a key that now exists only in this tab. The grant holds that key, wrapped so that only the recipient can unwrap it.')}</p>
-      <p class="note">${t('t.s3.addrnote', 'The interesting one is the middle line — the name of that third record. It is not a hash of the recipient’s public key, which anybody could compute; it comes out of the shared secret between the ephemeral key and theirs. Only two parties can work it out: the recipient, and whoever holds the ephemeral private key. An observer holding every public value in this page cannot say whether this secret grants to anyone in particular, or even test a guess.')}</p>
-      <p class="note">${t('t.s3.ephnote', 'One ephemeral pair serves the whole secret, not one per recipient: each recipient’s ECDH lands somewhere else, so a second grant shares no key material with this one. Replacing that pair later would move every grant on the name at once, which is why a name publishes it once and never again.')}</p>`)
+      <p class="found">✓ ${t('t.s3.done', 'Sealed, and granted to one recipient.')}</p>
+      <dl>
+        <dt>${t('t.s3.at', 'the grant lives at')}</dt>
+        <dd class="mono break">${esc(S.grantKey)}</dd>
+      </dl>
+      <p class="note">${t('t.s3.short', 'Three records: the ephemeral key, the ciphertext, and the grant above. Nothing is on chain yet — step 4 writes them.')}</p>
+      ${why(t('t.s3.records', 'The three records, in full'), `
+        <p class="reclabel"><span class="mono">${esc(RECORD_EPH)}</span> — ${t('t.s3.rec0', 'one ephemeral public key for this secret, written once')}</p>
+        <pre class="mono">${esc(b64(S.eph.pk))}</pre>
+        <p class="reclabel"><span class="mono">${esc(RECORD_SECRET)}</span> — ${t('t.s3.rec1', 'the ciphertext, public by design')}</p>
+        <pre class="mono">${esc(JSON.stringify(S.sealed, null, 2))}</pre>
+        <p class="reclabel"><span class="mono">${esc(S.grantKey)}</span> — ${t('t.s3.rec2', 'the content key, wrapped so only they can unwrap it')}</p>
+        <pre class="mono">${esc(JSON.stringify(S.grant, null, 2))}</pre>`)}
+      ${why(t('t.why', 'Why this matters'), `
+        <p>${t('t.s3.addrnote', 'The interesting record is the third one — its name. It is not a hash of the recipient’s public key, which anybody could compute; it comes out of the shared secret between the ephemeral key and theirs. Only two parties can work it out: the recipient, and whoever holds the ephemeral private key. An observer holding every public value in this page cannot say whether this secret grants to anyone in particular, or even test a guess.')}</p>
+        <p>${t('t.s3.ephnote', 'One ephemeral pair serves the whole secret, not one per recipient: each recipient’s ECDH lands somewhere else, so a second grant shares no key material with this one. Replacing that pair later would move every grant on the name at once, which is why a name publishes it once and never again.')}</p>`)}`,
+      { step: 3, mode: S.mode, eph: b64(S.eph.pk), grantRecord: S.grantKey, ackRecord: S.ackKey })
+
+    // Steps 1 and 2 are spent. Their controls stay visible — a judge wants to
+    // see what was chosen — but nothing there can be pressed again, because
+    // changing the recipient after sealing would leave the page describing a
+    // grant that no longer matches what it is about to write.
+    lockChoices()
 
     // Only the chain step opens here. Opening and revoking now run against
     // real records, so they have nothing to act on until something is written.
     show($('step-chain'), true)
     $('publish-out').hidden = true
-    $('step-chain').scrollIntoView({ behavior: 'smooth', block: 'start' })
+    // To the result, not past it. Scrolling straight to step 4 put the success
+    // panel above the fold line and people concluded the button had done
+    // nothing — then pressed it again.
+    requestAnimationFrame(() => out.scrollIntoView({ behavior: 'smooth', block: 'center' }))
   } catch (e) {
     say(out, 'bad', `<p>${esc(plain(e))}</p>`)
   }
 })
+
+/**
+ * Everything steps 1 and 2 offered, switched off.
+ *
+ * The page used to leave all of it live: after sealing, a visitor could still
+ * generate a second wallet, look up a different recipient, or flip the mode
+ * switch, and the panels below would go on describing the first one. Nothing
+ * broke — it just quietly stopped being true, which on a page about
+ * cryptography is worse than breaking.
+ */
+function lockChoices() {
+  for (const id of ['mode-wallet', 'mode-message', 'gen', 'gen-recipient',
+                    'lookup', 'go-store', 'msg-edit']) $(id).disabled = true
+  $('ens-name').readOnly = true
+  phraseBox.readOnly = true
+  document.querySelectorAll('.step').forEach((el, i) => { if (i < 3) el.classList.add('done') })
+  $('step1-state').textContent = t('t.locked',
+    'Sealed. Reload the page to start again with a different secret.')
+}
 
 // ═══ Step 4 · on the chain ═════════════════════════════════════════════════
 //
@@ -452,12 +662,29 @@ const recordsFor = async (name, signMessage) => {
  * a second name.
  */
 const wroteIt = (out, name, hashes, moved, extra = '') => {
+  // One secret, one name. The lane that was not used is not an option any
+  // more, and a disabled button beside a finished result only invites the
+  // question of what it would have done.
+  show($('lane-own-wrap'), onchain.via !== 'demo')
+  show($('lane-demo'), onchain.via === 'demo')
+  document.querySelectorAll('.step').forEach((el, i) => { if (i === 3) el.classList.add('done') })
+
   show($('step-open'), true)
+  show($('step-more'), true)
   show($('step-revoke'), true)
   $('open-out').hidden = true
   $('revoke-out').hidden = true
-  $('open-as').disabled = !S.recipient.local
+  $('ack-out').hidden = true
+  show($('receipt-row'), false)
+  $('check-inbox').disabled = !S.recipient.local
   show($('open-remote-note'), !S.recipient.local)
+
+  // The inbox has to be told which names to look at, and the one just written
+  // is the only one this visitor certainly cares about. The field stays
+  // editable: adding a name is how somebody checks a grant made elsewhere.
+  const known = $('inbox-names').value.split(',').map((n) => n.trim()).filter(Boolean)
+  if (!known.includes(name)) known.unshift(name)
+  $('inbox-names').value = known.join(', ')
 
   say(out, 'ok', `
     <p class="found">✓ ${t('t.chain.done', 'Written. Those records are on Sepolia now.')}</p>
@@ -467,15 +694,16 @@ const wroteIt = (out, name, hashes, moved, extra = '') => {
       <dt class="mono">${esc(k)}</dt>
       <dd class="mono break"><a href="https://sepolia.etherscan.io/tx/${esc(h)}" rel="noopener">${esc(clip(h, 26))}</a></dd>`).join('')}
     </dl>
-    ${extra}
-    ${moved === S.grantKey ? '' : `
-    <p class="note">${t('t.s6.moved', 'The grant moved. Step 3 used a throwaway ephemeral key, because it asked you for no wallet; what went on chain uses one derived from the signature you just gave, so it outlives this tab. The address changed with it, because the address comes out of that key.')}</p>
-    <dl>
-      <dt>${t('t.s6.movedfrom', 'shown in step 3')}</dt><dd class="mono break">${esc(moved)}</dd>
-      <dt>${t('t.s6.movedto', 'written on chain')}</dt><dd class="mono break">${esc(S.grantKey)}</dd>
-    </dl>`}
-    <p class="note">${t('t.s6.explorernote', 'In the explorer this name now looks uninformative: an ephemeral key, a ciphertext, and one record whose name says nothing. That is the design working. To check it from the outside, open it with the command-line tool.')}</p>
-    <p class="note"><a href="https://hackathon-deployment-portal-app.ens-cf.workers.dev/" rel="noopener">${t('t.s6.explorer', 'See them in the ENS explorer')}</a></p>`)
+    <p class="note"><a href="https://hackathon-deployment-portal-app.ens-cf.workers.dev/" rel="noopener">${t('t.s6.explorer', 'See them in the ENS explorer')}</a></p>
+    ${why(t('t.why', 'Why this matters'), `
+      ${extra}
+      ${moved === S.grantKey ? '' : `
+      <p>${t('t.s6.moved', 'The grant moved. Step 3 used a throwaway ephemeral key, because it asked you for no wallet; what went on chain uses one derived from the signature you just gave, so it outlives this tab. The address changed with it, because the address comes out of that key.')}</p>
+      <dl>
+        <dt>${t('t.s6.movedfrom', 'shown in step 3')}</dt><dd class="mono break">${esc(moved)}</dd>
+        <dt>${t('t.s6.movedto', 'written on chain')}</dt><dd class="mono break">${esc(S.grantKey)}</dd>
+      </dl>`}
+      <p>${t('t.s6.explorernote', 'In the explorer this name now looks uninformative: an ephemeral key, a ciphertext, and one record whose name says nothing. That is the design working. To check it from the outside, open it with the command-line tool.')}</p>`)}`)
 
   // After a frame, so the two newly revealed sections are laid out before the
   // browser is asked to scroll to one of them.
@@ -486,14 +714,6 @@ const wroteIt = (out, name, hashes, moved, extra = '') => {
 // ─── Lane one · no wallet ──────────────────────────────────────────────────
 
 const demoAccount = () => privateKeyToAccount(hexOf(un64(DEMO_KEY)))
-
-$('confirm-fake').addEventListener('change', () => {
-  const ready = $('confirm-fake').checked
-  // `onchain` means something has already been written. Unticking and reticking
-  // the box must not hand back a button that would spend a second name.
-  $('write-demo').disabled = !ready || !!onchain
-  $('publish').disabled = !(wallet && ready) || !!onchain
-})
 
 const demoOut = $('demo-out')
 
@@ -510,8 +730,6 @@ let writing = false
 
 $('write-demo').addEventListener('click', async () => {
   if (writing) return
-  if (!$('confirm-fake').checked) return say(demoOut, 'bad', `
-    <p>${t('t.s6.needconfirm', 'Confirm first that the phrase guards nothing.')}</p>`)
   if (!S.sealed) return say(demoOut, 'bad', `
     <p>${t('t.s6.needsecret', 'Do steps 1 to 3 first — there is nothing to write yet.')}</p>`)
 
@@ -572,7 +790,7 @@ $('write-demo').addEventListener('click', async () => {
     $('demo-state').textContent = t('t.chain.spent',
       'That name now holds your secret and cannot hold another. Reload the page to start again with a fresh one.')
     wroteIt(demoOut, name, sent, moved, `
-      <p class="note">${t('t.chain.borrowed', 'This name is ours and we lent it to you, along with the gas. The key that signed those three transactions is published in this page: it owns nothing, and its only power is writing records on names set aside for exactly this. You can read it, and so can anyone.')}</p>`)
+      <p>${t('t.chain.borrowed', 'This name is ours and we lent it to you, along with the gas. The key that signed those three transactions is published in this page: it owns nothing, and its only power is writing records on names set aside for exactly this. You can read it, and so can anyone.')}</p>`)
   } catch (e) {
     // Only a failed run may be retried. A successful one leaves the button
     // disabled, because the name it used is gone.
@@ -707,7 +925,7 @@ async function connectWith(eth) {
         <a href="https://cloud.google.com/application/web3/faucet/ethereum/sepolia" rel="noopener">Google Cloud</a> ·
         <a href="https://faucet.quicknode.com/ethereum/sepolia" rel="noopener">QuickNode</a>
       </p>` : ''}`)
-    $('publish').disabled = !$('confirm-fake').checked
+    $('publish').disabled = !!onchain
   } catch (e) {
     say(walletOut, 'bad', `<p>${esc(plain(e))}</p>`)
   }
@@ -717,8 +935,6 @@ $('publish').addEventListener('click', async () => {
   if (writing) return
   const name = $('own-name').value.trim().toLowerCase()
 
-  if (!$('confirm-fake').checked) return say(chainOut, 'bad', `
-    <p>${t('t.s6.needconfirm', 'Confirm first that the phrase guards nothing.')}</p>`)
   if (!name) return say(chainOut, 'bad', `<p>${t('t.s6.needname', 'Enter a name you own.')}</p>`)
   if (!S.sealed) return say(chainOut, 'bad', `
     <p>${t('t.s6.needsecret', 'Do steps 1 to 3 first — there is nothing to write yet.')}</p>`)
@@ -832,7 +1048,7 @@ $('publish').addEventListener('click', async () => {
     onchain = { name, via: 'wallet', resolver, node, abi: shape.abi }
     $('publish').disabled = true
     wroteIt(chainOut, name, hashes, moved, `
-      <p class="note">${t('t.s6.donenote', 'Nothing about those records mentions NextKey as a service, and no server of ours knows they exist. The recipient can open them with the command-line tool; we could not, and neither could anyone who takes this site down.')}</p>`)
+      <p>${t('t.s6.donenote', 'Nothing about those records mentions NextKey as a service, and no server of ours knows they exist. The recipient can open them with the command-line tool; we could not, and neither could anyone who takes this site down.')}</p>`)
   } catch (e) {
     say(chainOut, 'bad', `
       <p>${t('t.s6.fail', 'That did not go through.')}</p>
@@ -844,54 +1060,195 @@ $('publish').addEventListener('click', async () => {
         : e.bothShapesRefused
         ? t('t.s6.failboth', 'Both setText signatures were refused, and the two reasons are above. If the name is not yours, that is the system working. If it is yours, its resolver may be one this page does not know how to write to — tell us which resolver, and it can be added.')
         : t('t.s6.failnote', 'The usual causes, in order: the name is not yours, so the resolver refuses the write; the name has no resolver attached yet; or the wallet has no Sepolia ether for gas. The first is the system working.')}</p>`)
-    $('publish').disabled = !$('confirm-fake').checked
+    $('publish').disabled = !wallet
   } finally {
     writing = false
   }
 })
 
-// ═══ Step 5 · open it, from the chain ══════════════════════════════════════
+// ═══ Step 5 · the inbox ════════════════════════════════════════════════════
 //
-// The difference from a page that stops at step 3: nothing below reads this
-// tab's memory. The ephemeral key, the ciphertext and the grant are fetched
-// from ENS, and the recipient works out *which record to fetch* herself, from
-// one public value and her own private key. Nobody sends her an address.
+// Nobody sends the recipient an address. This is the part that surprises
+// people and it is worth being exact about what it costs.
+//
+// The recipient reads one public value off a name — its ephemeral key — does a
+// single scalar multiplication with their own private key, and arrives at a
+// record name. If something is there, it is theirs. If nothing is there they
+// learn nothing at all: not that a grant was withdrawn, not that one ever
+// existed. That is the inbox, and it needs no server, no account and no
+// notification.
+//
+// What it does need is a list of names to try. This page scans the names it
+// knows about, which is enough to demonstrate the mechanism and is not a
+// delivery system: finding every name in the world that carries something for
+// you means indexing the registry's events, and a page served from static
+// files has no indexer. Saying so is better than implying a mailbox that does
+// not exist.
 
-const fromChain = async (key) => reader.getEnsText({ name: onchain.name, key })
+const fromChain = async (key, name) => reader.getEnsText({ name: name ?? onchain.name, key })
 
-$('open-as').addEventListener('click', async () => {
+const inboxNames = () => [...new Set(
+  $('inbox-names').value.split(',').map((n) => n.trim().toLowerCase()).filter(Boolean))]
+
+/** One name, from the recipient's side: is anything here addressed to me? */
+const scanName = async (name, sk, pk) => {
+  const ephB64 = await fromChain(RECORD_EPH, name).catch(() => null)
+  if (!ephB64) return { name, eph: false }
+  const ephPk = un64(ephB64)
+  const found = locateGrantV2(ephPk, sk, pk)
+  const grantJson = await fromChain(found.key, name).catch(() => null)
+  return { name, eph: true, ephPk, record: found.key, grantJson }
+}
+
+$('check-inbox').addEventListener('click', async () => {
   const out = $('open-out')
+  const names = inboxNames()
+  if (!names.length) return say(out, 'bad', `
+    <p>${t('t.s4.noname', 'Name at least one name to look at.')}</p>`)
+
   try {
-    say(out, 'busy', `<p>${t('t.chain.reading', 'Reading it back off the chain…')}</p>`)
-    const ephB64 = await fromChain(RECORD_EPH)
-    if (!ephB64) throw new Error(`${onchain.name} publishes no ${RECORD_EPH}`)
-    const ephPk = un64(ephB64)
+    say(out, 'busy', `<p>${t('t.s4.scanning', 'Working out, for each name, where a grant to this key would live…')}</p>`)
 
-    const found = locateGrantV2(ephPk, S.recipient.sk, S.recipient.pk)
-    const [grantJson, sealedJson] = await Promise.all([
-      fromChain(found.key), fromChain(RECORD_SECRET)])
+    // Five at a time. A phone on a hotel network cannot open twenty sockets at
+    // once, and a public RPC will rate-limit long before the scan is
+    // interesting.
+    const results = []
+    for (let i = 0; i < names.length; i += 5) {
+      results.push(...await Promise.all(names.slice(i, i + 5)
+        .map((n) => scanName(n, S.recipient.sk, S.recipient.pk))))
+    }
+    const hit = results.find((r) => r.grantJson)
+    const scanned = why(t('t.s4.scanned', 'What was scanned, and what this is not'), `
+      <p>${t('t.s4.scannednote', 'Scanned, one scalar multiplication each:')} <span class="mono break">${esc(names.join(', '))}</span></p>
+      <p>${t('t.s4.indexnote', 'A real inbox would walk the registry\'s events instead of a list somebody typed. That needs an indexer, which a page served from static files does not have — so this scans what it knows about, and that limit is the honest part of the demonstration.')}</p>`)
 
-    if (!grantJson) return say(out, 'bad', `
-      <p>${t('t.chain.norecord', 'That record is empty on chain — access was never given, or it was revoked.')}</p>
-      <dl><dt>${t('t.s4.derived', 'she worked out the record herself')}</dt>
-        <dd class="mono break">${esc(found.key)}</dd></dl>
-      <p class="note">${t('t.chain.norecordnote', 'Note what she learns from an empty record: nothing. Not that a grant was withdrawn, not that one ever existed. The ciphertext is still there and still unreadable.')}</p>`)
+    if (!hit) {
+      return say(out, 'bad', `
+        <p>${t('t.s4.empty', 'Nothing on those names is addressed to this key.')}</p>
+        <dl><dt>${t('t.s4.derived', 'the record it worked out')}</dt>
+          <dd class="mono break">${esc(results.find((r) => r.eph)?.record ?? '—')}</dd></dl>
+        ${why(t('t.why', 'Why this matters'), `
+          <p>${t('t.chain.norecordnote', 'Note what an empty record teaches: nothing. Not that a grant was withdrawn, not that one ever existed. The ciphertext is still there and still unreadable.')}</p>`)}
+        ${scanned}`,
+        { step: 5, found: false, scanned: names })
+    }
 
-    const contentKey = await openGrantV2(JSON.parse(grantJson), ephPk, S.recipient.sk, S.recipient.pk)
+    const sealedJson = await fromChain(RECORD_SECRET, hit.name)
+    const contentKey = await openGrantV2(
+      JSON.parse(hit.grantJson), hit.ephPk, S.recipient.sk, S.recipient.pk)
     const text = await unseal(JSON.parse(sealedJson), contentKey)
+
+    // The receipt is only offered once something has actually been read. An
+    // acknowledgement of an unopened message would be a lie with a button.
+    S.opened = { name: hit.name, ephPk: hit.ephPk, text }
+    show($('receipt-row'), true)
+
+    let restored = ''
+    if (S.mode === 'wallet') {
+      try {
+        const back = mnemonicToAccount(text.trim())
+        restored = `
+          <dl><dt>${t('t.s4.restored', 'restores the wallet')}</dt>
+            <dd class="mono break">${esc(back.address)}</dd></dl>
+          ${why(t('t.s4.restoredwhy', 'Why that address matters'), `
+            <p>${t('t.s4.restorednote', 'Derived from those words just now, in this tab, by the standard BIP-39 path. It is the same address step 1 made — which is the claim: the phrase is the wallet, and any tool that speaks BIP-39 restores it without NextKey being involved at all.')}</p>`)}`
+      } catch { /* a message that merely looks like a phrase — say nothing */ }
+    }
 
     say(out, 'ok', `
       <p class="found">✓ ${t('t.s4.ok', 'Opened.')}</p>
       <dl>
-        <dt>${t('t.s4.derived', 'she worked out the record herself')}</dt>
-        <dd class="mono break">${esc(found.key)}</dd>
+        <dt>${t('t.s4.onname', 'found on')}</dt><dd class="mono break">${esc(hit.name)}</dd>
+        <dt>${t('t.s4.derived', 'the record it worked out')}</dt>
+        <dd class="mono break">${esc(hit.record)}</dd>
       </dl>
       <pre class="mono reveal">${esc(text)}</pre>
-      <p class="note">${t('t.chain.oknote', 'All three records came off the chain, where they are public and were public the whole time. What made this work is a private key that was never published, never uploaded, and never left this tab.')}</p>
-      <p class="note">${t('t.s4.locnote', 'Nobody told her where to look. She read one public value off the name and derived that address from it with her own key — the same arithmetic that unwraps the content key, done once. A hardware wallet is therefore asked to approve once, not twice.')}</p>`)
+      ${restored}
+      ${why(t('t.why', 'Why this matters'), `
+        <p>${t('t.s4.locnote', 'Nobody said where to look. One public value off the name, one scalar multiplication with a private key that never left this tab, and the same arithmetic yields both the address and the key that opens what is there — which is why a hardware wallet is asked to approve once rather than twice.')}</p>`)}
+      ${scanned}`,
+      { step: 5, found: true, name: hit.name, record: hit.record,
+        restoredAddress: restored ? mnemonicToAccount(text.trim()).address : null })
   } catch (e) {
     say(out, 'bad', `<p>${t('t.s4.fail', 'Could not open it.')}</p>
                      <p class="note mono">${esc(plain(e))}</p>`)
+  }
+})
+
+// ─── The receipt ───────────────────────────────────────────────────────────
+//
+// A second record, at an address derived from the same shared secret under a
+// different HKDF info string. Either party can compute it alone; nobody else
+// can compute it at all.
+//
+// Two things about it are said on the page rather than glossed over. It does
+// not prove who wrote it — on the lent-name lane the page's own key does the
+// writing, because a recipient made in a browser has no wallet and no ether.
+// And it publishes when the secret was read, which is a metadata leak on a
+// page whose whole argument is that the chain should not show who talks to
+// whom. It is therefore a button, not a default.
+
+$('send-ack').addEventListener('click', async () => {
+  const out = $('ack-out')
+  try {
+    if (!S.opened) throw new Error(t('t.ack.needopen', 'Open it first — there is nothing to acknowledge.'))
+    if (!onchain) throw new Error(t('t.ack.needchain', 'Nothing has been written to the chain yet.'))
+    if (onchain.via !== 'demo') throw new Error(t('t.ack.needlent',
+      'On your own name, the receipt is a write the recipient makes from their own wallet. This page only does it on the names it lends, where it holds the setter role.'))
+
+    const key = locateAckV2(S.opened.ephPk, S.recipient.sk, S.recipient.pk)
+    const value = JSON.stringify({ v: 2, at: new Date().toISOString() })
+
+    say(out, 'busy', `<p>${t('t.ack.writing', 'Writing the receipt — one transaction…')}</p>`)
+    const signer = createWalletClient({
+      account: onchain.account, chain: sepolia, transport: http(RPC) })
+    const hash = await signer.writeContract({
+      address: onchain.resolver, abi: onchain.abi, functionName: 'setText',
+      args: [onchain.node, key, value], chain: sepolia })
+    await reader.waitForTransactionReceipt({ hash })
+
+    say(out, 'ok', `
+      <p class="found">✓ ${t('t.ack.sent', 'Receipt written.')}</p>
+      <dl>
+        <dt class="mono">${esc(key)}</dt>
+        <dd class="mono break"><a href="https://sepolia.etherscan.io/tx/${esc(hash)}" rel="noopener">${esc(clip(hash, 26))}</a></dd>
+      </dl>
+      ${why(t('t.why', 'Why this matters, and what it costs'), `
+        <p>${t('t.ack.note', 'That address comes out of the same shared secret as the grant, under a different derivation. The sender can compute it without being told, and nobody else can compute it at all — so the receipt is delivered by being findable rather than by being sent.')}</p>
+        <p>${t('t.ack.honest', 'Two limits, stated rather than buried. It shows a receipt exists at an address only two parties could name — not who wrote it, and on this lane the page\'s own lent key did the writing, because a recipient made in a browser has no wallet. And it makes the moment of reading public, which is the price of a delivery confirmation with no server involved.')}</p>`)}`,
+      { step: 5, receipt: 'written', record: key, tx: hash })
+    $('send-ack').disabled = true
+  } catch (e) {
+    say(out, 'bad', `<p>${esc(plain(e))}</p>`)
+  }
+})
+
+$('check-ack').addEventListener('click', async () => {
+  const out = $('ack-out')
+  try {
+    if (!onchain || !S.ackKey) throw new Error(t('t.ack.needchain', 'Nothing has been written to the chain yet.'))
+    say(out, 'busy', `<p>${t('t.ack.checking', 'Looking where a receipt would be…')}</p>`)
+    const there = await fromChain(S.ackKey)
+
+    if (!there) return say(out, 'bad', `
+      <p>${t('t.ack.none', 'No receipt yet.')}</p>
+      <dl><dt>${t('t.ack.where', 'where the sender looked')}</dt>
+        <dd class="mono break">${esc(S.ackKey)}</dd></dl>
+      <p class="note">${t('t.ack.nonenote', 'The sender derived that address from their own ephemeral key without asking anybody. An empty record means unread — or read by someone who chose not to say so, which is a choice the recipient gets to make.')}</p>`,
+      { step: 5, receipt: 'none', record: S.ackKey })
+
+    let when = null
+    try { when = JSON.parse(there).at } catch { /* not ours, or not JSON */ }
+    say(out, 'ok', `
+      <p class="found">✓ ${t('t.ack.found', 'Read.')}</p>
+      <dl>
+        <dt>${t('t.ack.where', 'where the sender looked')}</dt><dd class="mono break">${esc(S.ackKey)}</dd>
+        ${when ? `<dt>${t('t.ack.at', 'acknowledged at')}</dt><dd class="mono">${esc(when)}</dd>` : ''}
+      </dl>
+      <p class="note">${t('t.ack.foundnote', 'The sender was told nothing and asked nobody. They derived the address from the ephemeral key they already held, read it off the chain, and found a receipt that only the recipient could have addressed.')}</p>`,
+      { step: 5, receipt: 'found', record: S.ackKey, at: when })
+  } catch (e) {
+    say(out, 'bad', `<p>${esc(plain(e))}</p>`)
   }
 })
 
@@ -923,14 +1280,92 @@ $('open-other').addEventListener('click', async () => {
         <dt>${t('t.s4.whereis', 'where the grant actually is')}</dt>
         <dd class="mono break">${esc(S.grantKey)}</dd>
       </dl>
-      <p class="note">${t('t.chain.strangernote', 'She read the same public ephemeral key the recipient did, ran the same derivation, and arrived somewhere else — an address that holds nothing. She cannot tell whether this secret is shared with anybody at all, and there is no query that would tell her.')}</p>
-      <p class="note">${t('t.s4.refusednote', 'That failure is arithmetic, not policy. A different private key derives a different wrapping key, and AES-GCM will not decrypt under it. There is no rule anywhere in this page that could be edited to change the outcome.')}</p>`)
+      ${why(t('t.why', 'Why this matters'), `
+        <p>${t('t.chain.strangernote', 'She read the same public ephemeral key the recipient did, ran the same derivation, and arrived somewhere else — an address that holds nothing. She cannot tell whether this secret is shared with anybody at all, and there is no query that would tell her.')}</p>
+        <p>${t('t.s4.refusednote', 'That failure is arithmetic, not policy. A different private key derives a different wrapping key, and AES-GCM will not decrypt under it. There is no rule anywhere in this page that could be edited to change the outcome.')}</p>`)}`)
   } catch (e) {
     say(out, 'bad', `<p>${esc(plain(e))}</p>`)
   }
 })
 
-// ═══ Step 6 · take it back, on the chain ═══════════════════════════════════
+// ═══ Step 6 · a second recipient ═══════════════════════════════════════════
+//
+// The construction was always plural; this is the button that says so.
+//
+// A name publishes one ephemeral key and one ciphertext. Each recipient's ECDH
+// with that one key lands somewhere else, so a second grant is one more record
+// and shares no key material with the first. Nothing is re-encrypted, nothing
+// is replaced, and revoking one leaves the other untouched — which is the
+// difference between granting access and handing over a copy.
+//
+// What it costs is one setText. On the lent-name lane the page's own key signs
+// it; on your own name your wallet does. Neither needs a fresh derivation
+// signature, because the ephemeral private key is still in this tab from step
+// 4 — a reloaded page would have to re-derive it, which is what
+// `nextkey.mjs share` does on the command line.
+
+$('grant-more').addEventListener('click', async () => {
+  const out = $('more-out')
+  const name = $('more-name').value.trim().toLowerCase()
+  if (writing) return
+  if (!name) return say(out, 'bad', `
+    <p>${t('t.s7.needname', 'Name somebody to grant it to.')}</p>`)
+  if (!onchain || !S.eph) return say(out, 'bad', `
+    <p>${t('t.s7.needchain', 'Write it to the chain first — there is nothing to grant a share of yet.')}</p>`)
+
+  writing = true
+  $('grant-more').disabled = true
+  try {
+    say(out, 'busy', `<p>${t('t.s2.looking', 'Reading their key from the chain…')}</p>`)
+    const pub = await reader.getEnsText({ name, key: RECORD_PUBKEY })
+    if (!pub) throw new Error(t('t.s2.nokey',
+      'That name publishes no nextkey.pubkey record, so there is nothing to encrypt to.'))
+    const pk = un64(pub)
+    if (pk.length !== 32) throw new Error(`expected a 32-byte key, got ${pk.length}`)
+    if (b64(pk) === b64(S.recipient.pk)) throw new Error(t('t.s7.same',
+      'That is the recipient who already holds it. A second grant to the same key would land at the same address.'))
+
+    const g = await grantForV2(S.contentKey, S.eph.sk, pk)
+
+    say(out, 'busy', `<p>${t('t.s7.writing', 'Writing one more record — one transaction…')}</p>`)
+    let hash
+    if (onchain.via === 'demo') {
+      const signer = createWalletClient({
+        account: onchain.account, chain: sepolia, transport: http(RPC) })
+      hash = await signer.writeContract({
+        address: onchain.resolver, abi: onchain.abi, functionName: 'setText',
+        args: [onchain.node, g.key, JSON.stringify(g.value)], chain: sepolia })
+    } else {
+      hash = await wallet.writeContract({
+        address: onchain.resolver, abi: onchain.abi, functionName: 'setText',
+        args: [onchain.node, g.key, JSON.stringify(g.value)], chain: sepolia })
+    }
+    await reader.waitForTransactionReceipt({ hash })
+    S.extra.push({ name, record: g.key, tx: hash })
+
+    say(out, 'ok', `
+      <p class="found">✓ ${t('t.s7.done', 'Granted. The same secret, a second address.')}</p>
+      <dl>
+        ${S.extra.map((e) => `
+        <dt class="mono break">${esc(e.record)}</dt>
+        <dd class="mono break"><a href="https://sepolia.etherscan.io/tx/${esc(e.tx)}" rel="noopener">${esc(clip(e.tx, 26))}</a></dd>`).join('')}
+      </dl>
+      <p class="note">${t('t.s7.short', 'One more record on the same name. The ciphertext and the ephemeral key were not touched.')}</p>
+      ${why(t('t.why', 'Why this matters'), `
+        <p>${t('t.s7.note', 'Nothing was re-encrypted and no record was replaced. One ephemeral key serves the whole secret, and each recipient’s ECDH with it lands at a different address — so the two grants share no key material, and emptying one leaves the other working. That is what separates granting access from handing over a copy.')}</p>
+        <p>${t('t.s7.honest', 'What an observer gains: a count. Text records can be listed from their events, so anyone can see that this name now carries two grants. What stays hidden is whose they are, and whether either belongs to anybody in particular.')}</p>`)}`,
+      { step: 6, grants: S.extra.map((e) => ({ name: e.name, record: e.record })) })
+    $('more-name').value = ''
+  } catch (e) {
+    say(out, 'bad', `<p>${t('t.s7.fail', 'That did not go through.')}</p>
+                     <p class="note mono">${esc(plain(e))}</p>`)
+  } finally {
+    writing = false
+    $('grant-more').disabled = false
+  }
+})
+
+// ═══ Step 7 · take it back, on the chain ═══════════════════════════════════
 
 $('revoke').addEventListener('click', async () => {
   const out = $('revoke-out')
@@ -957,8 +1392,12 @@ $('revoke').addEventListener('click', async () => {
         <dt class="mono">${esc(S.grantKey)}</dt>
         <dd class="mono break"><a href="https://sepolia.etherscan.io/tx/${esc(hash)}" rel="noopener">${esc(clip(hash, 26))}</a></dd>
       </dl>
-      <p class="note">${t('t.s5.note', 'The ciphertext is untouched; the wrapped key is gone, so the recipient has nothing left to unwrap. Try opening it again above. On chain this is a write that only an address holding the setter role on that name may perform — not our opinion about who may revoke, but the registry’s.')}</p>
-      <p class="note">${t('t.s5.honest', 'What this does not do: anyone who already read the secret still knows it. No system can retract knowledge, and one that claims to is selling something.')}</p>`)
+      <p class="note">${t('t.s5.short', 'The ciphertext is untouched; the wrapped key is gone. Check the inbox again.')}</p>
+      ${S.extra.length ? `<p class="note">${t('t.s5.others', 'The other grants on this name are untouched and still open. Only the record above was emptied.')}</p>` : ''}
+      ${why(t('t.why', 'Why this matters'), `
+        <p>${t('t.s5.note', 'On chain this is a write that only an address holding the setter role on that name may perform — not our opinion about who may revoke, but the registry’s.')}</p>
+        <p>${t('t.s5.honest', 'What this does not do: anyone who already read the secret still knows it. No system can retract knowledge, and one that claims to is selling something.')}</p>`)}`)
+    $('revoke').disabled = true
   } catch (e) {
     say(out, 'bad', `<p>${esc(plain(e))}</p>`)
   }
@@ -971,7 +1410,51 @@ $('revoke').addEventListener('click', async () => {
 // re-translated, by the overlay in the page itself. Text already produced
 // keeps the language it was produced in, which is honest and beats blanking
 // somebody's decrypted phrase because they wanted to read a heading in French.
-window.__nextkeyRerender = () => { syncPhrase() }
+window.__nextkeyRerender = () => { setMode(S.mode) }
 
-syncPhrase()
-show($('r-local'), true)
+// ═══ The agent-facing surface ══════════════════════════════════════════════
+//
+// A page an agent can drive is not the same as a page with fewer buttons. Two
+// things make the difference, and both are cheap: a prepared state reachable
+// from a link, and a result that does not have to be read as prose.
+//
+// What is deliberately absent is a way to pass the secret itself in the URL.
+// A URL is written down in more places than anybody expects — history, server
+// logs, referrer headers, the chat message it was pasted into — and a page
+// about not leaking secrets should not offer the leak as a convenience.
+
+/** What has happened so far, minus everything private. */
+const nkState = () => ({
+  mode: S.mode,
+  hasSecret: !!S.phrase,
+  address: S.address,
+  recipient: S.recipient
+    ? { kind: S.recipient.local ? 'local' : 'ens', name: S.recipient.local ? null : S.recipient.label,
+        publicKey: b64(S.recipient.pk) }
+    : null,
+  eph: S.eph ? b64(S.eph.pk) : null,
+  grantRecord: S.grantKey,
+  ackRecord: S.ackKey,
+  onchain: onchain ? { name: onchain.name, via: onchain.via, resolver: onchain.resolver } : null,
+  opened: S.opened ? { name: S.opened.name } : null,
+})
+
+window.NEXTKEY = {
+  state: nkState,
+  records: { eph: RECORD_EPH, secret: RECORD_SECRET, pubkey: RECORD_PUBKEY },
+  version: 2,
+}
+
+// ─── Opening state, from the link ──────────────────────────────────────────
+{
+  const q = new URLSearchParams(location.search)
+  setMode(q.get('mode') === 'message' ? 'message' : 'wallet')
+
+  const to = q.get('to')
+  if (to) {
+    $('ens-name').value = to.trim().toLowerCase()
+    // Read their key straight away. An agent that had to press a button after
+    // following a prepared link would not have been given a prepared state.
+    $('lookup').click()
+  }
+}
