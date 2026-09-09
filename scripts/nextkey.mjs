@@ -393,14 +393,19 @@ else if (cmd === 'clear') {
 
   const current = await readRecord(`${label}.${PARENT}`, key)
   console.log(`\n  ${label}.${PARENT} · ${key}`)
+  // Not process.exit(0). The RPC connection is still open at this point, and
+  // tearing the process down while libuv is closing that handle crashes Node on
+  // Windows with an assertion in async.c — after the work is done, so it looks
+  // like the command failed when it did not. Letting the branch end returns
+  // through the normal path and closes everything in order.
   if (!current) {
     console.log(`  already empty — nothing to do\n`)
-    process.exit(0)
+  } else {
+    console.log(`  currently   ${current.length} characters`)
+    console.log(`  clearing`)
+    await setRecord(label, key, '')
+    console.log()
   }
-  console.log(`  currently   ${current.length} characters`)
-  console.log(`  clearing`)
-  await setRecord(label, key, '')
-  console.log()
 }
 
 else if (cmd === 'eph') {
@@ -421,12 +426,13 @@ else if (cmd === 'eph') {
 
   const ephB64 = await readRecord(name, RECORD_EPH)
   console.log(`\n  ${name}`)
+  // Same reason as in `clear`: an early process.exit here would end the process
+  // with the network handle mid-close.
   if (!ephB64) {
     console.log(`  scheme      v1 — no ${RECORD_EPH}, grants are addressed by recipient fingerprint`)
     console.log(`  Anyone holding a recipient's published key can test this name for a`)
     console.log(`  grant to them. That is what v2 fixes, and why new names are v2.\n`)
-    process.exit(0)
-  }
+  } else {
 
   console.log(`  scheme      v2`)
   console.log(`  ${RECORD_EPH}  ${ephB64}`)
@@ -448,6 +454,7 @@ else if (cmd === 'eph') {
     process.exitCode = 1
   }
   console.log()
+  }
 }
 
 else usage()
