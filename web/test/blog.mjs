@@ -114,7 +114,31 @@ let failed = 0
 const check = (what, ok) => { console.log(`  ${ok ? '✓' : '✗'}  ${what}`); ok ? passed++ : failed++ }
 
 await page.goto(`${base}/blog.html?lang=en`, { waitUntil: 'networkidle' })
-await page.waitForSelector('.bubble', { timeout: 15_000 })
+// If the window never fills, every check below fails for the same reason and
+// none of them says why. So the wait reports instead of throwing: what the page
+// put there, and whatever it threw while doing it.
+const filled = await page.waitForSelector('.bubble', { timeout: 15_000 })
+  .then(() => true).catch(() => false)
+if (!filled) {
+  // Asked of the document rather than of a locator: waiting for an element is
+  // how this went blind in the first place, and the interesting case is exactly
+  // the one where the element is not there.
+  const seen = await page.evaluate(() => ({
+    url: location.href,
+    title: document.title,
+    hasPosts: !!document.getElementById('posts'),
+    ids: [...document.querySelectorAll('[id]')].map((e) => e.id).slice(0, 25),
+    body: (document.body?.innerText ?? '').trim().replace(/\s+/g, ' ').slice(0, 400),
+  }))
+  console.log(`\n  The window never filled.`)
+  console.log(`  url:        ${seen.url}`)
+  console.log(`  title:      ${seen.title}`)
+  console.log(`  #posts:     ${seen.hasPosts ? 'present' : 'MISSING'}`)
+  console.log(`  ids seen:   ${seen.ids.join(', ') || '(none)'}`)
+  console.log(`  body:       ${seen.body || '(empty)'}`)
+  console.log(`  errors:     ${errors.length ? errors.join(' | ').slice(0, 500) : '(none)'}\n`)
+  process.exit(1)
+}
 
 const text = await page.textContent('#posts')
 check('the window fills itself, with no button pressed', (await page.locator('.bubble').count()) >= 2)
@@ -192,7 +216,7 @@ check('and asks for a wallet before it writes anything', await (async () => {
   return /wallet/i.test(await page.textContent('#edit-out'))
 })())
 check('and the navigation calls it the blog', /Blog/.test(await page.textContent('nav')))
-check('a house leads home, before the other three',
+check('a house leads home, before the rest',
   (await page.locator('.barnav > a').first().getAttribute('href')) === './index.html'
   && (await page.locator('.barnav .navhome svg').count()) === 1)
 check('and it is named for anyone not looking at pixels',

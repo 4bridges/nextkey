@@ -798,6 +798,13 @@ const feedFill = async () => {
         { feed: null, error: 'ranges-refused', resolvers: feed.addresses })
     }
 
+    // Held locally, not read from feed.* inside the loop. Choosing another
+    // filter sets feed.width back to null, and a fill still in flight would
+    // then compute `to > null` — BigInt against null, which throws, and the
+    // visitor reads "Could not read the events" on a page where nothing is
+    // wrong. The generation guard already drops a stale fill's output; this
+    // stops it from tripping over the next one's state on the way there.
+    const width = feed.width
     let to = head
     feed.scanned = 0n
     feed.refused = null
@@ -808,7 +815,7 @@ const feedFill = async () => {
     const budget = active().deep ? FEED_WINDOWS_DEEP : FEED_WINDOWS
     for (let i = 0; i < budget && to > 0n && feed.items.length < FEED_SHOW; i++) {
       if (!mineStill()) return
-      const from = to > feed.width ? to - feed.width + 1n : 0n
+      const from = to > width ? to - width + 1n : 0n
       try {
         feed.items.push(...await feedLogs(from, to))
         feed.scanned += to - from + 1n
@@ -838,7 +845,7 @@ const feedFill = async () => {
             : t('x.feed.nonehere', 'Nothing of this kind in the stretch this page could search.'))}</p>
       ${feed.refused ? `<p class="note mono">${esc(plain(feed.refused))}</p>
       <p class="note">${t('x.feed.refusednote', 'So this is not a quiet chain — it is a request that came back empty-handed. A public endpoint will refuse a range that matches too much, and the fix is to press Refresh, which starts again from the current head.')}</p>` : ''}
-      <p class="note">${t('x.log.scanned', 'Searched back')} ${esc(String(feed.scanned))} ${t('x.log.blocksfrom', 'blocks from the current head, in steps of')} ${esc(String(feed.width))}.</p>
+      <p class="note">${t('x.log.scanned', 'Searched back')} ${esc(String(feed.scanned))} ${t('x.log.blocksfrom', 'blocks from the current head, in steps of')} ${esc(String(width))}.</p>
       <p class="note">${t('x.feed.where', 'On')} ${feedWhere()}.</p>
       <p class="note">${t('x.feed.nonenote', 'If NextKey has written somewhere else on this deployment, this is where to say so: look a name up above, then press Refresh, and the resolver that name actually uses is watched too.')}</p>`,
       { feed: 0, scanned: String(feed.scanned), resolvers: feed.addresses })
@@ -847,6 +854,11 @@ const feedFill = async () => {
     feedRender()
     feedStamps()
   } catch (e) {
+    // A fill the visitor has already moved on from does not get to paint, and
+    // that includes painting a failure: its error belongs to a question nobody
+    // is asking any more, and on screen it would overwrite the answer to the
+    // one they did ask.
+    if (!mineStill()) return
     say(out, 'bad', `<p>${t('x.log.fail', 'Could not read the events.')}</p>
                      <p class="note mono">${esc(plain(e))}</p>`)
   } finally {
@@ -951,6 +963,13 @@ const feedFindName = async (name) => {
 
 /** Switch filters. Each one is its own question, so each gets its own answer. */
 const feedSelect = async (which, name) => {
+  // Choosing a view retires whatever is still in flight, before anything else.
+  // feedFill's own guard only retires a fill when a *new fill* starts, and the
+  // branches below that answer without reading — an empty name, a cached
+  // answer — never start one. Without this, the previous filter's read came
+  // back a moment later and wrote its result over the message the visitor was
+  // actually looking at.
+  feed.gen++
   feed.filter = FILTERS[which] ? which : 'all'
   feedChips()
   feed.width = null

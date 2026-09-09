@@ -51,10 +51,8 @@ const GIFTS = [
 ]
 
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH })
-// locale pinned, and this is the suite that proved why: the balances are
-// formatted with toLocaleString, which follows the browser and not ?lang=,
-// so on a German machine an English page printed 0,0123 and three checks
-// failed on a page that was working.
+// locale pinned: the page's own language comes from ?lang=, but anything
+// formatted by the browser (numbers, dates) follows the browser instead.
 const page = await browser.newPage({ permissions: [], locale: 'en-US' })
 const errors = []
 page.on('pageerror', (e) => errors.push(String(e)))
@@ -93,14 +91,23 @@ const check = (what, ok) => { console.log(`  ${ok ? '✓' : '✗'}  ${what}`); o
 
 await page.goto(`${base}/donate.html?lang=en`, { waitUntil: 'networkidle' })
 
-// ── The address, three times over ──
+// ── The address, and the name in front of it ──
+// The Etherscan link used to be the third place the address appeared and was
+// checked against the other two. It was removed from the page on 9 September,
+// so the pair that remains is checked instead, and the ENS name - now shown
+// twice, beside the code and under it - is checked the same way. Two spellings
+// of one identity on a page asking for money is the failure worth catching.
 const shown = (await page.textContent('#addr')).trim()
 const qrTitle = await page.getAttribute('.qr title', 'data-i18n')
 const fromScript = await page.evaluate(() => window.NEXTKEY && window.NEXTKEY.address)
-const etherscan = await page.getAttribute('#scan', 'href')
+const beside = (await page.textContent('#ensname')).trim()
+const under = (await page.textContent('#qrname')).trim()
 check('the address on the page is the address', shown === ADDRESS)
 check('and the script agrees with the page', fromScript === ADDRESS)
-check('and the link out points at the same one', etherscan.includes(ADDRESS))
+check('the ENS name is the same beside the code and under it',
+  beside === 'nextkey.eth' && under === beside)
+check('and nothing links out to Etherscan from here any more',
+  (await page.locator('#scan').count()) === 0)
 check('the QR code is drawn into the page, not fetched from anywhere',
   (await page.locator('.qr path').count()) === 1 && !!qrTitle)
 
@@ -129,6 +136,8 @@ check('the donate button is dead until a wallet is connected',
 await page.click('#amounts button[data-eth="0.01"]')
 check('a preset fills the amount', (await page.inputValue('#amount')) === '0.01')
 check('and the button stays dead without a wallet', await page.locator('#send').isDisabled())
+check('disconnecting is not offered before anything is connected',
+  await page.locator('#disconnect').isHidden())
 await page.click('#connect')
 await page.waitForTimeout(400)
 check('with no wallet in the browser, it says so and points at the address',
@@ -137,7 +146,11 @@ check('with no wallet in the browser, it says so and points at the address',
 // ── The page in another language ──
 await page.goto(`${base}/donate.html?lang=de`, { waitUntil: 'networkidle' })
 await page.waitForSelector('.bals .bal', { timeout: 15_000 })
-check('the page speaks German too', /Die Adresse/.test(await page.textContent('main')))
+// "Die Adresse" was the German heading of a section that is now called ENS
+// Name, so the sentence this looked for stopped existing on 9 September.
+// It asks for a heading inside <main> that only the overlay can produce.
+check('the page speaks German too',
+  /Oder verbinde deine Wallet/.test(await page.textContent('main')))
 check('and the address is not translated', (await page.textContent('#addr')).trim() === ADDRESS)
 
 check('and the page raised no errors at all', errors.length === 0)

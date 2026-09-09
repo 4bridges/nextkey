@@ -110,8 +110,8 @@ const plain = (e) => {
 }
 
 const REQUIRED_ELEMENTS = [
-  'addr', 'copy', 'copied', 'connect', 'who', 'amounts', 'amount', 'send', 'send-out',
-  'live', 'refresh', 'balances', 'gifts',
+  'addr', 'ensname', 'qrname', 'copy', 'copied', 'connect', 'disconnect', 'who',
+  'amounts', 'amount', 'send', 'send-out', 'live', 'refresh', 'balances', 'gifts',
 ]
 
 {
@@ -211,11 +211,31 @@ $('connect').addEventListener('click', async () => {
 
     wallet = createWalletClient({ account: addr, chain: mainnet, transport: custom(eth) })
     $('who').innerHTML = `${t('b.connected', 'connected')} · <span class="mono">${esc(clip(addr, 12))}…</span>`
+    $('disconnect').hidden = false
     out.hidden = true
     ready()
   } catch (e) {
     say(out, 'bad', `<p>${esc(plain(e))}</p>`)
   }
+})
+
+/**
+ * Disconnecting, and what it honestly is.
+ *
+ * A page cannot make a wallet forget it: the permission lives in the extension,
+ * and only the person can withdraw it there. What this button does is drop
+ * everything this page holds — the client, the account, the amount — so the
+ * donate button goes dead again and the next donation has to be reconnected and
+ * re-approved. Calling it more than that would be a lie in the direction that
+ * costs money.
+ */
+$('disconnect').addEventListener('click', () => {
+  wallet = null
+  account = null
+  $('who').textContent = ''
+  $('disconnect').hidden = true
+  $('send-out').hidden = true
+  ready()
 })
 
 let sending = false
