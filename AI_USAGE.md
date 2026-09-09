@@ -27,7 +27,7 @@ Codeium in this project. Commits carrying substantial assistance keep a
 
 **Planning, before the kickoff.** Claude was used to read and cross-check the ETHOnline 2026 rules, the submission guidelines and every sponsor prize page; to decide between the Continuity and From Scratch tracks; and to choose the three partner prizes. It also drafted the product positioning and the project description. All of this is prose, and all of it is in `docs/planning/` with its dates. No code, designs or assets predate the kickoff.
 
-**During the build.** Claude is used as a coding assistant: drafting boilerplate, explaining unfamiliar SDK surfaces (ENSv2 Enhanced Access Control, World ID Selfie Check, Chainlink CRE), reviewing code and drafting documentation. Architecture decisions, integration design and debugging are the author's.
+**During the build.** Claude is used as a coding assistant: drafting boilerplate, explaining unfamiliar SDK surfaces (ENSv2 Enhanced Access Control, Chainlink CRE, the Ledger device stack), reviewing code and drafting documentation. Architecture decisions, integration design and debugging are the author's.
 
 **Where the assistant was wrong.** Worth stating plainly, because it is the honest measure of how the tool was used. Its first prize recommendation (Privy, 1inch Aqua) was wrong and was discarded — both tracks require value transfer, which a credential vault does not do. It also misread the Chainlink documentation and concluded that CLI simulation needed no beta access, then reversed that, and then reversed again once Chainlink Labs answered directly in Discord. Each correction is recorded in `ai/PROMPT_LOG.md` and `docs/planning/00-track-and-sponsor-decisions.md` rather than quietly edited away.
 
@@ -76,9 +76,8 @@ cost, so a top-up arriving mid-run reported a negative spend. In each case the
 correct value was already available — in the request, in an option, in the
 receipts — and the fix was to ask for it rather than to work around the answer.
 
-**The feedback documents.** `FEEDBACK-ENS.md`, `FEEDBACK-LEDGER.md` and
-`FEEDBACK-WORLD.md` report what the author hit while building against these
-SDKs. An assistant can draft a sentence; it cannot have the experience the
+**The feedback documents.** `FEEDBACK-ENS.md` and `FEEDBACK-LEDGER.md` report
+what the author hit while building against these SDKs. An assistant can draft a sentence; it cannot have the experience the
 sentence is about.
 
 What did have substantial assistance: prose and documentation throughout, the

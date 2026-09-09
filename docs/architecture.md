@@ -395,9 +395,9 @@ a page that cannot tell them apart will eventually tell somebody the wrong one.
 
 Stated here rather than left for a reader to discover.
 
-**World ID Selfie Check** is designed and not implemented — sandbox access never
-arrived. Recovery therefore describes a flow rather than demonstrating one; the
-README marks it the same way.
+**Recovery after a total loss** is designed and not implemented. It describes a
+flow — guardians confirming that the person asking is the person who lost the
+key — rather than demonstrating one, and the README marks it the same way.
 
 **The notification channel** is a text record and a small local notifier, run by
 hand for the demo. It is not a deployed service and is not described as one.

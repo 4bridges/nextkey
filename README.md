@@ -2,7 +2,11 @@
 
 **A human is involved. No human is in control.**
 
-NextKey hands secrets over to the people who should get them — under rules nobody can bypass, not even us.
+NextKey hands secrets over to whoever should get them — a person or an AI-agent — under rules nobody
+can bypass. An AI-agent can propose a release and write it on its own name; it cannot finish one. The
+human in the loop is a device: the recipient's key lives on a Ledger, the device performs the key
+agreement itself or refuses without a button press, so nothing an AI-agent proposes can complete while
+nobody is watching.
 
 **Try it without installing anything: [nextkey.li/demo.html](https://nextkey.li/demo.html).** Encrypt a
 passphrase, grant it to an ENS name, put it on Sepolia, open it back off the chain, watch a stranger
@@ -11,21 +15,20 @@ ether, on a phone if you like: we lend you a name and pay the gas. If you hold a
 deployment yourself, the same step writes it under *your* name with *your* wallet, which is the real
 product.
 
-> **Repository note — please read this before the automated check does.** The
-> first commit predates the ETHOnline 2026 kickoff by one day, and ETHGlobal's
-> repository check flags it. Here is exactly what it contains, so the flag can be
-> resolved by looking rather than by trusting:
+> **Repository note —** The first commit predates the ETHOnline 2026 kickoff by
+> one day, and ETHGlobal's repository check flags it. Here is exactly what it
+> contains, so the flag can be resolved:
 >
 > ```
 > git show --stat cffa0fbe52452b517320192564d4ee3696ead008
 > ```
 >
-> `cffa0fbe`, 3 September 2026 11:54:50 +0200 — **two files, 164 lines: GitHub's
+> `cffa0fbe`, 3 September 2026 11:54:50 CEST — **two files, 164 lines: GitHub's
 > Node `.gitignore` template and the MIT licence.** No README, no source, no
 > assets, nothing about this project. It is the repository GitHub creates when you
 > tick two boxes.
 >
-> The next commit is 4 September 2026 21:53, after the kickoff, and everything
+> The next commit is 4 September 2026 21:53 CEST, after the kickoff, and everything
 > after it is the project. The rules permit boilerplate; this is boilerplate in
 > the most literal sense, and rewriting the history to hide a day would have been
 > both dishonest and worse evidence than leaving it in place.
@@ -52,7 +55,7 @@ Three independent runs are already on Sepolia, with transaction hashes in [`evid
 
 **Where your own key lives** is your decision alone. A file on your machine, or a Ledger — the difference is invisible to whoever shares with you, because what they read is a public key in your ENS record and nothing else. On a device, opening a secret costs a deliberate button press, so software running on your laptop cannot do it while you are away from it.
 
-And when someone has lost everything, recovery is meant to rest on guardians plus a proof that a unique, living person is asking, rather than on a file they were supposed to keep. That part is designed and not built — see the note under Prize tracks.
+And when someone has lost everything, recovery is meant to rest on their guardians rather than on a file they were supposed to keep. That part is designed and not built: nothing in this repository implements it, and nothing else here depends on it.
 
 ---
 
@@ -61,7 +64,7 @@ And when someone has lost everything, recovery is meant to rest on guardians plu
 1. **Place a secret.** Encrypted in your browser before it goes anywhere.
 2. **Share it with a name.** `anna.eth`, not `0x7f3a…`. NextKey reads the public key from her ENS records and wraps this one secret's key to it — that record and nothing else on your account. Whether her key sits in a file or on a Ledger is her business, and changes nothing for you.
 3. **Anna hears about it.** Through whatever channel she declared in her own ENS records. She never signed up for NextKey.
-4. **If she loses everything, she gets back in.** Her guardians confirm, and a liveness proof establishes that a unique, living person is asking. *(Designed; the liveness half is not built — see Prize tracks.)*
+4. **If she loses everything, she gets back in.** Her guardians confirm. *(Designed, not built.)*
 5. **Some releases happen without you.** The AI-agent proposes; an enclave decides, against rules you wrote yourself.
 
 ---
@@ -288,19 +291,7 @@ Explorer and registration app for this deployment:
 
 ---
 
-## World ID Selfie Check in NextKey
-
-> **Designed, not built.** Sandbox access was requested at the start of the event and has not arrived. This section describes the intended role so the recovery story is legible; no code implements it, and no claim in this repository depends on it.
-
-Selfie Check is used as a **risk and eligibility signal**, not as a login.
-
-The hardest question for a product like this one is how somebody gets back in after losing everything, without opening the same door to an attacker. Plain social recovery fails here: an attacker who can pressure, impersonate or replay their way past the guardian step is through. NextKey requires both — the guardians confirm the request, *and* Selfie Check establishes that a unique, live human is the one asking. The selfie never leaves the device; the app receives only an anonymous proof.
-
-<!-- TODO: link to the recovery flow implementation and add the Sandbox test evidence -->
-
----
-
-### The release AI-agent, and what stops it
+## The release AI-agent, and what stops it
 
 Automation is useful right up to the moment it can act alone. NextKey's release AI-agent is a **namespace, not a service account**: `agent.nextkey.eth` is a name in our registry, the AI-agent signs with its own key, and that key holds one role on one resource.
 
@@ -594,10 +585,6 @@ Sponsor qualification evidence is collected in [`evidence/`](./evidence) as it i
 Transaction hashes for the registry deployment, subname registration, role grants and
 the rejected write are in the tables above and in the logs.
 
-Still to come: the Selfie Check flow, once World ID Sandbox access is granted. If it is
-not granted before the deadline, that slot is dropped rather than half-built, and this
-line will say so.
-
 ---
 
 ## Prize tracks
@@ -608,9 +595,7 @@ This project is submitted to three partner prizes:
 |---|---|
 | ENS | Best Use of ENSv2 |
 | Chainlink | Best Confidential Workflow |
-| Ledger | AI AI-agents × Ledger |
-
-**On World.** Selfie Check is designed into the recovery flow and described below, but it is **not built**: Sandbox access was requested at the start of the event and has not arrived, and other teams report the same wait. ETHGlobal allows three partner prizes, so Ledger takes the third slot. If access arrives before submission we will choose the three strongest then — but nothing in this repository claims a World integration that exists.
+| Ledger | AI Agents × Ledger |
 
 ---
 
@@ -621,7 +606,6 @@ This project is submitted to three partner prizes:
 - [`ai/PROMPT_LOG.md`](./ai/PROMPT_LOG.md) — prompts that shaped documents, decisions and code
 - [`docs/decisions.md`](./docs/decisions.md) — dated decision log kept during the build
 - [`AI_USAGE.md`](./AI_USAGE.md) — AI tool usage disclosure
-- [`FEEDBACK-WORLD.md`](./FEEDBACK-WORLD.md) — developer experience feedback for World
 - [`FEEDBACK-ENS.md`](./FEEDBACK-ENS.md) — developer experience feedback for ENS
 - [`FEEDBACK-LEDGER.md`](./FEEDBACK-LEDGER.md) — developer experience feedback for Ledger
 - [`evidence/`](./evidence) — sponsor qualification evidence
