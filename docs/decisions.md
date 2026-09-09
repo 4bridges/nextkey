@@ -465,3 +465,160 @@ leaving an empty box and an error.
 sixty-second commit–reveal wait and mock USDC the visitor has to obtain
 somewhere. Building that into a playground means building a registrar, and the
 lent-name lane beside it already solves the problem the visitor actually has.
+
+---
+
+## 2026-09-08 — The ciphertext's length was metadata
+
+**Our own explorer found the leak by printing it.** The page shows what each
+record holds, and for `nextkey.secret` it printed the character count. Looking at
+two names side by side, the count said which one held a twelve-word phrase and
+which held a message — without decrypting anything, from a public value, by
+anybody.
+
+The tempting fix was to stop printing the number. That hides the symptom and
+leaves the leak: the ciphertext is public either way, and its length is a
+subtraction away.
+
+**So the plaintext is padded to 256-byte blocks before sealing.** Every
+passphrase, credential and short message now lands in the same block. Honest
+about the residue, and the page says it: a very long secret still falls into a
+higher block, so the length is coarse rather than absent.
+
+Only the payload is padded. The wrapped content key and the wrapped ephemeral
+key are fixed-length key material already, and padding them would triple three
+records that leak nothing.
+
+**Backwards compatible in both directions.** Unpadding strips trailing NUL bytes,
+and a record written before this existed has none, so it comes back unchanged.
+The one thing lost is a secret that deliberately ends in NUL bytes — not
+something a passphrase, a key or a typed message contains.
+
+---
+
+## 2026-09-08 (later) — A live window, and the topics that were never sent
+
+**Asked for: an explorer window showing everything NextKey does. Found instead:
+that none of our topic filters had ever reached the node.**
+
+viem's `getLogs` builds its filter from an `event` and its `args`. A raw `topics`
+option is discarded — silently. Every filtered query in this project was
+therefore answered with *every* log on the resolver, and the browser did the
+selecting afterwards.
+
+For a list that gets filtered again on arrival, harmless. Not harmless for the
+per-name history, which found a name's record id by filtering creation events on
+its namehash and then read `found[0].topics[1]`. With the filter dropped, that
+was the record id of whatever log happened to come back first. On a name that
+dominated the window it looked right; on any other it would have shown a
+stranger's writes under the name you typed.
+
+**`eth_getLogs` is now issued directly** (`web/src/nk-logs.mjs`), and the two
+topic hashes live in one module instead of two copies that must agree.
+
+**Three smaller findings from the same build.** viem caches `getBlockNumber` for
+the length of its polling interval, so a twenty-second poll asked a cache how new
+the chain was and went quietly still — `cacheTime: 0`. A fill that took several
+seconds ignored a click on another filter because one was already running, which
+is worse than being slow — fills are cancellable now. And the first version
+guessed one resolver address from one anchor name, found nothing, and reported an
+empty chain: it now watches every candidate at once and, empty or not, **prints
+which addresses it looked at**.
+
+**Rejected: hiding the block range.** Every empty answer says how far back it
+searched and in what steps. "The node refused" and "there is nothing there" are
+different statements and this project has already shipped that confusion once.
+
+---
+
+## 2026-09-08 (night) — The community page reads the chain, not a list
+
+**The blog read a short allow-list of names written into its own source.** Safe,
+and small: it could only show posts on names somebody had committed, and it
+showed them as records — a key, a slot number, a blob of JSON. A community page
+whose posts look like database rows is a database with a headline on it.
+
+It now reads the chain's own events, filtered at the node to the five post
+records, and renders what it finds as speech bubbles: title and body run together
+as one piece of text, because the split is an artefact of the record format and
+not something the author meant.
+
+**The date comes from the block, not from the post.** A post can claim any time
+it likes. The chain cannot.
+
+**The trade-off, stated because it reverses an earlier decision.** Reading the
+chain means a post appears whoever wrote it, which is the opposite of the
+allow-list's guarantee that what appears here is a decision somebody made. The
+mitigations that remain: posts render as plain text with no markup and no
+automatic links, and a name is shown **only** where a creation event proves which
+record it belongs to.
+
+**And the answer to that query is checked against the record it asked for.** A
+node that ignores a topic — or a proxy in front of one — would otherwise hand the
+page somebody else's creation event and put a borrowed name under a stranger's
+words. Of every mistake available on that page, that is the only one that would
+really hurt somebody.
+
+**Added: editing.** A post is a record, so changing it is a write to the same
+record — the one thing only the owner of a name can do. Ownership is left to the
+resolver to enforce rather than guessed at here; the page just reports the
+refusal clearly. Posts on a lent name cannot be edited, and the page says why.
+
+---
+
+## 2026-09-09 — A donation page, and the number we refuse to show
+
+**Keeping this alive after the hackathon costs money**, so there is now an
+address, a QR code and the option to send from the page. The wallet signs; the
+page holds no key and can move nothing.
+
+**The QR is drawn into the page as a single SVG path** — no library, no request —
+and carries an EIP-681 payment link rather than bare text, so a wallet that scans
+it opens with the recipient filled in. It keeps a white quiet zone in both
+themes: a dark-mode page that inverts a code produces one half the scanners in
+the world refuse.
+
+**The address exists three times** — markup, QR code, script — and the test
+asserts all three are the same string. Then it scans the code as the browser
+renders it. On a page asking for money, a wrong address is the only failure that
+matters.
+
+**What the page will not do is list incoming ETH.** A plain transfer emits no
+event; without an indexer there is nothing to filter for. The balance counts it
+exactly, Etherscan has the list, and the page says both. Showing "3 donations"
+while ETH arrives unseen would be a number worse than no number.
+
+**Rejected: a token API.** Three stablecoins are named in the source. A page that
+renders every token that ever touched the address renders whatever a stranger
+airdropped onto it, and a donation page decorated with somebody's scam token is
+worse than one that shows three currencies and says so.
+
+---
+
+## 2026-09-09 (later) — Two hundred names, and a cost report that lied
+
+**A name is used up once it publishes its ephemeral key**, so the playground
+needs a supply rather than a set. 150 more subnames registered — `hero51` to
+`hero200` — in three blocks of fifty, each two transactions per name.
+
+**The order matters and is worth writing down:** register first, probe at both
+ends of the new range, *then* raise the constant in the bundle. A name in that
+list that does not exist on chain is offered to a visitor and fails at the write,
+which is a worse failure than a smaller pool.
+
+**And the run reported `spent -0.268 ETH`.** A negative cost, which reads as a
+refund. The line was subtracting two balances — and a top-up that arrived mid-run
+counts against that subtraction with the wrong sign.
+
+The receipts were in hand the whole time. The script now sums
+`gasUsed × effectiveGasPrice`, prints the balance separately as a balance, and
+names anything the two numbers do not explain as an amount received or sent out
+during the run. A receipt without a gas price is skipped rather than guessed at:
+a figure that is slightly low and admits it beats one that is invented.
+
+**A second bug fell out of the same session.** `clear` and `eph` ended their
+no-op path with `process.exit(0)`. On Windows that tears the process down while
+libuv is still closing the RPC socket, and Node aborts with an assertion in
+`async.c` — *after* the command has printed its answer, so a successful run looks
+like a crash and the exit code becomes meaningless. Both are ordinary branches
+now.
