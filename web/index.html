@@ -607,7 +607,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
       </details>
 
       <details>
-        <summary data-i18n="faq.2q">Can an AI AI-agent hold a wallet safely?</summary>
+        <summary data-i18n="faq.2q">Can an AI-agent hold a wallet safely?</summary>
         <p data-i18n-html="faq.2a1">Not if it holds the key. It can hold a wallet whose passphrase it cannot read back.</p>
         <p data-i18n-html="faq.2a2">The AI-agent generates the phrase, seals it to a person's published key, and writes the
            ciphertext to ENS. After that the AI-agent has no way to recover those words on its own:
@@ -694,7 +694,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   "@type": "FAQPage",
   "mainEntity": [
     {"@type":"Question","name":"How do I safely pass on my seed phrase to someone?","acceptedAnswer":{"@type":"Answer","text":"Encrypt it to a key only that person holds, and put the ciphertext somewhere you both can reach. NextKey does this by name: it reads the public key the recipient publishes in their own ENS records and wraps the secret's key to it, so nothing readable passes through a message or a server, and the recipient does not have to sign up first."}},
-    {"@type":"Question","name":"Can an AI AI-agent hold a wallet safely?","acceptedAnswer":{"@type":"Answer","text":"Not if it holds the key; it can hold a wallet whose passphrase it cannot read back. With NextKey the AI-agent generates the phrase, seals it to a person's published key and writes the ciphertext to ENS. Recovering those words then needs a human confirmation, a time lock or whatever condition was set, so a compromised AI-agent leaks a record anyone could already read."}},
+    {"@type":"Question","name":"Can an AI-agent hold a wallet safely?","acceptedAnswer":{"@type":"Answer","text":"Not if it holds the key; it can hold a wallet whose passphrase it cannot read back. With NextKey the AI-agent generates the phrase, seals it to a person's published key and writes the ciphertext to ENS. Recovering those words then needs a human confirmation, a time lock or whatever condition was set, so a compromised AI-agent leaks a record anyone could already read."}},
     {"@type":"Question","name":"How does the recipient know a secret is waiting for them?","acceptedAnswer":{"@type":"Answer","text":"They derive it rather than being notified. A recipient reads one public value off a name, does a single scalar multiplication with their own key, and arrives at the record where anything addressed to them would be. There is no server to send a notification, and finding every such name needs an indexer, so today this works on names the recipient knows about. A read receipt works the same way in reverse, at a second address only the two parties can compute."}},
     {"@type":"Question","name":"Can I share one secret with more than one person?","acceptedAnswer":{"@type":"Answer","text":"Yes, and each of them can be cut off without touching the others. A name publishes one ephemeral key and one ciphertext; every recipient gets one further record, at an address derived from that key and theirs, so two grants share no key material. Adding somebody weeks later re-encrypts nothing. An observer can count how many grants a name carries, but not whose they are."}},
     {"@type":"Question","name":"Can I share a password without both of us using the same password manager?","acceptedAnswer":{"@type":"Answer","text":"Yes. The recipient needs an ENS name and a published key, not an account with NextKey."}},
@@ -730,7 +730,7 @@ document.addEventListener('submit', function (e) {
   location.href = './explorer.html' + (v ? '?name=' + encodeURIComponent(v) : '')
 })
 </script>
-<script src="./i18n.js?v=43190522"></script>
+<script src="./i18n.js?v=e11349a9"></script>
 <script>
 /**
  * Translation is applied over the page, not baked into it.
