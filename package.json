@@ -6,8 +6,12 @@
     "doc": "docs"
   },
   "scripts": {
+    "build": "npm run build:bundles && node scripts/stamp-assets.mjs",
+    "build:bundles": "esbuild web/src/app.js --bundle --format=esm --minify --target=es2022 --outfile=web/app.js && esbuild web/src/demo.js --bundle --format=esm --minify --target=es2022 --outfile=web/demo.js && esbuild web/src/explorer.js --bundle --format=esm --minify --target=es2022 --outfile=web/explorer.js && esbuild web/src/blog.js --bundle --format=esm --minify --target=es2022 --outfile=web/blog.js && esbuild web/src/donate.js --bundle --format=esm --minify --target=es2022 --outfile=web/donate.js",
+    "verify:stamps": "node scripts/stamp-assets.mjs --check",
     "test": "npm run test:crypto && npm run test:pages",
     "test:crypto": "node web/test/v2.mjs && node web/test/interop.mjs",
+    "pretest:pages": "npm run build",
     "test:pages": "node web/test/playground.mjs && node web/test/feed.mjs && node web/test/blog.mjs && node web/test/donate.mjs"
   },
   "repository": {
@@ -30,9 +34,11 @@
     "viem": "^2.56.3"
   },
   "allowScripts": {
-    "node-hid@2.1.2": true
+    "node-hid@2.1.2": true,
+    "esbuild@0.28.2": true
   },
   "devDependencies": {
+    "esbuild": "0.28.2",
     "playwright": "^1.63.0"
   }
 }

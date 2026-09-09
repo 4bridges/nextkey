@@ -407,7 +407,7 @@ described above; the second writes to the chain and needs a funded Sepolia key.
 ```bash
 git clone https://github.com/4bridges/nextkey.git
 cd nextkey
-npm install                       # viem, @noble/curves, @noble/hashes
+npm install                       # viem, @noble/curves, @noble/hashes, esbuild, Playwright
 
 node scripts/agent.mjs   show                              # the AI-agent's open release request
 node scripts/resolver.mjs read-text visa nextkey.secret   # the ciphertext, read through the Universal Resolver
@@ -426,13 +426,26 @@ exists at all.
 The same state in a browser, which is what the demo link opens:
 
 ```bash
+npm run build             # the five bundles under web/ — build output, not in git
 npx serve web -l 8080     # then http://localhost:8080/poc.html
                           #  and http://localhost:8080/demo.html
 ```
 
+`web/app.js`, `demo.js`, `explorer.js`, `blog.js` and `donate.js` are esbuild output and are
+not committed; a fresh clone has to build them once. The esbuild version is pinned exactly,
+so the build is reproducible: the content hash each page carries in its `<script src>` —
+`demo.js?v=09417c32`, written by `scripts/stamp-assets.mjs` — matches the bundle a clone
+produces today. `npm run verify:stamps` says so without building anything. `web/i18n.js` is
+committed even though a tool writes it, because `i18n-merge.mjs` reads it as the base it
+merges into and it cannot be rebuilt from `i18n.patch.json` alone.
+
 And the tests, which need no chain at all:
 
 ```bash
+npm test                       # all six suites, 208 checks
+npm run test:crypto            # 31 — no browser and no bundle needed
+npm run test:pages             # 177 — builds first, then drives the pages in Chromium
+
 node web/test/v2.mjs           # 18 — the v2 construction, padding, backwards compatibility
 node web/test/interop.mjs      # 13 — browser and command line derive the same keys
 node web/test/playground.mjs   # 71 — demo.html driven in a real browser, in two languages
@@ -444,7 +457,9 @@ node web/test/donate.mjs       # 21 — the donation page: address, QR code, bal
 The last four answer a mocked node, which is what lets them assert what a reader ends up looking at:
 that a post arrives as a sentence rather than as the JSON it is stored in, that a date comes from the
 block rather than from the post's own claim, that a name appears only where it can be proved. The
-browser suites need Playwright (`npm install` brings it); what none of them can reach is writing,
+browser suites need Playwright (`npm install` brings it) and a current bundle, which is why
+`npm run test:pages` builds before it runs — a suite against a stale bundle tests the last build and
+says nothing about the code in front of you. What none of them can reach is writing,
 opening and revoking on a real chain, which is what [`evidence/`](./evidence) is for.
 
 Open `web/` over `http://`, not by double-clicking the file — ES modules are blocked

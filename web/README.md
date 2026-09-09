@@ -1,7 +1,8 @@
 # nextkey.li — six static pages
 
-No framework, no build step for the HTML, no server of ours. Upload the contents of this
-folder to the web root at Cyon and the site works.
+No framework, no build step for the HTML, no server of ours. Run `npm run build` once for
+the five bundles, then upload the contents of this folder to the web root at Cyon and the
+site works.
 
 ```
 index.html         what the project is, the FAQ, the diagrams
@@ -11,11 +12,11 @@ explorer.html      what a name carries, and every NextKey record, live
 blog.html          community posts: write one, edit one, read them all
 donate.html        address, QR code, and what has arrived
 
-app.js             bundled reader for index.html and poc.html  — built, do not edit
-demo.js            bundled logic for demo.html                 — built, do not edit
-explorer.js        bundled logic for explorer.html             — built, do not edit
-blog.js            bundled logic for blog.html                 — built, do not edit
-donate.js          bundled logic for donate.html               — built, do not edit
+app.js             bundled reader for index.html and poc.html  — built, not in git
+demo.js            bundled logic for demo.html                 — built, not in git
+explorer.js        bundled logic for explorer.html             — built, not in git
+blog.js            bundled logic for blog.html                 — built, not in git
+donate.js          bundled logic for donate.html               — built, not in git
 i18n.js            the nine translations — English is not in here, see below
 i18n.patch.json    the working file translations are written into
 i18n.stamp.json    the English baseline the checker compares against
@@ -68,19 +69,28 @@ from the `.html` form so one spelling stays canonical.
 > whether a file exists somewhere it never was, fails quietly, and leaves a 404 that looks
 > like a missing page.
 
-## Rebuilding the bundles
+## Building the bundles
 
-Only needed after editing something under `src/`:
+The five bundles are esbuild output and are **not committed**. A fresh clone has to build
+them once; after that, only when something under `src/` changes:
 
 ```bash
-npx esbuild web/src/app.js      --bundle --format=esm --minify --target=es2022 --outfile=web/app.js
-npx esbuild web/src/demo.js     --bundle --format=esm --minify --target=es2022 --outfile=web/demo.js
-npx esbuild web/src/explorer.js --bundle --format=esm --minify --target=es2022 --outfile=web/explorer.js
-npx esbuild web/src/blog.js     --bundle --format=esm --minify --target=es2022 --outfile=web/blog.js
-npx esbuild web/src/donate.js   --bundle --format=esm --minify --target=es2022 --outfile=web/donate.js
-
-node scripts/stamp-assets.mjs   # then re-stamp the pages
+npm run build            # five esbuild calls, then scripts/stamp-assets.mjs
+npm run verify:stamps    # every page matches the bundle it loads — builds nothing
 ```
+
+**The esbuild version is pinned exactly** (`"esbuild": "0.28.2"`, no caret) and that is
+load-bearing, not tidiness. The pages *are* committed and each one carries a content hash
+of the script it loads. If a rebuild produced different bytes, every committed page would
+be stamped for a file nobody can reproduce, and `git status` would be dirty after every
+build. Pinned, a clone rebuilds the same bytes, the stamps still hold, and "built from this
+source" is something `npm run verify:stamps` can answer rather than something the README
+asserts. Bumping esbuild therefore means rebuilding, re-stamping, committing the pages and
+re-uploading the site — a deploy, not a dependency update.
+
+`web/i18n.js` is committed even though `scripts/i18n-merge.mjs` writes it. It is the base
+that script merges into and it cannot be rebuilt from `i18n.patch.json` alone, so it is a
+source file with a tool attached, not build output.
 
 Three modules are shared, so that two copies of a constant cannot drift apart:
 

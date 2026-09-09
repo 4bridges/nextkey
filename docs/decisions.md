@@ -700,3 +700,69 @@ where they were already pushed: removing them from HEAD is not the same as
 erasing them, and rewriting history to pretend otherwise would break the promise
 the repository note makes at the top of the README. Nothing that the demo video
 shows or the submission claims was removed.
+
+---
+
+## 2026-09-09 (afternoon) — the bundles leave the repository, and three tests turn out never to have run here
+
+**The five esbuild bundles are no longer committed.** 2.16 MB of minified output
+sat next to its own source; `npm run build` produces it now, and a fresh clone
+runs that once. What made the removal safe rather than tidy is the **exact pin**:
+esbuild was never a dependency at all — ten days of builds went through `npx`,
+which resolves whatever npm offers that day, so the committed bundles were built
+by a version nobody recorded. It is now `"esbuild": "0.28.2"`, no caret, and that
+version was verified to rebuild the previously committed bundles **byte for
+byte** before anything was deleted.
+
+**Why the pin is load-bearing and not hygiene.** The pages *are* committed, and
+each carries a content hash of the script it loads (`donate.js?v=78c5e2c8`). A
+build that produced different bytes would leave every page stamped for a file
+nobody can reproduce, and `git status` would be dirty after every build. Pinned,
+the stamps hold, `npm run verify:stamps` can answer *does this page match its
+bundle* without building anything, and bumping esbuild becomes a deploy rather
+than a dependency update. The gate for the whole change was one command:
+`npm run build && git status` had to come back clean. It did.
+
+**`web/i18n.js` stays committed** even though a tool writes it.
+`scripts/i18n-merge.mjs` reads it as the base it merges into and refuses a file
+it does not recognise, so it cannot be rebuilt from `i18n.patch.json` alone. It
+is a source file with a tool attached, not build output, and `.gitattributes`
+now says exactly that instead of listing the bundles.
+
+**What the change uncovered is worth more than the change.** Three of the six
+suites — `feed.mjs`, `blog.mjs`, `donate.mjs`, 106 of the checks — carried a
+hard-coded absolute path to a container that is not this machine. They served
+404 for every file and timed out on a selector, which reads like a broken page.
+They had never run outside the sandbox they were written in, so the "208 checks"
+the README advertises had never been reproduced by anyone but their author.
+Resolved from `import.meta.url` now, like `playground.mjs` always did.
+
+Underneath that were two more, both in `feed.mjs`:
+
+- **The language was not pinned.** It was the only suite that opened the page
+  without `?lang=`, so the page followed the *browser*, which on a German
+  machine is German. Every assertion about a sentence failed; every assertion
+  about a number, an address or a link passed. The page was working perfectly.
+  The comment *"an assertion that passes only in one language is not an
+  assertion"* was already in the file, three lines above the one place someone
+  had got it right.
+- **One check read a state instead of catching it.** Clicking the name filter
+  re-renders the window, and the previous filter's fill can land on top of the
+  message a moment later. It passed on one run and failed on the next. It now
+  waits *for* the state and treats the wait as the check, like the arrival mark
+  above it.
+
+**And one real bug in the site, found by the same thread.** `donate.js`
+formatted every balance with `toLocaleString(undefined, …)`, which follows the
+browser rather than the page. An English donation page printed `0,0123` to
+anyone whose browser is German — English words, German separators, on the one
+page where the number is the point. Numbers and the `poc.html` timestamp now
+follow `data-i18n-lang`, with `cn → zh` and `ua → uk` translated for `Intl` and
+the call guarded, because an unknown tag throws rather than degrading and would
+have left a blank balance line in Chinese.
+
+**Rejected:** obfuscating or encrypting the bundles to protect the
+implementation. The browser must run them, so the key ships with them; it is
+obfuscation at best, it demands `unsafe-eval`, and on a page whose whole claim
+is that nothing leaves the browser, unreadable code is the argument against
+itself. The licence protects the implementation. Nothing else can.

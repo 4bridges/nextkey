@@ -168,3 +168,16 @@ vite.config.ts.timestamp-*
 /docs/video-script.md
 /web/brand/README.md
 /web/brand/ethglobal/
+
+# Build output. `npm run build` produces these from web/src/ with a pinned
+# esbuild and then stamps the pages with their hashes; the committed pages
+# therefore expect exactly these bytes, which is why the esbuild version in
+# package.json is pinned exactly rather than with a caret.
+#
+# web/i18n.js is deliberately NOT ignored: i18n-merge.mjs reads it as the base
+# it merges into, so it cannot be rebuilt from i18n.patch.json alone.
+/web/app.js
+/web/demo.js
+/web/explorer.js
+/web/blog.js
+/web/donate.js
