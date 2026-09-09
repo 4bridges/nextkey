@@ -269,7 +269,7 @@
     "t.s2.badkey": "Dieser Name veröffentlicht einen nextkey.pubkey-Record, aber er ist nicht als Schlüssel lesbar.",
     "t.s2.badkeynote": "Ein Schlüssel sind 32 Bytes in Base64. Dieser Record ist etwas anderes — der Fehler liegt also im Record und nicht in dieser Seite; wer den Namen besitzt, muss ihn neu schreiben.",
     "t.s2.recv.btn": "Mach mich empfangsbereit",
-    "t.s2.p": "Ein ENS-Name, der einen Schlüssel veröffentlicht — dieser Record ist das ganze Opt-in, eine Anmeldung bei NextKey gibt es nicht. Noch kein Schlüssel? Der dritte Knopf macht dich mit einer Signatur empfangsbereit, ohne Gas.",
+    "t.s2.p": "Ein ENS-Name, der einen Schlüssel veröffentlicht — dieser Record ist das ganze Opt-in, eine Anmeldung bei NextKey gibt es nicht. Niemanden im Sinn? Ein hier erzeugter Demo-Grant tut es zum Ausprobieren genauso.",
     "t.id.signing": "Deine Wallet wird um eine Signatur gebeten — sie bewegt nichts und kostet nichts…",
     "t.id.writing": "Dein Schlüssel wird veröffentlicht — ein Record, unser Gas…",
     "t.id.done": "Ab jetzt können dir Geheimnisse geschickt werden an",
@@ -283,7 +283,10 @@
     "t.claim.bad": "Dieser Link trägt etwas, das kein Schlüssel ist — damit lässt sich nichts öffnen. Bitte um einen frischen.",
     "t.id.looking": "Wird geprüft, ob diese Wallet hier schon einen Namen hat…",
     "t.id.already": "Du bist bereits empfangsbereit — dieselbe Wallet ergibt denselben Schlüssel, also gehört dir dieser Name weiterhin:",
-    "t.id.alreadynote": "Es wurde nichts geschrieben und kein Name verbraucht. Genau dafür wird der Schlüssel abgeleitet statt erzeugt: es gibt dich nur einmal, in wie vielen Browsern du auch drückst."
+    "t.id.alreadynote": "Es wurde nichts geschrieben und kein Name verbraucht. Genau dafür wird der Schlüssel abgeleitet statt erzeugt: es gibt dich nur einmal, in wie vielen Browsern du auch drückst.",
+    "t.recv.h": "Kann dir jemand ein Geheimnis schicken?",
+    "t.recv.p": "Nur wenn dein ENS-Name einen Schlüssel veröffentlicht — dieser Record ist das ganze Opt-in, eine Anmeldung bei NextKey gibt es nicht. Noch kein Schlüssel? Eine Signatur genügt: es wird nichts erzeugt und nichts gespeichert, der Schlüssel kommt aus deiner Wallet und kommt auf jeder Maschine wieder daraus. Den Namen leihen wir dir, den Record zahlen wir.",
+    "t.recv.at": "empfangsbereit unter"
   },
   "fr": {
     "b.write.p": "Un titre et un texte, écrits dans <span class=\"mono\">nextkey.post</span> sur un nom. Rien n’est chiffré — c’est la moitié publique du même mécanisme. Un nom peut porter jusqu’à cinq billets ; la publication prend le premier emplacement libre au lieu de remplacer l’existant. Le propriétaire peut vider n’importe lequel à tout moment.",
@@ -557,7 +560,7 @@
     "t.s2.badkey": "Ce nom publie un enregistrement nextkey.pubkey, mais il ne se lit pas comme une clé.",
     "t.s2.badkeynote": "Une clé fait 32 octets en base64. Cet enregistrement est autre chose : le défaut est dans l’enregistrement et non dans cette page, et son propriétaire doit le réécrire.",
     "t.s2.recv.btn": "Rendez-moi joignable",
-    "t.s2.p": "Un nom ENS qui publie une clé — cet enregistrement est tout le consentement, et il n'y a aucune inscription chez NextKey. Pas encore de clé ? Le troisième bouton vous rend joignable en une signature, sans frais.",
+    "t.s2.p": "Un nom ENS qui publie une clé — cet enregistrement est tout le consentement, et il n'y a aucune inscription chez NextKey. Personne en tête ? Un grant de démonstration créé ici fait tout aussi bien l'affaire pour essayer.",
     "t.id.signing": "Votre portefeuille reçoit une demande de signature — elle ne déplace rien et ne coûte rien…",
     "t.id.writing": "Publication de votre clé — un enregistrement, à nos frais…",
     "t.id.done": "On peut désormais vous envoyer des secrets à",
@@ -571,7 +574,10 @@
     "t.claim.bad": "Ce lien porte quelque chose qui n'est pas une clé : il n'y a rien pour ouvrir. Demandez-en un nouveau.",
     "t.id.looking": "Vérification : ce portefeuille a-t-il déjà un nom ici…",
     "t.id.already": "Vous êtes déjà joignable — le même portefeuille donne la même clé, donc ce nom reste le vôtre :",
-    "t.id.alreadynote": "Rien n'a été écrit et aucun nom n'a été consommé. C'est tout l'intérêt de dériver la clé plutôt que de la générer : il n'y a qu'un seul vous, quel que soit le nombre de navigateurs."
+    "t.id.alreadynote": "Rien n'a été écrit et aucun nom n'a été consommé. C'est tout l'intérêt de dériver la clé plutôt que de la générer : il n'y a qu'un seul vous, quel que soit le nombre de navigateurs.",
+    "t.recv.h": "Peut-on vous envoyer un secret ?",
+    "t.recv.p": "Seulement si votre nom ENS publie une clé — cet enregistrement est tout le consentement, et il n'y a aucune inscription chez NextKey. Pas encore de clé ? Une signature suffit : rien n'est généré ni conservé, la clé sort de votre portefeuille et en ressort sur n'importe quelle machine. Nous vous prêtons le nom et payons l'enregistrement.",
+    "t.recv.at": "joignable à"
   },
   "it": {
     "b.write.p": "Un titolo e un testo, scritti in <span class=\"mono\">nextkey.post</span> su un nome. Nulla viene cifrato — è la metà pubblica dello stesso meccanismo. Un nome può portare fino a cinque post; la pubblicazione occupa il primo posto libero invece di sostituire quanto c’è. Il proprietario può svuotarne uno qualsiasi in qualsiasi momento.",
@@ -843,7 +849,7 @@
     "t.s2.badkey": "Questo nome pubblica un record nextkey.pubkey, ma non è leggibile come chiave.",
     "t.s2.badkeynote": "Una chiave è di 32 byte in base64. Questo record è altro: il difetto sta nel record e non in questa pagina, e chi possiede il nome deve riscriverlo.",
     "t.s2.recv.btn": "Rendimi ricevibile",
-    "t.s2.p": "Un nome ENS che pubblica una chiave — quel record è tutto il consenso, e non esiste alcuna registrazione presso NextKey. Ancora senza chiave? Il terzo pulsante ti rende ricevibile con una firma e senza gas.",
+    "t.s2.p": "Un nome ENS che pubblica una chiave — quel record è tutto il consenso, e non esiste alcuna registrazione presso NextKey. Nessuno in mente? Un grant di prova creato qui va altrettanto bene.",
     "t.id.signing": "Al tuo wallet viene chiesta una firma — non muove nulla e non costa nulla…",
     "t.id.writing": "Pubblicazione della tua chiave — un record, il nostro gas…",
     "t.id.done": "Da ora ti si possono inviare segreti a",
@@ -857,7 +863,10 @@
     "t.claim.bad": "Questo link porta qualcosa che non è una chiave, quindi non c’è nulla con cui aprire. Chiedine uno nuovo.",
     "t.id.looking": "Verifica se questo wallet ha già un nome qui…",
     "t.id.already": "Sei già ricevibile — lo stesso wallet dà la stessa chiave, quindi questo nome resta tuo:",
-    "t.id.alreadynote": "Non è stato scritto nulla e nessun nome è stato consumato. È proprio il motivo per cui la chiave si deriva invece di generarla: di te ce n’è uno solo, in quanti browser tu lo prema."
+    "t.id.alreadynote": "Non è stato scritto nulla e nessun nome è stato consumato. È proprio il motivo per cui la chiave si deriva invece di generarla: di te ce n’è uno solo, in quanti browser tu lo prema.",
+    "t.recv.h": "Qualcuno può mandarti un segreto?",
+    "t.recv.p": "Solo se il tuo nome ENS pubblica una chiave — quel record è tutto il consenso, e non esiste alcuna registrazione presso NextKey. Ancora senza chiave? Basta una firma: non viene generato né conservato nulla, la chiave esce dal tuo wallet e ne riesce su qualsiasi macchina. Il nome te lo prestiamo noi e il record lo paghiamo noi.",
+    "t.recv.at": "ricevibile su"
   },
   "es": {
     "b.write.p": "Un título y un texto, escritos en <span class=\"mono\">nextkey.post</span> sobre un nombre. Nada se cifra — es la mitad pública del mismo mecanismo. Un nombre puede llevar hasta cinco entradas; al publicar se ocupa el primer hueco libre en lugar de reemplazar lo que hay. El propietario puede vaciar cualquiera cuando quiera.",
@@ -1129,7 +1138,7 @@
     "t.s2.badkey": "Ese nombre publica un registro nextkey.pubkey, pero no se puede leer como una clave.",
     "t.s2.badkeynote": "Una clave son 32 bytes en base64. Este registro es otra cosa: el fallo está en el registro y no en esta página, y quien posee el nombre debe volver a escribirlo.",
     "t.s2.recv.btn": "Hazme receptivo",
-    "t.s2.p": "Un nombre ENS que publica una clave: ese registro es todo el consentimiento, y no hay registro en NextKey. ¿Todavía sin clave? El tercer botón te vuelve receptivo con una firma y sin gas.",
+    "t.s2.p": "Un nombre ENS que publica una clave: ese registro es todo el consentimiento, y no hay registro en NextKey. ¿Nadie en mente? Un grant de demostración creado aquí sirve igual para probarlo.",
     "t.id.signing": "Se pide una firma a tu cartera: no mueve nada y no cuesta nada…",
     "t.id.writing": "Publicando tu clave: un registro, nuestro gas…",
     "t.id.done": "Ya se te pueden enviar secretos a",
@@ -1143,7 +1152,10 @@
     "t.claim.bad": "Este enlace lleva algo que no es una clave, así que no hay con qué abrir. Pide uno nuevo.",
     "t.id.looking": "Comprobando si esta cartera ya tiene un nombre aquí…",
     "t.id.already": "Ya eres receptivo: la misma cartera da la misma clave, así que este nombre sigue siendo tuyo:",
-    "t.id.alreadynote": "No se escribió nada ni se gastó ningún nombre. Para eso se deriva la clave en lugar de generarla: solo hay uno de ti, en cuantos navegadores lo pulses."
+    "t.id.alreadynote": "No se escribió nada ni se gastó ningún nombre. Para eso se deriva la clave en lugar de generarla: solo hay uno de ti, en cuantos navegadores lo pulses.",
+    "t.recv.h": "¿Alguien puede enviarte un secreto?",
+    "t.recv.p": "Solo si tu nombre ENS publica una clave: ese registro es todo el consentimiento, y no hay registro en NextKey. ¿Todavía sin clave? Basta una firma: no se genera ni se guarda nada, la clave sale de tu cartera y vuelve a salir en cualquier máquina. El nombre te lo prestamos y el registro lo pagamos nosotros.",
+    "t.recv.at": "receptivo en"
   },
   "pt": {
     "b.write.p": "Um título e um texto, escritos em <span class=\"mono\">nextkey.post</span> num nome. Nada é cifrado — é a metade pública do mesmo mecanismo. Um nome pode levar até cinco publicações; publicar ocupa o primeiro lugar livre em vez de substituir o que lá está. O dono pode esvaziar qualquer uma a qualquer momento.",
@@ -1415,7 +1427,7 @@
     "t.s2.badkey": "Esse nome publica um registo nextkey.pubkey, mas não é legível como uma chave.",
     "t.s2.badkeynote": "Uma chave são 32 bytes em base64. Este registo é outra coisa: a falha está no registo e não nesta página, e quem detém o nome tem de o escrever de novo.",
     "t.s2.recv.btn": "Torne-me recetível",
-    "t.s2.p": "Um nome ENS que publica uma chave — esse registo é todo o consentimento, e não há inscrição na NextKey. Ainda sem chave? O terceiro botão torna-o recetível com uma assinatura e sem gás.",
+    "t.s2.p": "Um nome ENS que publica uma chave — esse registo é todo o consentimento, e não há inscrição na NextKey. Ninguém em mente? Um grant de demonstração criado aqui serve igualmente para experimentar.",
     "t.id.signing": "É pedida uma assinatura à sua carteira — não move nada e não custa nada…",
     "t.id.writing": "A publicar a sua chave — um registo, o nosso gás…",
     "t.id.done": "A partir de agora podem enviar-lhe segredos para",
@@ -1429,7 +1441,10 @@
     "t.claim.bad": "Esta ligação traz algo que não é uma chave, por isso não há com que abrir. Peça uma nova.",
     "t.id.looking": "A verificar se esta carteira já tem um nome aqui…",
     "t.id.already": "Já é recetível — a mesma carteira dá a mesma chave, por isso este nome continua seu:",
-    "t.id.alreadynote": "Nada foi escrito e nenhum nome foi gasto. É precisamente por isso que a chave é derivada e não gerada: só existe um de si, em quantos navegadores o carregue."
+    "t.id.alreadynote": "Nada foi escrito e nenhum nome foi gasto. É precisamente por isso que a chave é derivada e não gerada: só existe um de si, em quantos navegadores o carregue.",
+    "t.recv.h": "Alguém lhe pode enviar um segredo?",
+    "t.recv.p": "Só se o seu nome ENS publicar uma chave — esse registo é todo o consentimento, e não há inscrição na NextKey. Ainda sem chave? Basta uma assinatura: nada é gerado nem guardado, a chave sai da sua carteira e volta a sair em qualquer máquina. O nome emprestamos nós e o registo pagamos nós.",
+    "t.recv.at": "recetível em"
   },
   "ru": {
     "b.write.p": "Заголовок и текст, записанные в <span class=\"mono\">nextkey.post</span> на имени. Ничего не шифруется — это публичная половина того же механизма. Имя может нести до пяти записей; публикация занимает первое свободное место, а не заменяет то, что есть. Владелец может очистить любое из них в любой момент.",
@@ -1701,7 +1716,7 @@
     "t.s2.badkey": "Это имя публикует запись nextkey.pubkey, но она не читается как ключ.",
     "t.s2.badkeynote": "Ключ — это 32 байта в base64. Эта запись — что-то другое: ошибка в записи, а не на этой странице, и владелец имени должен записать её заново.",
     "t.s2.recv.btn": "Сделать меня получателем",
-    "t.s2.p": "Имя ENS, публикующее ключ, — эта запись и есть всё согласие, регистрации в NextKey нет. Ключа ещё нет? Третья кнопка делает вас получателем одной подписью и без газа.",
+    "t.s2.p": "Имя ENS, публикующее ключ, — эта запись и есть всё согласие, регистрации в NextKey нет. Никого на примете? Демонстрационный грант, созданный здесь, подойдёт для пробы не хуже.",
     "t.id.signing": "У кошелька запрашивается подпись — она ничего не двигает и ничего не стоит…",
     "t.id.writing": "Публикуем ваш ключ — одна запись, наш газ…",
     "t.id.done": "Теперь вам можно отправлять секреты на",
@@ -1715,7 +1730,10 @@
     "t.claim.bad": "Эта ссылка несёт что-то, что не является ключом, — открывать нечем. Попросите новую.",
     "t.id.looking": "Проверяем, есть ли уже имя у этого кошелька…",
     "t.id.already": "Вы уже получатель — тот же кошелёк даёт тот же ключ, поэтому это имя по-прежнему ваше:",
-    "t.id.alreadynote": "Ничего не записано и ни одно имя не потрачено. Ровно для этого ключ выводится, а не генерируется: вы один, в скольких браузерах ни нажимайте."
+    "t.id.alreadynote": "Ничего не записано и ни одно имя не потрачено. Ровно для этого ключ выводится, а не генерируется: вы один, в скольких браузерах ни нажимайте.",
+    "t.recv.h": "Может ли кто-нибудь прислать вам секрет?",
+    "t.recv.p": "Только если ваше имя ENS публикует ключ — эта запись и есть всё согласие, регистрации в NextKey нет. Ключа ещё нет? Достаточно одной подписи: ничего не создаётся и не сохраняется, ключ выходит из вашего кошелька и выходит из него на любой машине. Имя мы одалживаем, запись оплачиваем.",
+    "t.recv.at": "получатель на"
   },
   "ua": {
     "b.write.p": "Заголовок і текст, записані в <span class=\"mono\">nextkey.post</span> на імені. Нічого не шифрується — це публічна половина того самого механізму. Ім’я може нести до п’яти дописів; публікація займає перше вільне місце, а не замінює наявне. Власник може спорожнити будь-яке з них будь-коли.",
@@ -1987,7 +2005,7 @@
     "t.s2.badkey": "Це ім’я публікує запис nextkey.pubkey, але він не читається як ключ.",
     "t.s2.badkeynote": "Ключ — це 32 байти в base64. Цей запис — щось інше: помилка в записі, а не на цій сторінці, і власник імені має записати його наново.",
     "t.s2.recv.btn": "Зробити мене отримувачем",
-    "t.s2.p": "Ім’я ENS, яке публікує ключ, — цей запис і є вся згода, реєстрації в NextKey немає. Ключа ще немає? Третя кнопка робить вас отримувачем одним підписом і без газу.",
+    "t.s2.p": "Ім’я ENS, яке публікує ключ, — цей запис і є вся згода, реєстрації в NextKey немає. Нікого на думці? Демонстраційний грант, створений тут, для проби годиться так само.",
     "t.id.signing": "У гаманця запитується підпис — він нічого не рухає й нічого не коштує…",
     "t.id.writing": "Публікуємо ваш ключ — один запис, наш газ…",
     "t.id.done": "Тепер вам можна надсилати секрети на",
@@ -2001,7 +2019,10 @@
     "t.claim.bad": "Це посилання несе щось, що не є ключем, — відкривати нічим. Попросіть нове.",
     "t.id.looking": "Перевіряємо, чи має цей гаманець тут уже ім’я…",
     "t.id.already": "Ви вже отримувач — той самий гаманець дає той самий ключ, тож це ім’я й далі ваше:",
-    "t.id.alreadynote": "Нічого не записано й жодного імені не витрачено. Саме для цього ключ виводиться, а не генерується: ви один, у скількох браузерах не натискайте."
+    "t.id.alreadynote": "Нічого не записано й жодного імені не витрачено. Саме для цього ключ виводиться, а не генерується: ви один, у скількох браузерах не натискайте.",
+    "t.recv.h": "Чи може хтось надіслати вам секрет?",
+    "t.recv.p": "Лише якщо ваше ім’я ENS публікує ключ — цей запис і є вся згода, реєстрації в NextKey немає. Ключа ще немає? Досить одного підпису: нічого не створюється й не зберігається, ключ виходить із вашого гаманця й виходить із нього на будь-якій машині. Ім’я позичаємо ми, запис оплачуємо ми.",
+    "t.recv.at": "отримувач на"
   },
   "cn": {
     "b.write.p": "一个标题和一段正文，写入某个名字上的 <span class=\"mono\">nextkey.post</span>。不加密——这是同一套机制的公开一半。一个名字最多可承载五篇帖子；发布会占用第一个空位，而不是覆盖已有内容。持有者随时可以清空其中任何一篇。",
@@ -2268,7 +2289,7 @@
     "t.s2.badkey": "这个名称发布了 nextkey.pubkey 记录，但它无法作为密钥读取。",
     "t.s2.badkeynote": "密钥是 base64 编码的 32 字节。这条记录是别的东西——问题出在记录上而不是这个页面，名称的持有者需要重新写入。",
     "t.s2.recv.btn": "让我可以接收",
-    "t.s2.p": "一个发布了密钥的 ENS 名称——那条记录就是全部的授权，无需在 NextKey 注册。还没有密钥？第三个按钮用一次签名让你可以接收，不花 gas。",
+    "t.s2.p": "一个发布了密钥的 ENS 名称——那条记录就是全部的授权，无需在 NextKey 注册。没有特定的人？在这里创建一个演示 grant 同样可以试用。",
     "t.id.signing": "正在向你的钱包请求一次签名——它不转移任何东西，也不花钱……",
     "t.id.writing": "正在发布你的密钥——一条记录，由我们付 gas……",
     "t.id.done": "现在可以把秘密发送到",
@@ -2282,7 +2303,10 @@
     "t.claim.bad": "这个链接带的不是密钥，因此没有可用来打开的东西。请对方重新发一个。",
     "t.id.looking": "正在检查这个钱包在这里是否已经有名称……",
     "t.id.already": "你已经可以接收了——同一个钱包给出同一个密钥，所以这个名称仍然是你的：",
-    "t.id.alreadynote": "没有写入任何东西，也没有消耗名称。这正是密钥要派生而不是生成的原因：无论你在多少个浏览器里按，你都只有一个。"
+    "t.id.alreadynote": "没有写入任何东西，也没有消耗名称。这正是密钥要派生而不是生成的原因：无论你在多少个浏览器里按，你都只有一个。",
+    "t.recv.h": "有人能给你发秘密吗？",
+    "t.recv.p": "只有当你的 ENS 名称发布了密钥时才可以——那条记录就是全部的授权，无需在 NextKey 注册。还没有密钥？一次签名就够了：不生成任何东西，也不保存任何东西，密钥来自你的钱包，并且在任何设备上都能再次得出。名称由我们出借，记录由我们付费。",
+    "t.recv.at": "可接收于"
   },
   "fa": {
     "b.write.p": "یک عنوان و یک متن، نوشته‌شده در <span class=\"mono\">nextkey.post</span> روی یک نام. چیزی رمزگذاری نمی‌شود — این نیمهٔ عمومی همان سازوکار است. هر نام می‌تواند تا پنج نوشته داشته باشد؛ انتشار نخستین جای خالی را می‌گیرد و آنچه هست را جایگزین نمی‌کند. مالک هر کدام را هر وقت بخواهد خالی می‌کند.",
@@ -2553,7 +2577,7 @@
     "t.s2.badkey": "این نام یک رکورد nextkey.pubkey منتشر کرده، اما به‌عنوان کلید خوانا نیست.",
     "t.s2.badkeynote": "یک کلید ۳۲ بایت در base64 است. این رکورد چیز دیگری است — ایراد از رکورد است نه از این صفحه، و صاحب نام باید دوباره آن را بنویسد.",
     "t.s2.recv.btn": "مرا قابل دریافت کن",
-    "t.s2.p": "یک نام ENS که کلیدی منتشر می‌کند — همان رکورد تمام رضایت است و هیچ ثبت‌نامی در نکست‌کی وجود ندارد. هنوز کلید ندارید؟ دکمهٔ سوم با یک امضا و بدون گس شما را قابل دریافت می‌کند.",
+    "t.s2.p": "یک نام ENS که کلیدی منتشر می‌کند — همان رکورد تمام رضایت است و ثبت‌نامی در نکست‌کی وجود ندارد. کسی را در نظر ندارید؟ یک گرنت نمایشی که همین‌جا ساخته می‌شود هم برای امتحان کافی است.",
     "t.id.signing": "از کیف پول شما یک امضا خواسته می‌شود — چیزی جابه‌جا نمی‌کند و هزینه‌ای ندارد…",
     "t.id.writing": "در حال انتشار کلید شما — یک رکورد، با گس ما…",
     "t.id.done": "از حالا می‌توان رازها را برای شما فرستاد به",
@@ -2567,6 +2591,9 @@
     "t.claim.bad": "این پیوند چیزی دارد که کلید نیست، پس چیزی برای باز کردن وجود ندارد. یکی تازه بخواهید.",
     "t.id.looking": "در حال بررسی اینکه این کیف پول اینجا نامی دارد یا نه…",
     "t.id.already": "شما از قبل قابل دریافت هستید — همان کیف پول همان کلید را می‌دهد، پس این نام همچنان مال شماست:",
-    "t.id.alreadynote": "چیزی نوشته نشد و نامی مصرف نشد. دقیقاً برای همین کلید مشتق می‌شود نه ساخته: شما فقط یکی هستید، در هر چند مرورگری که این را بزنید."
+    "t.id.alreadynote": "چیزی نوشته نشد و نامی مصرف نشد. دقیقاً برای همین کلید مشتق می‌شود نه ساخته: شما فقط یکی هستید، در هر چند مرورگری که این را بزنید.",
+    "t.recv.h": "کسی می‌تواند رازی برای شما بفرستد؟",
+    "t.recv.p": "فقط اگر نام ENS شما کلیدی منتشر کند — همان رکورد تمام رضایت است و ثبت‌نامی در نکست‌کی وجود ندارد. هنوز کلید ندارید؟ یک امضا کافی است: چیزی ساخته و چیزی ذخیره نمی‌شود، کلید از کیف پول شما بیرون می‌آید و روی هر دستگاهی دوباره بیرون می‌آید. نام را ما قرض می‌دهیم و هزینهٔ رکورد را ما می‌پردازیم.",
+    "t.recv.at": "قابل دریافت در"
   }
 }

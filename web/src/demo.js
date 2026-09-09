@@ -179,7 +179,7 @@ const REQUIRED_ELEMENTS = [
   'phrase', 'gen', 'wallet-made', 'message-made', 'pane-message-box',
   'msg-edit', 'msg-edit-row', 'step1-state',
   's1-h', 's1-p', 's2-h', 's2-p',
-  'gen-recipient', 'be-receivable', 'r-out', 'ens-name', 'lookup',
+  'gen-recipient', 'be-receivable', 'recv-state', 'id-out', 'r-out', 'ens-name', 'lookup',
   'go-store', 'store-out',
   'step-chain', 'write-demo', 'demo-out', 'demo-state',
   'connect', 'wallet-out', 'own-name', 'publish', 'publish-out',
@@ -1032,7 +1032,7 @@ walletOut.addEventListener('click', (e) => {
  * changes the address, not the identity.
  */
 $('be-receivable').addEventListener('click', async () => {
-  const out = $('r-out')
+  const out = $('id-out')
   const eth = announced[0]?.provider ?? window.ethereum
   if (!eth) return offerDeepLinks()
   if (receiving) return
@@ -1061,8 +1061,7 @@ $('be-receivable').addEventListener('click', async () => {
       say(out, 'busy', `<p>${t('t.id.looking', 'Checking whether this wallet already has a name here…')}
         <span class="mono">${done}/${total}</span></p>`))
     if (already) {
-      S.recipient = { pk, label: already, local: false }
-      refreshReady()
+      receivableAt(already)
       return say(out, 'ok', `
         <p>${t('t.id.already', 'You are already receivable — the same wallet gives the same key, so this name is still yours:')} <span class="mono">${esc(already)}</span></p>
         <dl>
@@ -1095,8 +1094,8 @@ $('be-receivable').addEventListener('click', async () => {
       args: [node, RECORD_PUBKEY, value], chain: sepolia })
     await reader.waitForTransactionReceipt({ hash })
 
-    S.recipient = { pk, label: name, local: false }
     try { localStorage.setItem(REMEMBERED, JSON.stringify({ name, value })) } catch { /* fine */ }
+    receivableAt(name)
     say(out, 'ok', `
       <p>${t('t.id.done', 'You can now be sent secrets at')} <span class="mono">${esc(name)}</span>.</p>
       <dl>
@@ -1112,11 +1111,30 @@ $('be-receivable').addEventListener('click', async () => {
     refreshReady()
   } catch (e) {
     say(out, 'bad', `<p>${esc(plain(e))}</p>`)
+    // Only a failure re-arms the button. A success leaves it disabled, because
+    // pressing it again is meaningless: the same wallet derives the same key,
+    // and the second press could only spend a name or repeat an answer.
+    $('be-receivable').disabled = false
   } finally {
     receiving = false
-    $('be-receivable').disabled = false
   }
 })
+
+/**
+ * Once, and visibly once.
+ *
+ * The button stays pressed-out and the section says which name answers for this
+ * wallet. The recipient field is filled in but not confirmed: being receivable
+ * is about you, choosing a grant is about somebody else, and having the page
+ * quietly decide you are sending to yourself was the confusion that put this
+ * button in step 2 in the first place.
+ */
+function receivableAt(name) {
+  $('be-receivable').disabled = true
+  $('recv-state').textContent = `${t('t.recv.at', 'receivable at')} ${name}`
+  $('be-receivable-box').classList.add('done')
+  if (!$('ens-name').value.trim()) $('ens-name').value = name
+}
 
 async function connectWith(eth) {
   if (!eth) return offerDeepLinks()

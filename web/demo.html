@@ -403,6 +403,24 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 
 <main class="wrap">
 
+  <!-- Being receivable ─────────────────────────────────────────────────────
+       Deliberately not a numbered step and deliberately before them. The steps
+       answer "who do I send this to"; this answers "how does anyone send
+       anything to me", which is a different question asked by a different
+       person, and putting it inside step 2 made both of them harder to read. -->
+  <section class="step" id="be-receivable-box" style="padding-left:0">
+    <h2 data-i18n="t.recv.h">Can anyone send you a secret?</h2>
+    <p data-i18n="t.recv.p">Only if your ENS name publishes a key — that record is the whole of the opt-in, and
+      there is no registration with NextKey. If you have no key yet, one signature is enough: nothing is
+      generated and nothing is stored, the key comes out of your wallet and comes back out of it on any
+      machine. We lend you a name and pay for the record.</p>
+    <div class="row">
+      <button class="act ghost" id="be-receivable" type="button" data-i18n="t.s2.recv.btn">Make me receivable</button>
+      <span class="note" id="recv-state"></span>
+    </div>
+    <div class="out" id="id-out" hidden></div>
+  </section>
+
   <!-- 1 ─────────────────────────────────────────────────────────────────── -->
   <section class="step">
     <div class="n">1</div>
@@ -435,8 +453,8 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     <div class="n">2</div>
     <h2 id="s2-h" data-i18n="t.s2.h">Choose your grant</h2>
     <p id="s2-p" data-i18n="t.s2.p">An ENS name that publishes a key — that record is the whole of the opt-in,
-      and there is no registration with NextKey. No key yet? The third button makes you receivable in one
-      signature, with no gas.</p>
+      and there is no registration with NextKey. Nobody in mind? A demo grant made here works just as well
+      for trying it out.</p>
     <div class="row">
       <input type="text" id="ens-name" spellcheck="false" autocomplete="off"
              aria-label="A name on the hackathon deployment"
@@ -446,7 +464,6 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     <div class="row">
       <button class="act ghost" id="lookup" type="button" data-i18n="t.s2.look.btn">Confirm grant</button>
       <button class="act ghost" id="gen-recipient" type="button" data-i18n="t.s2.gen.btn">Create a demo grant</button>
-      <button class="act ghost" id="be-receivable" type="button" data-i18n="t.s2.recv.btn">Make me receivable</button>
     </div>
     <div class="out" id="r-out" hidden></div>
   </section>
