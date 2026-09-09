@@ -52,7 +52,7 @@ written from a phone with no wallet, the one written in a browser on a name
 outside our registry and opened from a command line, and the recovery in which
 MetaMask and viem reconstructed the same 32 bytes.
 
-**The bugs, and what they taught.** Four are worth naming because each changed
+**The bugs, and what they taught.** These are worth naming because each changed
 the code around it. `grantSetterRoles` binds to the record *key*, so a v2 grant
 whose tag is only computed in the visitor's browser cannot be delegated — found
 by reproducing it down to the revert selector `0x4b27a133`, and written up as
@@ -65,6 +65,17 @@ page and its bundle, cached separately on a static host, drift — the symptom w
 `Cannot set properties of null` on a page about cryptography, and the answer was
 `stamp-assets.mjs`.
 
+Three more came out of the later pages, and they have the same shape: a tool that
+answers a question you did not ask. viem's `getLogs` discards a raw `topics`
+option without a word, so filters that looked like they were running at the node
+never left the browser — which mattered exactly once, where a record id was being
+read out of an unfiltered result. viem also caches `getBlockNumber` for the length
+of its polling interval, which is long enough to make a live window ask a cache
+how new the chain is and go still. And a balance delta was being printed as a
+cost, so a top-up arriving mid-run reported a negative spend. In each case the
+correct value was already available — in the request, in an option, in the
+receipts — and the fix was to ask for it rather than to work around the answer.
+
 **The feedback documents.** `FEEDBACK-ENS.md`, `FEEDBACK-LEDGER.md` and
 `FEEDBACK-WORLD.md` report what the author hit while building against these
 SDKs. An assistant can draft a sentence; it cannot have the experience the
@@ -72,7 +83,11 @@ sentence is about.
 
 What did have substantial assistance: prose and documentation throughout, the
 nine translations, much of the test scaffolding, and boilerplate in the scripts
-and page code. Those commits say so in their trailers.
+and page code. In the final days that extended to the explorer, the community
+page and the donation page — drafted in a working session with the assistant,
+reviewed screen by screen by the author, and committed by him. Those commits say
+so in their trailers, and `HANDOVER.md` records the same division of labour for
+whoever continues.
 
 ## Statement
 

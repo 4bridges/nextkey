@@ -105,11 +105,53 @@ So a name now carries one ephemeral public key at `nextkey.eph`, written once an
 
 One ephemeral pair serves the whole name rather than one per recipient, because each recipient's ECDH lands somewhere else — a second grant shares no key material with the first. The recipient needs one scalar multiplication to find *and* open her grant, which is why a Ledger is asked to approve once rather than twice. The owner can recompute any recipient's address from that recipient's published key, which is why revocation still needs no index record.
 
+**And the ciphertext's length was metadata too.** AES-GCM does not pad, so a public ciphertext is
+exactly as long as its plaintext: a twelve-word phrase and a two-paragraph message are distinguishable
+without decrypting either. The explorer made that visible by printing the character count, and
+removing the number would have hidden the symptom rather than the cause. The secret is now padded to
+256-byte blocks before sealing, so every passphrase, credential and short message comes out the same
+size. A very long secret still lands in a higher block — the length is coarse rather than absent, and
+the page says that. Unpadding strips trailing NUL bytes, so every record written before this exists
+still opens unchanged.
+
 **What an observer gets.** A name with an ephemeral key, a ciphertext, and some records whose names are 32 hex characters. Not who has access, not how many recipients there are in any meaningful sense, and no way to test a guess. That property is not free: a v2 name in the explorer no longer reads as anything, and a working one looks identical to a broken one — which is why `nextkey.mjs eph <name>` exists to answer the two questions the explorer cannot.
 
 **v1 names still open.** `open` consults `nextkey.eph` first and falls back to the fingerprint scheme when there is none. The order is not politeness: a v2 grant lives at an address that cannot be guessed, so "no record here" is indistinguishable from "wrong scheme" unless the ephemeral key is read first.
 
 **The ephemeral private key must outlive the machine that made it**, or a name is frozen after one session and no second recipient can ever be added. Two independent routes back, so that losing either alone costs nothing: `nextkey.eph.sealed`, wrapped to the owner's own identity key; and derivation from a signature over a fixed message, which needs nothing stored at all. Whichever is used, the result is checked against the published `nextkey.eph` before anything is written, and when both are available they are compared with each other. Deterministic signing is what makes the second route a key rather than a coincidence — [measured, not assumed](./scripts/probe-signing.mjs), and confirmed on chain where the two routes agreed.
+
+### Reading the chain without an indexer
+
+Three pages show history — a name's writes, every record NextKey has made, the community's posts —
+and none of them has a server or an index. All three stand on two events, read off the deployment
+with [`probe-events.mjs`](./scripts/probe-events.mjs) rather than guessed at, because a wrong topic
+hash matches nothing and matching nothing looks exactly like a chain where nothing happened.
+
+| Topic | What it is |
+|---|---|
+| `0x66fd1d4e…` | a record being created — topic1 is the record id, topic2 is `namehash(name)` |
+| `0x14cf4389…` | `TextUpdated(uint256 recordId, string indexed key, string key, string value)` |
+
+Two properties of that second event carry more weight than they look. The key sits in the data
+**unindexed as well as indexed**, so a line can show `nextkey.g2.251c75…` in full instead of
+confirming a hash somebody already guessed — which is the only reason the history reads as prose. And
+the record-id-to-namehash pair is the sole bridge between an event and a name, running **one way
+only**: a name gives a namehash, a namehash never gives back a name. That is why the live window can
+say a grant was given and cannot say to whom, and why a post carries an author only when its creation
+event can be found.
+
+**A finding worth passing on: viem's `getLogs` silently discards a raw `topics` option.** It builds
+its filter from an `event` and its `args`, and anything else is dropped without a warning. Every topic
+filter here was therefore never sent — the node returned every log on the resolver and the browser
+did the selecting afterwards. Harmless for a list that gets filtered again on arrival; not harmless
+for the record id in the name history, which was being read out of whatever log came back first. The
+pages now issue `eth_getLogs` directly ([`web/src/nk-logs.mjs`](./web/src/nk-logs.mjs)), and the two
+topic hashes live in one module rather than in two copies that must agree.
+
+Public endpoints refuse wide ranges, so every walk probes for the widest window the node will serve
+and reports how far back it actually looked. A refusal is printed as a refusal. "The node would not
+answer" and "there is nothing there" are different statements, and a page that cannot tell them apart
+will eventually tell somebody the wrong one.
 
 ### Where the role model stopped, and what we did
 
@@ -211,6 +253,7 @@ This project builds against the dedicated ENSv2 hackathon deployment on Sepolia,
 | Permissioned Resolver for the lent names only | [`0x04B2DB6567Cc68d059c061215Adf9a99adD1cA65`](https://sepolia.etherscan.io/address/0x04B2DB6567Cc68d059c061215Adf9a99adD1cA65) |
 | Release AI-agent | `0xABCf3893FBe9802343f9b444575250Aa979Fb59c` |
 | The key the playground publishes | `0x45f0b8e270245e356A1760456ea84eDB8712C62b` — root roles on the resolver above, and on nothing else |
+| Names it may lend | `hero01` … `hero200` — 200 subnames set aside, listed in `web/src/demo-wallet.js`. A name is used up once it publishes its ephemeral key, so the playground needs a supply rather than a set |
 | `nextkeyv2.eth` — v2 outside our registry | resolver [`0x8CC85C123aBC579378A51153aCE7001E00756771`](https://sepolia.etherscan.io/address/0x8CC85C123aBC579378A51153aCE7001E00756771), attached through the `.eth` registry |
 
 The registry proxy address is deterministic: its salt is `keccak256(keccak256("UserRegistry"), namehash("nextkey.eth"), version)` with version `0`. Redeploying requires bumping the version, or the CREATE2 address collides.
@@ -396,6 +439,23 @@ npx serve web -l 8080     # then http://localhost:8080/poc.html
                           #  and http://localhost:8080/demo.html
 ```
 
+And the tests, which need no chain at all:
+
+```bash
+node web/test/v2.mjs           # 18 — the v2 construction, padding, backwards compatibility
+node web/test/interop.mjs      # 13 — browser and command line derive the same keys
+node web/test/playground.mjs   # 71 — demo.html driven in a real browser, in two languages
+node web/test/feed.mjs         # 43 — the explorer's live window and its filters
+node web/test/blog.mjs         # 42 — the community page, its names and its editing step
+node web/test/donate.mjs       # 21 — the donation page: address, QR code, balances
+```
+
+The last four answer a mocked node, which is what lets them assert what a reader ends up looking at:
+that a post arrives as a sentence rather than as the JSON it is stored in, that a date comes from the
+block rather than from the post's own claim, that a name appears only where it can be proved. The
+browser suites need Playwright (`npm install` brings it); what none of them can reach is writing,
+opening and revoking on a real chain, which is what [`evidence/`](./evidence) is for.
+
 Open `web/` over `http://`, not by double-clicking the file — ES modules are blocked
 on `file://` and the failure looks like a bug in the page.
 
@@ -455,12 +515,46 @@ resets periodically; if a name has vanished, re-register it.
 
 ---
 
-## Demo
+## The site
 
-- **Try it yourself:** https://nextkey.li/demo.html — the full loop in the browser, no wallet needed
-- Live view (this deployment's real records, read from Sepolia): https://nextkey.li/poc.html
-- About: https://nextkey.li
-- Demo video: <!-- TODO -->
+Six static pages, no framework, no server of ours. Every one of them reads the chain directly.
+
+| Page | What it is |
+|---|---|
+| [nextkey.li](https://nextkey.li) | What the project is, how it works, and the questions people actually ask |
+| [/demo](https://nextkey.li/demo) | **The playground** — the whole loop in the browser, no wallet needed |
+| [/explorer](https://nextkey.li/explorer) | What a name carries, in plain words — plus every NextKey record on the deployment, live |
+| [/blog](https://nextkey.li/blog) | Community posts: an ENS text record, written in the open, by people and AI-agents alike |
+| [/donate](https://nextkey.li/donate) | Keeping it running after the hackathon — address, QR code, and what has arrived |
+| [/poc](https://nextkey.li/poc) | The live view: this deployment's real records, read from Sepolia |
+
+Demo video: <!-- TODO -->
+
+### The explorer, and what it will not claim
+
+The official ENS explorer shows every record on a name correctly. Ours answers a narrower question in
+words instead of hex — what this name can do, what it is holding, and **what an observer can and
+cannot determine from it** — and then offers the visitor the attack itself: name somebody who
+publishes a key, and the page computes where their grant would live and looks. On a v1 name it finds
+it. On a v2 name it cannot even compute the address, and says why.
+
+Underneath it runs a live window over every `nextkey.*` record the resolver has ever written, newest
+first, refreshed while the page is open. Filters are asked of the node where the protocol allows it —
+posts and ciphertexts by their indexed key, one name by its record id — and **not** for grants, whose
+record name is derived and therefore unindexable. The same property that keeps a grant unattributable
+keeps it unfilterable, and the page says so rather than passing a partial list off as a complete one.
+
+### Community posts
+
+A post is one ENS text record at `nextkey.post`, in the clear: the exact mirror of a sealed secret,
+and the public half of the same mechanism. Anyone can publish — with their own wallet on their own
+name, or on a name we lend along with the gas — and anyone can edit or empty their own posts, because
+that is a write only the owner of a name can make.
+
+The page reads the chain's own events rather than a list of names in its source, so a post appears
+whoever wrote it. A name is shown **only** where a creation event proves which record it belongs to;
+otherwise the post stands without an author, because inventing one would be the single worst thing
+this page could do.
 
 The playground runs the same X25519 + HKDF-SHA256 + AES-256-GCM construction the command-line tool
 uses, not a stand-in for it. `node web/test/interop.mjs` proves it: it generates a grant with the Node
@@ -530,7 +624,26 @@ This project is submitted to three partner prizes:
 - [`FEEDBACK-WORLD.md`](./FEEDBACK-WORLD.md) — developer experience feedback for World
 - [`FEEDBACK-ENS.md`](./FEEDBACK-ENS.md) — developer experience feedback for ENS
 - [`FEEDBACK-LEDGER.md`](./FEEDBACK-LEDGER.md) — developer experience feedback for Ledger
+- [`HANDOVER.md`](./HANDOVER.md) — the complete handbook: how everything works, the rules, the addresses, the mistakes we made and what they taught us. Written so somebody with no context can continue
 - [`evidence/`](./evidence) — sponsor qualification evidence
+
+---
+
+## Keeping it running
+
+The project is open source and outlives the hackathon only if somebody pays for the names, the gas the
+playground hands out and the hosting. [nextkey.li/donate](https://nextkey.li/donate) has the address,
+a QR code carrying an EIP-681 payment link, and the option to send from the page — the wallet signs,
+the page holds no key.
+
+**Ethereum mainnet: `0x54Dd2Bc2f1Eb15A878C05ADfB58b90d68eA2EF14`**
+
+The page reads the balances from the chain and lists the stablecoin donations it can find. It does not
+list incoming ETH, and says so: a plain transfer emits no event, so without an indexer there is
+nothing to filter for. The balance counts it exactly; Etherscan has the rest. A donation count that
+quietly omitted ETH would be a number worse than no number.
+
+Nothing here is a purchase and nothing is owed in return.
 
 ---
 

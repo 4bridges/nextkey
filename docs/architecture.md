@@ -317,10 +317,27 @@ they care about.
 |---|---|
 | That a name holds a secret | **yes** — `nextkey.secret` is right there |
 | Roughly how many records it carries | **yes** |
+| What *kind* of secret it is, from the ciphertext's length | **no longer** — see below |
 | The plaintext | no — AES-256-GCM under a key they do not have |
 | Whether the secret is shared with a particular person | no, and no query would tell them |
 | Which record belongs to whom | no — the address comes out of an ECDH |
 | That access was revoked rather than never granted | no — both are an empty record |
+
+**The length row used to read yes.** AES-GCM does not pad, so a ciphertext is
+exactly as long as its plaintext and the ciphertext is a public record: a
+twelve-word phrase and a two-paragraph message are distinguishable without
+decrypting either. Our own explorer made it visible by printing the character
+count, which is how it was noticed. Hiding the number would have hidden the
+symptom; the secret is now padded to 256-byte blocks before sealing, so every
+passphrase, credential and short message comes out the same size.
+
+Honest about the residue: a very long secret still lands in a higher block, so
+the length is coarse rather than absent. Only the payload is padded — the wrapped
+keys are fixed-length key material already, and padding them would triple three
+records that leak nothing. Unpadding strips trailing NUL bytes, so records
+written before padding existed still open unchanged, and the one thing lost is a
+secret that deliberately ends in NUL bytes, which is not something a passphrase,
+a key or a typed message contains.
 
 The last two rows are what version 2 bought. The first two are the honest cost
 of putting anything on a public chain, and no amount of design removes them.
@@ -332,6 +349,45 @@ would change nothing about any record already written.
 
 **What we could not do even if compelled.** Decrypt anything. There is no key to
 hand over.
+
+---
+
+## Reading it back out
+
+Three pages show history — one name's writes, every record NextKey has made, the
+community's posts — and none of them has a server or an index. All three stand on
+two events on the resolver, read off the deployment rather than guessed at:
+
+| Topic | What it is |
+|---|---|
+| `0x66fd1d4e…` | a record being created. topic1 = record id, topic2 = `namehash(name)` |
+| `0x14cf4389…` | `TextUpdated(uint256 recordId, string indexed key, string key, string value)` |
+
+Two properties of the second one decide what these pages can say.
+
+**The key is in the data as well as indexed.** So a line can print
+`nextkey.g2.251c75…` in full rather than confirming a hash somebody already
+guessed. Had it been indexed only, no page could ever *show* a grant record — it
+could only test a name it had already thought of, which is the v1 attack wearing
+a different hat.
+
+**Record id ↔ namehash runs one way.** A name gives a namehash; a namehash never
+gives back a name. This is why the live window can say a grant was given and
+cannot say to whom, and why a community post carries an author only when its
+creation event can be found and matched. It is the same one-way property the
+whole design rests on, met from the other side.
+
+**What an indexer would add, and why there isn't one.** Counting every grant on a
+name, listing every name in the world that carries a post, showing incoming ETH
+donations: each needs an index over events, which a page served from static files
+does not have. Every one of those places says so rather than showing a number
+that would be quietly incomplete.
+
+**A limit of the public endpoint, not of the design.** Public RPCs refuse wide
+log ranges. Each walk probes for the widest window the node will serve, reports
+how far back it actually looked, and prints a refusal as a refusal — because "the
+node would not answer" and "there is nothing there" are different statements, and
+a page that cannot tell them apart will eventually tell somebody the wrong one.
 
 ---
 
@@ -349,6 +405,9 @@ hand for the demo. It is not a deployed service and is not described as one.
 **The release AI-agent** runs locally. Its ENS namespace, its single delegated role
 and the boundary it cannot cross are real and on chain; the process that drives
 them is a script on a laptop.
+
+**No indexer.** Grant counts, a global list of posts and incoming ETH donations
+all need one. Each place that would want it says what it cannot show instead.
 
 **Storage is a text record.** Small secrets — a passphrase, a seed phrase — fit.
 Files do not, and would need IPFS or similar. That is a stretch goal and was

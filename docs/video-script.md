@@ -2,6 +2,14 @@
 
 **Target 3:30, hard limits 2:00–4:00. Minimum 720p. Your own voice, no synthetic narration.**
 
+> **Status, 9 September 2026 — read before shooting.** This script predates the
+> explorer, the community page and the donation page, and it predates the pool of
+> two hundred lendable names. Its structure still holds: show the thing, then say
+> what it means. What it does not yet contain is the shot that has become the
+> strongest thirty seconds available — the explorer offering the visitor the
+> attack, succeeding on a v1 name and failing on a v2 one, on screen, in real
+> time. Rewrite the middle around that before filming.
+
 The rule for every line below: show the thing, then say what it means. Not the
 other way round. A judge who mutes the audio should still follow the story, and a
 judge who only listens should still learn something. Nothing is claimed here that
