@@ -8,6 +8,7 @@
   "scripts": {
     "build": "npm run build:bundles && node scripts/stamp-assets.mjs",
     "build:bundles": "esbuild web/src/app.js --bundle --format=esm --minify --target=es2022 --outfile=web/app.js && esbuild web/src/demo.js --bundle --format=esm --minify --target=es2022 --outfile=web/demo.js && esbuild web/src/explorer.js --bundle --format=esm --minify --target=es2022 --outfile=web/explorer.js && esbuild web/src/blog.js --bundle --format=esm --minify --target=es2022 --outfile=web/blog.js && esbuild web/src/donate.js --bundle --format=esm --minify --target=es2022 --outfile=web/donate.js",
+    "build:contract": "node scripts/build-contract.mjs",
     "verify:stamps": "node scripts/stamp-assets.mjs --check",
     "test": "npm run test:crypto && npm run test:pages",
     "test:crypto": "node web/test/v2.mjs && node web/test/interop.mjs",
@@ -39,6 +40,7 @@
   },
   "devDependencies": {
     "esbuild": "0.28.2",
-    "playwright": "^1.63.0"
+    "playwright": "^1.63.0",
+    "solc": "0.8.28"
   }
 }

@@ -947,3 +947,88 @@ reader looking.
 
 **Deliberately not built before the deadline:** a free subname the visitor
 actually *owns*. See `docs/architecture.md`, "How this scales".
+
+## 2026-09-09 (night) — a rule that lives in a key is not a rule
+
+The free subname works, and the honest note under it was that nothing limits it.
+`ROLE_REGISTRAR` is one bit: whoever holds it may call `register()` as often as
+they like until somebody takes the bit away. Held by a key the page carries, the
+only real limits are that key's balance and how fast we notice. "One name per
+address" was, until now, a sentence in the page's JavaScript — which is to say a
+request, not a limit, since the same call can be made from a terminal.
+
+So the role moves off the key and into a contract: `contracts/NextKeyNames.sol`.
+It holds the role; the rules live where the chain enforces them.
+
+- **One name per address, ever.** `nameOf[to]` is written *before* the external
+  `register()` call, so a registry that re-entered would find the allowance
+  already spent rather than a second one.
+- **A hard cap**, chosen and not defaulted — a cap is a promise about the most
+  this can ever cost and the most junk it can ever create.
+- **A deny list**, and a pause that stops new claims without reaching into a
+  single existing name.
+- **`claim(label, to)` may be called by `to` themselves — paying their own gas —
+  or by a relayer the operator names**, which is how the page can give somebody
+  a name without asking them for gas. Nobody else, so a stranger cannot burn a
+  victim's one allowance on a name they did not want.
+
+What it deliberately cannot do matters as much. It holds no funds, has no
+payable function, cannot transfer a name, cannot edit a name's records and
+cannot take one back. Revoking its role, pausing it, or losing the operator key
+leaves every name already handed out exactly where it is — and
+`renounceOperator()` exists so that can be proved rather than promised.
+
+**The compiler could not run here.** `npm install solc` was refused by this
+container's egress policy with a 403. Reporting that is the whole of the
+correct response; routing around it would produce bytecode nobody could
+reproduce. `scripts/build-contract.mjs` compiles with solc-js, optimizer at 200
+runs, and records the compiler version and the optimizer settings *in the
+artifact* — the same argument as pinning esbuild exactly: bytecode that cannot
+be reproduced is bytecode nobody can check. `contracts/NextKeyNames.json` is
+committed for the same reason the web bundles once were: the deployment is a
+static step and must not need a build.
+
+**Deployed, granted and proved** — in that order, and the page still knows
+nothing about it. `0x7716…ca98` on Sepolia, cap 500, one year per name.
+
+Two things surfaced between deploy and proof, both worth keeping.
+
+**`grantRoles(0, ROLE_REGISTRAR, …)` reverts.** The selector was `0xc2842458`,
+which viem could not name because it is not in our ABI; recomputed by hand it is
+`EACRootResourceNotAllowed()`. Root roles have their own entry points —
+`grantRootRoles` / `revokeRootRoles` / `hasRootRoles` — and passing 0 to the
+ordinary ones is refused on purpose, because a role on the root resource applies
+to every name in the registry and granting one is a different act. Reading with
+`hasRoles(0, …)` is allowed; only writing is not. That is why the failure read
+like a permission problem when it was an addressing problem.
+
+The rule this project keeps relearning held again: **do not guess an ABI, ask
+the contract.** `scripts/probe-roles.mjs` puts eight candidate signatures to the
+deployed registry with `eth_call` — nothing signed, no gas — and separates the
+three cases that otherwise look identical: *ok*, *exists and refused with a
+named reason*, and *empty revert, that selector is not here*. The last is the
+same trap as `register` taking a string where the documentation said bytes32.
+The per-name `grantRoles` / `revokeRoles` / `hasRoles` were then **removed** from
+`name-registrar.mjs`'s ABI rather than left beside the root ones: an ABI that
+offers both invites the next reader to pick the one whose failure mode is a bare
+selector.
+
+**`check` was printing a sentence that had quietly become false.** "balance …
+this is the cap on how many names it can ever mint" is true of a key and
+meaningless of a contract, which pays no gas of its own — its callers do. It now
+asks whether the account has code and says the right thing for what it found.
+
+**What the proof actually proves.** `scripts/prove-names.mjs` makes a throwaway
+key, funds it with 0.01 Sepolia ETH and runs five assertions against the chain:
+a stranger can claim paying their own gas; the registry names *them* as owner;
+the contract recorded which name went to them; a second claim reverts
+`AlreadyClaimed`; a claim *for* somebody else reverts `NotYoursToClaim`; an
+existing name reverts `LabelTaken`. All held. Using the owner key as the
+claimant would have been easier and would have proved the wrong thing — the
+owner is not a stranger, and its single allowance would have been spent for good
+on a test. The fourth assertion is the one worth a transaction: without it a
+passer-by could burn a victim's one allowance on a name they never wanted, and
+nothing would look wrong until somebody complained.
+
+The name that run created belongs to a key that no longer exists. That is not a
+loose end, it is the demonstration: the contract cannot take it back either.
