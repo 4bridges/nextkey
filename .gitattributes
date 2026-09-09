@@ -9,9 +9,19 @@
 #
 # linguist-generated collapses them in pull-request diffs and keeps them out of
 # GitHub's language statistics.
+#
+# eol=lf is not cosmetic here, and it was learned the hard way. Every page
+# carries a content hash of i18n.js written by scripts/stamp-assets.mjs. The
+# file is produced with LF and stored with LF, but on Windows git checks it out
+# with CRLF by default — different bytes, different hash. A fresh clone
+# therefore re-stamped all six pages before a single test ran, and the promise
+# that a clone reproduces what is committed held only on the machine that made
+# it. Pinned to LF, the hash is the same everywhere.
 
-web/i18n.js         linguist-generated=true
-web/i18n.stamp.json linguist-generated=true
+web/i18n.js         text eol=lf linguist-generated=true
+web/i18n.stamp.json text eol=lf linguist-generated=true
 
-# web/i18n.patch.json is NOT listed: it is the hand-edited input, and its diffs
-# are the ones worth reading.
+# web/i18n.patch.json is NOT listed as generated: it is the hand-edited input,
+# and its diffs are the ones worth reading. It is pinned to LF all the same,
+# because i18n-merge.mjs reads it and a stray CR would travel into a string.
+web/i18n.patch.json text eol=lf

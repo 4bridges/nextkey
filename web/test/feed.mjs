@@ -229,9 +229,16 @@ await page.click('#feed-chips button[data-f="name"]')
 // above: the previous filter's fill can still be in flight and land on top of
 // this message a moment later. Reading the element after the wait therefore
 // failed on some runs and passed on others, which is worse than either.
-check('the name filter asks for a name first', await page.waitForFunction(
+const askedForName = await page.waitForFunction(
   () => /Type a name to see only its writes/.test(document.getElementById('feed-out').textContent),
-  null, { timeout: 15_000 }).then(() => true).catch(() => false))
+  null, { timeout: 15_000 }).then(() => true).catch(() => false)
+check('the name filter asks for a name first', askedForName)
+// A failed check that will not say what it saw instead is the error class this
+// project keeps rediscovering, so it says.
+if (!askedForName) {
+  const saw = (await page.textContent('#feed-out')).trim().replace(/\s+/g, ' ')
+  console.log(`      (the window said instead: ${saw.slice(0, 200)}${saw.length > 200 ? '…' : ''})`)
+}
 check('and offers a field to type it in', !(await page.locator('#feed-namerow').isHidden()))
 
 await page.goto(`${base}/explorer.html?show=post`, { waitUntil: 'networkidle' })
