@@ -181,3 +181,8 @@ vite.config.ts.timestamp-*
 /web/explorer.js
 /web/blog.js
 /web/donate.js
+
+# Where deliveries from the assistant land on the author's machine. Working
+# material, not the project.
+/Claude outputs/
+/setup-claude outputs/

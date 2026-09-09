@@ -50,9 +50,17 @@ const digest = (s) => createHash('sha256').update(s).digest('hex').slice(0, 12)
 // pressed looks itself up through t('key', 'English fallback').
 const used = new Map()   // key → English source text, where we can see it
 
+// All four spellings, not one. The overlay translates data-i18n (text),
+// data-i18n-html (markup), data-i18n-ph (a placeholder) and data-i18n-title (a
+// tooltip) — this loop knew only the first, so 46 keys were outside the check
+// while it reported everything present: the whole FAQ, the blog's form, and the
+// legal notices. Five of them turned out to be untranslated in all nine
+// languages and had been shipping English to every reader. A checker that does
+// not know a spelling cannot report it, which is the same lesson as the two
+// pages that were once missing from PAGES, one line further up.
 for (const page of PAGES) {
   const html = readFileSync(join(WEB, page), 'utf8')
-  for (const m of html.matchAll(/data-i18n="([^"]+)"/g)) {
+  for (const m of html.matchAll(/data-i18n(?:-html|-ph|-title)?="([^"]+)"/g)) {
     if (!used.has(m[1])) used.set(m[1], null)   // English lives in the element
   }
 }
