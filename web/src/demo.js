@@ -45,6 +45,7 @@ import {
   b64, un64, randomSecret, publicKeyOf,
   seal, unseal,
   RECORD_EPH, ephMessage, ephSecretFromSignature, padSecret, unpadSecret,
+  identityMessage, identitySecretFromSignature,
   grantForV2, locateGrantV2, openGrantV2,
   locateAckV2, ackKeyForSender,
 } from './nk-crypto.mjs'
@@ -178,7 +179,7 @@ const REQUIRED_ELEMENTS = [
   'phrase', 'gen', 'wallet-made', 'message-made', 'pane-message-box',
   'msg-edit', 'msg-edit-row', 'step1-state',
   's1-h', 's1-p', 's2-h', 's2-p',
-  'gen-recipient', 'r-out', 'ens-name', 'lookup',
+  'gen-recipient', 'be-receivable', 'r-out', 'ens-name', 'lookup',
   'go-store', 'store-out',
   'step-chain', 'write-demo', 'demo-out', 'demo-state',
   'connect', 'wallet-out', 'own-name', 'publish', 'publish-out',
@@ -649,8 +650,13 @@ const freePoolName = async () => {
   const shuffled = [...POOL].sort(() => Math.random() - 0.5)
   for (let i = 0; i < shuffled.length; i += 5) {
     const batch = shuffled.slice(i, i + 5).map((l) => `${l}.${PARENT}`)
-    const taken = await Promise.all(batch.map((n) =>
-      reader.getEnsText({ name: n, key: RECORD_EPH }).catch(() => 'unreadable')))
+    const taken = await Promise.all(batch.map(async (n) => {
+      const [eph, pub] = await Promise.all([
+        reader.getEnsText({ name: n, key: RECORD_EPH }).catch(() => 'unreadable'),
+        reader.getEnsText({ name: n, key: RECORD_PUBKEY }).catch(() => 'unreadable'),
+      ])
+      return eph || pub
+    }))
     const free = batch.find((_, k) => !taken[k])
     if (free) return free
   }
@@ -765,6 +771,7 @@ const demoOut = $('demo-out')
  * sitting there looking pressable.
  */
 let writing = false
+let receiving = false
 
 $('write-demo').addEventListener('click', async () => {
   if (writing) return
@@ -910,6 +917,93 @@ $('connect').addEventListener('click', async () => {
 walletOut.addEventListener('click', (e) => {
   const pick = e.target.closest('[data-wallet]')
   if (pick) connectWith(announced[Number(pick.dataset.wallet)].provider)
+})
+
+/**
+ * Becoming receivable, in one signature and no gas.
+ *
+ * This is the answer to the question the rest of the page raises: encrypting to
+ * somebody needs their public key, so a name without one can receive nothing —
+ * and asking an ordinary person to generate a key, keep it for ever, own a name
+ * and pay for a transaction is four walls, of which they climb none.
+ *
+ * So none of the four happens here. The key is *derived* from one signature
+ * with the wallet they already have, so nothing is created and nothing has to
+ * be kept: the same wallet gives the same key back on any machine, for ever.
+ * The name is lent from the pool and the record is written by the page's own
+ * account, so no gas is asked for. What is left for the visitor is: connect,
+ * sign once.
+ *
+ * The honest limits, stated on the page as well as here: the name is borrowed
+ * rather than owned, and the same signature on a name of their own would give
+ * them the identical key — which is the point. Moving to their own name later
+ * changes the address, not the identity.
+ */
+$('be-receivable').addEventListener('click', async () => {
+  const out = $('r-out')
+  const eth = announced[0]?.provider ?? window.ethereum
+  if (!eth) return offerDeepLinks()
+  if (receiving) return
+  receiving = true
+  $('be-receivable').disabled = true
+  try {
+    const [addr] = await eth.request({ method: 'eth_requestAccounts' })
+    try {
+      await eth.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0xaa36a7' }] })
+    } catch { /* checked next */ }
+    const chainId = await eth.request({ method: 'eth_chainId' })
+    if (parseInt(chainId, 16) !== 11155111) return say(out, 'bad', `
+      <p>${t('t.s6.wrongchain', 'That wallet is not on Sepolia.')}</p>
+      <p class="note">${t('t.s6.wrongchainnote', 'The hackathon ENS deployment lives on Sepolia. Switch the network and connect again.')}</p>`)
+
+    say(out, 'busy', `<p>${t('t.id.signing', 'Asking your wallet for one signature — it moves nothing and costs nothing…')}</p>`)
+    const signer = createWalletClient({ account: addr, chain: sepolia, transport: custom(eth) })
+    const sig = await signer.signMessage({ message: identityMessage() })
+    const sk = identitySecretFromSignature(sig)
+    const pk = publicKeyOf(sk)
+
+    say(out, 'busy', `<p>${t('t.chain.finding', 'Finding a name that is still free…')}</p>`)
+    const name = await freePoolName()
+    if (!name) throw new Error(t('t.chain.exhausted',
+      'Every name we lend out has been used. That is a good problem and a real one — each name holds exactly one secret, and this pool is finite. Use your own wallet and your own name below, or come back once we have topped it up.'))
+
+    const node = toHex(packetToBytes(name))
+    const abi = SHAPES[0].abi
+    const account = demoAccount()
+    const value = b64(pk)
+
+    say(out, 'busy', `<p>${t('t.s6.simulating', 'Checking the write would succeed, before asking you to sign…')}</p>`)
+    await reader.simulateContract({
+      address: POOL_RESOLVER, abi, functionName: 'setText',
+      args: [node, RECORD_PUBKEY, value], account: account.address })
+
+    say(out, 'busy', `<p>${t('t.id.writing', 'Publishing your key — one record, our gas…')}</p>`)
+    const w = createWalletClient({ account, chain: sepolia, transport: http(RPC) })
+    const hash = await w.writeContract({
+      address: POOL_RESOLVER, abi, functionName: 'setText',
+      args: [node, RECORD_PUBKEY, value], chain: sepolia })
+    await reader.waitForTransactionReceipt({ hash })
+
+    S.recipient = { pk, label: name, local: false }
+    say(out, 'ok', `
+      <p>${t('t.id.done', 'You can now be sent secrets at')} <span class="mono">${esc(name)}</span>.</p>
+      <dl>
+        <dt>${t('t.name', 'name')}</dt><dd class="mono">${esc(name)}</dd>
+        <dt>${t('t.pubkey', 'published key')}</dt><dd class="mono break">${esc(value)}</dd>
+        <dt>${t('t.id.from', 'derived from')}</dt><dd class="mono break">${esc(addr)}</dd>
+      </dl>
+      <p class="note"><a href="https://sepolia.etherscan.io/tx/${esc(hash)}" target="_blank" rel="noopener noreferrer">${t('t.tx', 'transaction')}</a></p>
+      ${why(t('t.why', 'Why this matters'), `
+        <p>${t('t.id.note1', 'Nothing was generated and nothing was stored. That key came out of your signature and comes back out of it every time, on any machine you can sign from — lose this browser, this page and this name, and the key is still yours.')}</p>
+        <p>${t('t.id.note2', 'The name is lent, not owned: it is one of this project\'s names, and the record was written and paid for by this page. Publish the same key on a name you own and the address changes while the identity does not, because the key was never tied to the name.')}</p>`)}`,
+      { step: 2, recipient: 'derived', name, publicKey: value, from: addr })
+    refreshReady()
+  } catch (e) {
+    say(out, 'bad', `<p>${esc(plain(e))}</p>`)
+  } finally {
+    receiving = false
+    $('be-receivable').disabled = false
+  }
 })
 
 async function connectWith(eth) {

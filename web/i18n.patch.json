@@ -267,7 +267,16 @@
     "t.s2.noname": "Diesen Namen gibt es auf diesem Deployment nicht.",
     "t.s2.nonamenote": "Dies ist das ENSv2-Hackathon-Deployment auf Sepolia — eine eigene Welt neben Produktions-ENS: ein Name, den du dort hältst, ist hier unbekannt. Versuche anna.nextkey.eth oder bob.nextkey.eth, oder registriere einen Namen auf diesem Deployment.",
     "t.s2.badkey": "Dieser Name veröffentlicht einen nextkey.pubkey-Record, aber er ist nicht als Schlüssel lesbar.",
-    "t.s2.badkeynote": "Ein Schlüssel sind 32 Bytes in Base64. Dieser Record ist etwas anderes — der Fehler liegt also im Record und nicht in dieser Seite; wer den Namen besitzt, muss ihn neu schreiben."
+    "t.s2.badkeynote": "Ein Schlüssel sind 32 Bytes in Base64. Dieser Record ist etwas anderes — der Fehler liegt also im Record und nicht in dieser Seite; wer den Namen besitzt, muss ihn neu schreiben.",
+    "t.s2.recv.btn": "Mach mich empfangsbereit",
+    "t.s2.p": "Ein ENS-Name, der einen Schlüssel veröffentlicht — dieser Record ist das ganze Opt-in, eine Anmeldung bei NextKey gibt es nicht. Noch kein Schlüssel? Der dritte Knopf macht dich mit einer Signatur empfangsbereit, ohne Gas.",
+    "t.id.signing": "Deine Wallet wird um eine Signatur gebeten — sie bewegt nichts und kostet nichts…",
+    "t.id.writing": "Dein Schlüssel wird veröffentlicht — ein Record, unser Gas…",
+    "t.id.done": "Ab jetzt können dir Geheimnisse geschickt werden an",
+    "t.id.from": "abgeleitet aus",
+    "t.id.note1": "Nichts wurde erzeugt und nichts gespeichert. Dieser Schlüssel kam aus deiner Signatur und kommt jedes Mal wieder daraus — auf jedem Gerät, mit dem du signieren kannst. Verlierst du diesen Browser, diese Seite und diesen Namen, ist der Schlüssel weiterhin deiner.",
+    "t.id.note2": "Der Name ist geliehen, nicht besitzt: er gehört diesem Projekt, und der Record wurde von dieser Seite geschrieben und bezahlt. Veröffentliche denselben Schlüssel auf einem eigenen Namen, und die Adresse ändert sich, die Identität nicht — weil der Schlüssel nie an den Namen gebunden war.",
+    "t.tx": "Transaktion"
   },
   "fr": {
     "b.write.p": "Un titre et un texte, écrits dans <span class=\"mono\">nextkey.post</span> sur un nom. Rien n’est chiffré — c’est la moitié publique du même mécanisme. Un nom peut porter jusqu’à cinq billets ; la publication prend le premier emplacement libre au lieu de remplacer l’existant. Le propriétaire peut vider n’importe lequel à tout moment.",
@@ -539,7 +548,16 @@
     "t.s2.noname": "Ce nom n'existe pas sur ce déploiement.",
     "t.s2.nonamenote": "Il s'agit du déploiement bêta ENSv2 sur Sepolia, un monde distinct de l'ENS de production : un nom que vous détenez là-bas est inconnu ici. Essayez anna.nextkey.eth ou bob.nextkey.eth, ou enregistrez un nom sur ce déploiement.",
     "t.s2.badkey": "Ce nom publie un enregistrement nextkey.pubkey, mais il ne se lit pas comme une clé.",
-    "t.s2.badkeynote": "Une clé fait 32 octets en base64. Cet enregistrement est autre chose : le défaut est dans l’enregistrement et non dans cette page, et son propriétaire doit le réécrire."
+    "t.s2.badkeynote": "Une clé fait 32 octets en base64. Cet enregistrement est autre chose : le défaut est dans l’enregistrement et non dans cette page, et son propriétaire doit le réécrire.",
+    "t.s2.recv.btn": "Rendez-moi joignable",
+    "t.s2.p": "Un nom ENS qui publie une clé — cet enregistrement est tout le consentement, et il n'y a aucune inscription chez NextKey. Pas encore de clé ? Le troisième bouton vous rend joignable en une signature, sans frais.",
+    "t.id.signing": "Votre portefeuille reçoit une demande de signature — elle ne déplace rien et ne coûte rien…",
+    "t.id.writing": "Publication de votre clé — un enregistrement, à nos frais…",
+    "t.id.done": "On peut désormais vous envoyer des secrets à",
+    "t.id.from": "dérivée de",
+    "t.id.note1": "Rien n'a été généré ni conservé. Cette clé est sortie de votre signature et en ressort à chaque fois, sur toute machine où vous pouvez signer. Perdez ce navigateur, cette page et ce nom : la clé reste la vôtre.",
+    "t.id.note2": "Le nom est prêté, pas possédé : il appartient à ce projet, et l'enregistrement a été écrit et payé par cette page. Publiez la même clé sur un nom qui vous appartient et l'adresse change, l'identité non — car la clé n'a jamais été liée au nom.",
+    "t.tx": "transaction"
   },
   "it": {
     "b.write.p": "Un titolo e un testo, scritti in <span class=\"mono\">nextkey.post</span> su un nome. Nulla viene cifrato — è la metà pubblica dello stesso meccanismo. Un nome può portare fino a cinque post; la pubblicazione occupa il primo posto libero invece di sostituire quanto c’è. Il proprietario può svuotarne uno qualsiasi in qualsiasi momento.",
@@ -809,7 +827,16 @@
     "t.s2.noname": "Questo nome non esiste su questo deployment.",
     "t.s2.nonamenote": "Questo è il deployment hackathon di ENSv2 su Sepolia, un mondo separato dall'ENS di produzione: un nome che possiedi lì qui è sconosciuto. Prova anna.nextkey.eth o bob.nextkey.eth, oppure registra un nome su questo deployment.",
     "t.s2.badkey": "Questo nome pubblica un record nextkey.pubkey, ma non è leggibile come chiave.",
-    "t.s2.badkeynote": "Una chiave è di 32 byte in base64. Questo record è altro: il difetto sta nel record e non in questa pagina, e chi possiede il nome deve riscriverlo."
+    "t.s2.badkeynote": "Una chiave è di 32 byte in base64. Questo record è altro: il difetto sta nel record e non in questa pagina, e chi possiede il nome deve riscriverlo.",
+    "t.s2.recv.btn": "Rendimi ricevibile",
+    "t.s2.p": "Un nome ENS che pubblica una chiave — quel record è tutto il consenso, e non esiste alcuna registrazione presso NextKey. Ancora senza chiave? Il terzo pulsante ti rende ricevibile con una firma e senza gas.",
+    "t.id.signing": "Al tuo wallet viene chiesta una firma — non muove nulla e non costa nulla…",
+    "t.id.writing": "Pubblicazione della tua chiave — un record, il nostro gas…",
+    "t.id.done": "Da ora ti si possono inviare segreti a",
+    "t.id.from": "derivata da",
+    "t.id.note1": "Non è stato generato né conservato nulla. Quella chiave è uscita dalla tua firma e ne esce ogni volta, su qualsiasi macchina da cui puoi firmare. Perdi questo browser, questa pagina e questo nome: la chiave resta tua.",
+    "t.id.note2": "Il nome è prestato, non posseduto: appartiene a questo progetto, e il record è stato scritto e pagato da questa pagina. Pubblica la stessa chiave su un nome tuo e cambia l’indirizzo, non l’identità — perché la chiave non è mai stata legata al nome.",
+    "t.tx": "transazione"
   },
   "es": {
     "b.write.p": "Un título y un texto, escritos en <span class=\"mono\">nextkey.post</span> sobre un nombre. Nada se cifra — es la mitad pública del mismo mecanismo. Un nombre puede llevar hasta cinco entradas; al publicar se ocupa el primer hueco libre en lugar de reemplazar lo que hay. El propietario puede vaciar cualquiera cuando quiera.",
@@ -1079,7 +1106,16 @@
     "t.s2.noname": "Ese nombre no existe en este despliegue.",
     "t.s2.nonamenote": "Este es el despliegue del hackathon de ENSv2 en Sepolia, un mundo aparte del ENS de producción: un nombre que tengas allí aquí es desconocido. Prueba anna.nextkey.eth o bob.nextkey.eth, o registra un nombre en este despliegue.",
     "t.s2.badkey": "Ese nombre publica un registro nextkey.pubkey, pero no se puede leer como una clave.",
-    "t.s2.badkeynote": "Una clave son 32 bytes en base64. Este registro es otra cosa: el fallo está en el registro y no en esta página, y quien posee el nombre debe volver a escribirlo."
+    "t.s2.badkeynote": "Una clave son 32 bytes en base64. Este registro es otra cosa: el fallo está en el registro y no en esta página, y quien posee el nombre debe volver a escribirlo.",
+    "t.s2.recv.btn": "Hazme receptivo",
+    "t.s2.p": "Un nombre ENS que publica una clave: ese registro es todo el consentimiento, y no hay registro en NextKey. ¿Todavía sin clave? El tercer botón te vuelve receptivo con una firma y sin gas.",
+    "t.id.signing": "Se pide una firma a tu cartera: no mueve nada y no cuesta nada…",
+    "t.id.writing": "Publicando tu clave: un registro, nuestro gas…",
+    "t.id.done": "Ya se te pueden enviar secretos a",
+    "t.id.from": "derivada de",
+    "t.id.note1": "No se generó ni se guardó nada. Esa clave salió de tu firma y vuelve a salir cada vez, en cualquier máquina desde la que puedas firmar. Pierde este navegador, esta página y este nombre: la clave sigue siendo tuya.",
+    "t.id.note2": "El nombre es prestado, no propio: pertenece a este proyecto, y el registro lo escribió y pagó esta página. Publica la misma clave en un nombre tuyo y cambia la dirección, no la identidad, porque la clave nunca estuvo atada al nombre.",
+    "t.tx": "transacción"
   },
   "pt": {
     "b.write.p": "Um título e um texto, escritos em <span class=\"mono\">nextkey.post</span> num nome. Nada é cifrado — é a metade pública do mesmo mecanismo. Um nome pode levar até cinco publicações; publicar ocupa o primeiro lugar livre em vez de substituir o que lá está. O dono pode esvaziar qualquer uma a qualquer momento.",
@@ -1349,7 +1385,16 @@
     "t.s2.noname": "Esse nome não existe neste deployment.",
     "t.s2.nonamenote": "Este é o deployment do hackathon de ENSv2 na Sepolia, um mundo à parte do ENS de produção: um nome que detenha lá é desconhecido aqui. Experimente anna.nextkey.eth ou bob.nextkey.eth, ou registe um nome neste deployment.",
     "t.s2.badkey": "Esse nome publica um registo nextkey.pubkey, mas não é legível como uma chave.",
-    "t.s2.badkeynote": "Uma chave são 32 bytes em base64. Este registo é outra coisa: a falha está no registo e não nesta página, e quem detém o nome tem de o escrever de novo."
+    "t.s2.badkeynote": "Uma chave são 32 bytes em base64. Este registo é outra coisa: a falha está no registo e não nesta página, e quem detém o nome tem de o escrever de novo.",
+    "t.s2.recv.btn": "Torne-me recetível",
+    "t.s2.p": "Um nome ENS que publica uma chave — esse registo é todo o consentimento, e não há inscrição na NextKey. Ainda sem chave? O terceiro botão torna-o recetível com uma assinatura e sem gás.",
+    "t.id.signing": "É pedida uma assinatura à sua carteira — não move nada e não custa nada…",
+    "t.id.writing": "A publicar a sua chave — um registo, o nosso gás…",
+    "t.id.done": "A partir de agora podem enviar-lhe segredos para",
+    "t.id.from": "derivada de",
+    "t.id.note1": "Nada foi gerado nem guardado. Essa chave saiu da sua assinatura e volta a sair sempre, em qualquer máquina onde possa assinar. Perca este navegador, esta página e este nome: a chave continua sua.",
+    "t.id.note2": "O nome é emprestado, não seu: pertence a este projeto, e o registo foi escrito e pago por esta página. Publique a mesma chave num nome seu e muda o endereço, não a identidade — porque a chave nunca esteve ligada ao nome.",
+    "t.tx": "transação"
   },
   "ru": {
     "b.write.p": "Заголовок и текст, записанные в <span class=\"mono\">nextkey.post</span> на имени. Ничего не шифруется — это публичная половина того же механизма. Имя может нести до пяти записей; публикация занимает первое свободное место, а не заменяет то, что есть. Владелец может очистить любое из них в любой момент.",
@@ -1619,7 +1664,16 @@
     "t.s2.noname": "Такого имени в этом развёртывании нет.",
     "t.s2.nonamenote": "Это хакатонное развёртывание ENSv2 в Sepolia — отдельный мир от боевого ENS: имя, которым вы владеете там, здесь неизвестно. Попробуйте anna.nextkey.eth или bob.nextkey.eth либо зарегистрируйте имя в этом развёртывании.",
     "t.s2.badkey": "Это имя публикует запись nextkey.pubkey, но она не читается как ключ.",
-    "t.s2.badkeynote": "Ключ — это 32 байта в base64. Эта запись — что-то другое: ошибка в записи, а не на этой странице, и владелец имени должен записать её заново."
+    "t.s2.badkeynote": "Ключ — это 32 байта в base64. Эта запись — что-то другое: ошибка в записи, а не на этой странице, и владелец имени должен записать её заново.",
+    "t.s2.recv.btn": "Сделать меня получателем",
+    "t.s2.p": "Имя ENS, публикующее ключ, — эта запись и есть всё согласие, регистрации в NextKey нет. Ключа ещё нет? Третья кнопка делает вас получателем одной подписью и без газа.",
+    "t.id.signing": "У кошелька запрашивается подпись — она ничего не двигает и ничего не стоит…",
+    "t.id.writing": "Публикуем ваш ключ — одна запись, наш газ…",
+    "t.id.done": "Теперь вам можно отправлять секреты на",
+    "t.id.from": "выведен из",
+    "t.id.note1": "Ничего не создавалось и не сохранялось. Этот ключ вышел из вашей подписи и выходит из неё каждый раз, на любой машине, где вы можете подписать. Потеряйте этот браузер, эту страницу и это имя — ключ всё равно ваш.",
+    "t.id.note2": "Имя одолжено, а не принадлежит вам: оно проекта, а запись написала и оплатила эта страница. Опубликуйте тот же ключ на своём имени — изменится адрес, а не личность, потому что ключ никогда не был привязан к имени.",
+    "t.tx": "транзакция"
   },
   "ua": {
     "b.write.p": "Заголовок і текст, записані в <span class=\"mono\">nextkey.post</span> на імені. Нічого не шифрується — це публічна половина того самого механізму. Ім’я може нести до п’яти дописів; публікація займає перше вільне місце, а не замінює наявне. Власник може спорожнити будь-яке з них будь-коли.",
@@ -1889,7 +1943,16 @@
     "t.s2.noname": "Такого імені в цьому розгортанні немає.",
     "t.s2.nonamenote": "Це хакатонне розгортання ENSv2 у Sepolia — окремий світ від бойового ENS: ім’я, яким ви володієте там, тут невідоме. Спробуйте anna.nextkey.eth або bob.nextkey.eth чи зареєструйте ім’я в цьому розгортанні.",
     "t.s2.badkey": "Це ім’я публікує запис nextkey.pubkey, але він не читається як ключ.",
-    "t.s2.badkeynote": "Ключ — це 32 байти в base64. Цей запис — щось інше: помилка в записі, а не на цій сторінці, і власник імені має записати його наново."
+    "t.s2.badkeynote": "Ключ — це 32 байти в base64. Цей запис — щось інше: помилка в записі, а не на цій сторінці, і власник імені має записати його наново.",
+    "t.s2.recv.btn": "Зробити мене отримувачем",
+    "t.s2.p": "Ім’я ENS, яке публікує ключ, — цей запис і є вся згода, реєстрації в NextKey немає. Ключа ще немає? Третя кнопка робить вас отримувачем одним підписом і без газу.",
+    "t.id.signing": "У гаманця запитується підпис — він нічого не рухає й нічого не коштує…",
+    "t.id.writing": "Публікуємо ваш ключ — один запис, наш газ…",
+    "t.id.done": "Тепер вам можна надсилати секрети на",
+    "t.id.from": "виведено з",
+    "t.id.note1": "Нічого не створювалося й не зберігалося. Цей ключ вийшов із вашого підпису й виходить із нього щоразу, на будь-якій машині, де ви можете підписати. Втратьте цей браузер, цю сторінку та це ім’я — ключ усе одно ваш.",
+    "t.id.note2": "Ім’я позичене, а не ваше: воно належить проєкту, а запис написала й оплатила ця сторінка. Опублікуйте той самий ключ на власному імені — зміниться адреса, а не особа, бо ключ ніколи не був прив’язаний до імені.",
+    "t.tx": "транзакція"
   },
   "cn": {
     "b.write.p": "一个标题和一段正文，写入某个名字上的 <span class=\"mono\">nextkey.post</span>。不加密——这是同一套机制的公开一半。一个名字最多可承载五篇帖子；发布会占用第一个空位，而不是覆盖已有内容。持有者随时可以清空其中任何一篇。",
@@ -2154,7 +2217,16 @@
     "t.s2.noname": "这个名称在此部署上不存在。",
     "t.s2.nonamenote": "这里是 Sepolia 上的 ENSv2 黑客松部署，与生产环境的 ENS 是两个世界：你在那边持有的名称，在这里并不存在。试试 anna.nextkey.eth 或 bob.nextkey.eth，或者在这个部署上注册一个名称。",
     "t.s2.badkey": "这个名称发布了 nextkey.pubkey 记录，但它无法作为密钥读取。",
-    "t.s2.badkeynote": "密钥是 base64 编码的 32 字节。这条记录是别的东西——问题出在记录上而不是这个页面，名称的持有者需要重新写入。"
+    "t.s2.badkeynote": "密钥是 base64 编码的 32 字节。这条记录是别的东西——问题出在记录上而不是这个页面，名称的持有者需要重新写入。",
+    "t.s2.recv.btn": "让我可以接收",
+    "t.s2.p": "一个发布了密钥的 ENS 名称——那条记录就是全部的授权，无需在 NextKey 注册。还没有密钥？第三个按钮用一次签名让你可以接收，不花 gas。",
+    "t.id.signing": "正在向你的钱包请求一次签名——它不转移任何东西，也不花钱……",
+    "t.id.writing": "正在发布你的密钥——一条记录，由我们付 gas……",
+    "t.id.done": "现在可以把秘密发送到",
+    "t.id.from": "派生自",
+    "t.id.note1": "没有生成任何东西，也没有保存任何东西。这个密钥来自你的签名，并且每次都会再次由它得出——在任何你能签名的设备上。丢了这个浏览器、这个页面和这个名称，密钥依然是你的。",
+    "t.id.note2": "这个名称是借来的，不是你的：它属于这个项目，记录由本页写入并付费。把同一个密钥发布到你自己的名称上，变的是地址而不是身份——因为密钥从来没有和名称绑在一起。",
+    "t.tx": "交易"
   },
   "fa": {
     "b.write.p": "یک عنوان و یک متن، نوشته‌شده در <span class=\"mono\">nextkey.post</span> روی یک نام. چیزی رمزگذاری نمی‌شود — این نیمهٔ عمومی همان سازوکار است. هر نام می‌تواند تا پنج نوشته داشته باشد؛ انتشار نخستین جای خالی را می‌گیرد و آنچه هست را جایگزین نمی‌کند. مالک هر کدام را هر وقت بخواهد خالی می‌کند.",
@@ -2423,6 +2495,15 @@
     "t.s2.noname": "این نام در این استقرار وجود ندارد.",
     "t.s2.nonamenote": "این استقرار هکاتونی ENSv2 روی Sepolia است، دنیایی جدا از ENS اصلی: نامی که آنجا دارید اینجا ناشناخته است. anna.nextkey.eth یا bob.nextkey.eth را امتحان کنید، یا نامی روی همین استقرار ثبت کنید.",
     "t.s2.badkey": "این نام یک رکورد nextkey.pubkey منتشر کرده، اما به‌عنوان کلید خوانا نیست.",
-    "t.s2.badkeynote": "یک کلید ۳۲ بایت در base64 است. این رکورد چیز دیگری است — ایراد از رکورد است نه از این صفحه، و صاحب نام باید دوباره آن را بنویسد."
+    "t.s2.badkeynote": "یک کلید ۳۲ بایت در base64 است. این رکورد چیز دیگری است — ایراد از رکورد است نه از این صفحه، و صاحب نام باید دوباره آن را بنویسد.",
+    "t.s2.recv.btn": "مرا قابل دریافت کن",
+    "t.s2.p": "یک نام ENS که کلیدی منتشر می‌کند — همان رکورد تمام رضایت است و هیچ ثبت‌نامی در نکست‌کی وجود ندارد. هنوز کلید ندارید؟ دکمهٔ سوم با یک امضا و بدون گس شما را قابل دریافت می‌کند.",
+    "t.id.signing": "از کیف پول شما یک امضا خواسته می‌شود — چیزی جابه‌جا نمی‌کند و هزینه‌ای ندارد…",
+    "t.id.writing": "در حال انتشار کلید شما — یک رکورد، با گس ما…",
+    "t.id.done": "از حالا می‌توان رازها را برای شما فرستاد به",
+    "t.id.from": "مشتق‌شده از",
+    "t.id.note1": "چیزی ساخته و چیزی ذخیره نشد. آن کلید از امضای شما بیرون آمد و هر بار دوباره از آن بیرون می‌آید، روی هر دستگاهی که بتوانید با آن امضا کنید. این مرورگر، این صفحه و این نام را از دست بدهید، کلید همچنان مال شماست.",
+    "t.id.note2": "این نام قرضی است، نه مال شما: به این پروژه تعلق دارد و رکورد را همین صفحه نوشته و هزینه‌اش را داده است. همان کلید را روی نام خودتان منتشر کنید؛ نشانی عوض می‌شود، هویت نه — چون کلید هرگز به نام گره نخورده بود.",
+    "t.tx": "تراکنش"
   }
 }

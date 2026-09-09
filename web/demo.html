@@ -434,8 +434,9 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   <section class="step">
     <div class="n">2</div>
     <h2 id="s2-h" data-i18n="t.s2.h">Choose your grant</h2>
-    <p id="s2-p" data-i18n="t.s2.p">A name on ENS, any public address. Your grant will receive it — no need to
-      register with NextKey.</p>
+    <p id="s2-p" data-i18n="t.s2.p">An ENS name that publishes a key — that record is the whole of the opt-in,
+      and there is no registration with NextKey. No key yet? The third button makes you receivable in one
+      signature, with no gas.</p>
     <div class="row">
       <input type="text" id="ens-name" spellcheck="false" autocomplete="off"
              aria-label="A name on the hackathon deployment"
@@ -445,6 +446,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     <div class="row">
       <button class="act ghost" id="lookup" type="button" data-i18n="t.s2.look.btn">Confirm grant</button>
       <button class="act ghost" id="gen-recipient" type="button" data-i18n="t.s2.gen.btn">Create a demo grant</button>
+      <button class="act ghost" id="be-receivable" type="button" data-i18n="t.s2.recv.btn">Make me receivable</button>
     </div>
     <div class="out" id="r-out" hidden></div>
   </section>
@@ -615,7 +617,7 @@ nextkey.mjs revoke &lt;label&gt; &lt;recipient&gt;</pre>
   </p>
 </footer>
 
-<script src="./i18n.js?v=d391ba65"></script>
+<script src="./i18n.js?v=61df6e2a"></script>
 <script>
 /**
  * The same overlay as the other two pages, same storage keys, so a language or
@@ -771,6 +773,6 @@ nextkey.mjs revoke &lt;label&gt; &lt;recipient&gt;</pre>
   label()
 })()
 </script>
-<script type="module" src="./demo.js?v=b79ec7bb"></script>
+<script type="module" src="./demo.js?v=145f52bd"></script>
 </body>
 </html>
