@@ -9,7 +9,7 @@ Format: **what was decided** · why · what was rejected and why not.
 ## 2026-09-04 — Kickoff
 
 **Slot 3 goes to Chainlink Confidential Workflows, not Ledger.**
-Ledger's AI AI-agents track pays more ($3,500 vs $2,000) and fits the motto well — it rewards a clear boundary between autonomous and approved actions. It was dropped once Chainlink Labs confirmed in Discord that `cre workflow simulate` runs confidential workflows without beta access, and the prize accepts a CLI simulation as evidence. Rationale: solo developer, nine days left. Ledger meant an AI-agent stack, DMK, a hardware flow and a second developer-experience feedback document; Chainlink encodes the release condition, which is core product logic we are building anyway. Execution risk outweighed the larger pot.
+Ledger's AI Agents track pays more ($3,500 vs $2,000) and fits the motto well — it rewards a clear boundary between autonomous and approved actions. It was dropped once Chainlink Labs confirmed in Discord that `cre workflow simulate` runs confidential workflows without beta access, and the prize accepts a CLI simulation as evidence. Rationale: solo developer, nine days left. Ledger meant an AI-agent stack, DMK, a hardware flow and a second developer-experience feedback document; Chainlink encodes the release condition, which is core product logic we are building anyway. Execution risk outweighed the larger pot.
 
 **The release AI-agent survives that reversal.** It keeps its own ENS namespace holding exactly one role — propose a release, never read, never release. This also satisfies ENS's stated bonus criterion for the hackathon (*AI-agents as namespaces, each with their own identity and permissions*), so the AI-agent now pays into two slots instead of one.
 
@@ -622,3 +622,37 @@ libuv is still closing the RPC socket, and Node aborts with an assertion in
 `async.c` — *after* the command has printed its answer, so a successful run looks
 like a crash and the exit code becomes meaningless. Both are ordinary branches
 now.
+
+---
+
+## 2026-09-09 (later) — World comes out of the documentation, not out of the log
+
+**World ID is removed from the README, `docs/architecture.md` and
+`AI_USAGE.md`, and `FEEDBACK-WORLD.md` is deleted.** Sandbox access was
+requested on the first day and never arrived. For four days the documents
+carried a section describing a Selfie Check flow, marked *designed, not built* —
+which was honest, and still the wrong shape: a reader arriving at a submission
+should meet what exists, not a tour of what does not. Three sponsor slots are
+filled, so the section was documenting an intention rather than a deliverable.
+
+**What replaced it, rather than what was cut.** The recovery story stays, minus
+the liveness half: guardians confirm, the entry under *What is not built* now
+says recovery is designed and not implemented in those words, and the two README
+cross-references that pointed at the deleted Prize-tracks note were rewritten
+instead of left dangling. `### The release AI-agent, and what stops it` had been
+nested under the World heading and is now a section of its own, which is where it
+always belonged.
+
+**This entry stays, and so does the entry above it.** The 2026-09-04 note
+explaining why Ledger took the third slot from World is history, and the
+repository note in the README promises a history that can be read rather than
+trusted. Deleting the reasoning to make the outcome look inevitable would cost
+more than the paragraph is worth.
+
+**A rename that had struck twice.** Replacing *agent* with *AI-agent* across the
+site had produced `AI AI-agents × Ledger` in the prize table — Ledger's track is
+called **AI Agents × Ledger** — the same doubling in this log, `Can an AI
+AI-agent hold a wallet safely?` in the FAQ and its JSON-LD copy, and four
+translations reading *agente de IA de IA*, *agent IA IA*, *agente IA IA*. A
+blanket substitution cannot see a word it has already produced. Fixed at source
+and in the nine languages, then re-stamped.
