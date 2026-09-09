@@ -774,3 +774,21 @@ inside Chromium, and prints 26. The suites together are **221**, not 208. The
 figure had stood since the suites were written and could not be caught by
 anyone who could not run them — which is the same finding as above, wearing a
 different hat.
+
+**The pin was not enough, and a fresh clone said so.** With the bundles removed
+the claim was: a clone rebuilds the same bytes, so the content hashes stamped
+into the committed pages still hold. Cloned from GitHub, the first thing the
+build did was re-stamp all six pages — `i18n.js` had a different hash there than
+here. `i18n-merge.mjs` writes it with LF and git stores LF, but Windows checks it
+out with CRLF, and the stamp hashes bytes. The bundles were never exposed to
+this: they are gitignored and esbuild writes LF every time. It is `eol=lf` in
+`.gitattributes` now, and the second clone built without stamping anything and
+ran 221 green — which is the first time the repository has been shown to
+reproduce itself on a machine other than the one that wrote it.
+
+One check moved with it. `the name filter asks for a name first` failed in every
+run where the build had just rewritten HTML underneath the test's own server,
+and passed in every run where it had not — five for five. That is a correlation
+across five runs, not a proven cause, and it is recorded as such; the trigger is
+gone with the stamping, and the check now prints what the window said instead,
+so a return would arrive with its evidence attached.
