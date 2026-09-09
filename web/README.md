@@ -1,4 +1,4 @@
-# nextkey.li — six static pages
+# nextkey.li — eight static pages
 
 No framework, no build step for the HTML, no server of ours. Run `npm run build` once for
 the five bundles, then upload the contents of this folder to the web root at Cyon and the
@@ -10,7 +10,9 @@ poc.html           the live view — records that already exist, read from chain
 demo.html          the playground — make one yourself, no wallet required
 explorer.html      what a name carries, and every NextKey record, live
 blog.html          community posts: write one, edit one, read them all
-donate.html        address, QR code, and what has arrived
+donate.html        the ENS name, the address, the QR code, and the donations
+imprint.html       who runs this, and what it does not promise
+privacy.html       what is collected, and what a public chain keeps for good
 
 app.js             bundled reader for index.html and poc.html  — built, not in git
 demo.js            bundled logic for demo.html                 — built, not in git
@@ -23,14 +25,14 @@ i18n.stamp.json    the English baseline the checker compares against
 .htaccess          cache rules, and addresses without the extension
 
 src/               the sources the bundles are built from
-test/              six suites, 221 checks
+test/              seven suites, 259 checks
 brand/             the mark, icons, social card and manifest
 ```
 
 ## Deploy
 
 Everything is a plain file with relative paths, so the site also works from a
-subdirectory. Upload the six `.html`, the five bundles, `i18n.js`, `.htaccess` and the
+subdirectory. Upload the eight `.html`, the five bundles, `i18n.js`, `.htaccess` and the
 whole `brand/` folder. `src/`, `test/`, `i18n.patch.json`, `i18n.stamp.json` and this
 README are not needed on the server.
 
@@ -40,7 +42,7 @@ are there. A mismatch produces a red banner naming what is missing, with a link 
 copy — a better failure than "Cannot set properties of null", which is the one a judge on
 a phone actually hit when MetaMask's in-app browser served a cached `demo.html` beside a
 current `demo.js`. `i18n.js` is stamped the same way, so a change there means re-uploading
-all six pages.
+all eight pages.
 
 `demo.js` is about 200 KB gzipped, most of it viem and the BIP-39 word list. That is heavy
 for a static site and the trade is deliberate: bundling means the page has no CDN to be
@@ -313,7 +315,8 @@ node web/test/interop.mjs      # 26 — the same 13 checks in Node and again in 
 node web/test/playground.mjs   # 71 — demo.html in a real browser, in two languages
 node web/test/feed.mjs         # 43 — the explorer's live window and its filters
 node web/test/blog.mjs         # 42 — the community page, its names and its editing step
-node web/test/donate.mjs       # 21 — the donation page: address, QR code, balances
+node web/test/donate.mjs       # 23 — the donation page: the ENS name, the address, the QR code, balances
+node web/test/legal.mjs        # 36 — the imprint and the privacy notice
 ```
 
 The four newer suites answer a **mocked node**: Playwright intercepts the RPC calls and

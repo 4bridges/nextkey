@@ -442,9 +442,9 @@ merges into and it cannot be rebuilt from `i18n.patch.json` alone.
 And the tests, which need no chain at all:
 
 ```bash
-npm test                       # all six suites, 221 checks
+npm test                       # all seven suites, 259 checks
 npm run test:crypto            # 44 — no bundle needed, and only interop wants a browser
-npm run test:pages             # 177 — builds first, then drives the pages in Chromium
+npm run test:pages             # 215 — builds first, then drives the pages in Chromium
 
 node web/test/v2.mjs           # 18 — the v2 construction, padding, backwards compatibility
 node web/test/interop.mjs      # 26 — browser and command line derive the same keys:
@@ -452,7 +452,8 @@ node web/test/interop.mjs      # 26 — browser and command line derive the same
 node web/test/playground.mjs   # 71 — demo.html driven in a real browser, in two languages
 node web/test/feed.mjs         # 43 — the explorer's live window and its filters
 node web/test/blog.mjs         # 42 — the community page, its names and its editing step
-node web/test/donate.mjs       # 21 — the donation page: address, QR code, balances
+node web/test/donate.mjs       # 23 — the donation page: the ENS name, the address, the QR code, balances
+node web/test/legal.mjs        # 36 — the imprint and the privacy notice: what they must say, and what they must not load
 ```
 
 The last four answer a mocked node, which is what lets them assert what a reader ends up looking at:

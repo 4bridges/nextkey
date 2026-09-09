@@ -12,7 +12,7 @@
     "test": "npm run test:crypto && npm run test:pages",
     "test:crypto": "node web/test/v2.mjs && node web/test/interop.mjs",
     "pretest:pages": "npm run build",
-    "test:pages": "node web/test/playground.mjs && node web/test/feed.mjs && node web/test/blog.mjs && node web/test/donate.mjs"
+    "test:pages": "node web/test/playground.mjs && node web/test/feed.mjs && node web/test/blog.mjs && node web/test/donate.mjs && node web/test/legal.mjs"
   },
   "repository": {
     "type": "git",
