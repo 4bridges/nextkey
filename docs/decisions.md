@@ -792,3 +792,78 @@ and passed in every run where it had not — five for five. That is a correlatio
 across five runs, not a proven cause, and it is recorded as such; the trigger is
 gone with the stamping, and the check now prints what the window said instead,
 so a return would arrive with its evidence attached.
+
+---
+
+## 2026-09-09 (evening) — an imprint, a privacy notice, and a checker that could not see a third of what it checked
+
+**Two legal pages, in all ten languages.** Swiss law (UWG Art. 3 lit. s) wants a
+site like this to name who runs it and how to reach them; that is the small part.
+The imprint also says what NextKey is *not* — no bank, no custodian, no server of
+ours — that the licence carries no warranty and the code is unaudited, that a
+donation on a public chain cannot be reversed, and that the ENS, Chainlink and
+Ledger marks belong to their owners and imply no endorsement. That last paragraph
+protects the project in both directions: against a sponsor reading a footer link
+as a partnership, and against a fork taking the name along with the code.
+
+**The privacy notice is the one worth reading, and it says two things most do
+not.** Every chain read leaves the visitor's browser for a public node, so the
+node operator sees their IP address *and which names they look up* — on a site
+whose subject is confidentiality, that had to be stated rather than discovered.
+And anything already written to the chain is beyond erasure or rectification by
+anyone, including us and including a court: the notice draws the consequence
+before the fact, that the decision belongs before writing rather than after, and
+warns that posts under a lent name are attributable to that name.
+
+**Ten languages was the author's call against the assistant's recommendation.**
+The risk in shipping unreviewed legal translations is real, so it is met rather
+than ignored: the text is deliberately short and plain, every block was checked
+to carry the same tag skeleton as the English it replaces — a translation that
+loses a `<strong>` loses the emphasis the sentence exists for — and each language
+carries the sentence that the English version is the binding one.
+
+**The footers were rebuilt.** Home is a house icon, first, on every page; the
+imprint and the privacy notice are reachable from every page, because a legal
+notice that is only on the landing page is not reachable. The three partners are
+named rather than badged. And `foot.lic` had been saying **MIT License** since the
+relicensing the night before, on every page, linking to a file that says AGPL.
+
+**A seventh test suite, and what it is for.** 36 checks on the two legal pages.
+Not that paragraphs exist — that the operator and one contact address are named,
+that the licence and the trademarks are named correctly, and that the two
+sentences that carry the weight survive future edits: *which names you look up*
+and *cannot be fulfilled for data that is already on chain*. Two checks are
+guards rather than assertions: neither page may load a bundle, so neither can
+fall out of step with one, and neither may fetch anything from outside this
+origin — which is the claim the notice itself makes.
+
+**The find of the evening was the checker.** `i18n-check.mjs` looked for
+`data-i18n` and nothing else. The overlay also translates `data-i18n-html`,
+`data-i18n-ph` and `data-i18n-title`, so **46 keys were outside the check while it
+reported everything present**: the entire FAQ on the landing page, the blog's
+form, and 15 of the 22 blocks written that evening. Five of them were
+untranslated in all nine languages and had been shipping English placeholders to
+every reader — the blog's title, body and name fields, and the explorer's name
+field. The site uses **539 keys**, not the 494 the README claimed; 494 was what a
+checker that could not see 46 of them reported.
+
+Two lines above the loop that caused it stands a comment about the same mistake
+in another guise: two pages had once been missing from `PAGES`, and *"a checker
+that does not know about a file cannot report it."* This time it did not know a
+spelling. The lesson has now been learned twice in the same file, which is a
+reason to write it down rather than to be embarrassed by it.
+
+**And one real bug in the explorer, found by a check that had been dismissed as
+flaky three times.** Choosing a filter set `feed.width` to null while a read was
+still in flight; the running loop then computed `to > null`, BigInt against null,
+and the visitor read *"Could not read the events"* on a page where nothing was
+wrong. Underneath was the actual defect: `feedSelect` answers some branches
+without starting a fill — an empty name, a cached answer — so the generation
+guard never advanced and the previous read painted its result over the message
+the visitor was looking at. The width is held locally now, a superseded fill
+paints nothing at all including its errors, and choosing a view retires whatever
+is in flight before anything else.
+
+It became visible only when the test was made to print *what the page said
+instead* of merely that a selector never appeared. Every failure today that
+looked like a flake was a real defect wearing a bad error message.
