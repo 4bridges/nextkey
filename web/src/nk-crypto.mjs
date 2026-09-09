@@ -137,6 +137,7 @@ export const RECORD_EPH = 'nextkey.eph'
 export const RECORD_EPH_SEALED = 'nextkey.eph.sealed'
 
 const INFO_EPH = 'nextkey/v2/eph'
+const INFO_ID = 'nextkey/v2/identity'
 const INFO_WRAP = 'nextkey/v2/wrap'
 const INFO_TAG = 'nextkey/v2/tag'
 const INFO_SEAL = 'nextkey/v2/eph-seal'
@@ -194,6 +195,38 @@ export const ephMessage = (name) => [
 
 export const ephSecretFromSignature = (signature, name) =>
   hkdf(sha256, unhex(signature), utf8.encode(INFO_EPH), utf8.encode(name), 32)
+
+/**
+ * The identity key, derived rather than generated.
+ *
+ * The first version of this made a random X25519 secret and wrote it to a file:
+ * a brand-new thing to guard, which no ordinary person guards well, and whose
+ * loss costs every secret ever sent to them. This derives the same key from a
+ * signature instead. Nothing is created, so nothing has to be kept: the wallet
+ * the person already protects is the whole of the backup, and the key comes
+ * back byte for byte on any machine they can sign from.
+ *
+ * The message carries no name. An identity belongs to a wallet, not to a name,
+ * so one signature serves every ENS name that person holds — and the key stays
+ * the same when they move it to another name.
+ *
+ * `nextkey/v2/identity` is a new info string, not a changed one. Every key
+ * derived before this existed still derives exactly as it did.
+ */
+export const identityMessage = () => [
+  'NextKey — derive your identity key',
+  '',
+  'version: 2',
+  '',
+  'This signature is not a transaction. It moves nothing, approves nothing and',
+  'costs nothing. It derives the key other people encrypt to when they send you',
+  'a secret — the same key every time, from this wallet alone, so there is no',
+  'file to keep and nothing to lose. Sign it only on a NextKey page you opened',
+  'yourself, and never because someone asked you to.',
+].join('\n')
+
+export const identitySecretFromSignature = (signature) =>
+  hkdf(sha256, unhex(signature), utf8.encode(INFO_ID), utf8.encode('identity'), 32)
 
 export const sealEphSecret = async (ephSk, ownerPub) => {
   const wSk = randomSecret()

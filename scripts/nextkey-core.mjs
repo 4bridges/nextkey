@@ -102,6 +102,12 @@ export const signAsOwner = (message) => {
   return writer.signMessage({ message })
 }
 
+/** Which wallet the signature above would come from. */
+export const writerAddress = () => {
+  if (!writer) throw new Error('REGISTRAR_PRIVATE_KEY not set — no wallet configured')
+  return writer.account.address
+}
+
 /** Read the way a client reads: through the Universal Resolver. */
 export const readRecord = (name, key) => reader.getEnsText({ name, key })
 
@@ -151,6 +157,28 @@ export const loadIdentity = (name) => {
         const { ledgerSharedSecret } = await import('./ledger.mjs')
         return ledgerSharedSecret(ephPub, j.path)
       },
+    }
+  }
+
+  // A derived identity keeps no private half on disk either. The file records
+  // which address it belongs to; the key itself comes back from one signature,
+  // here and on any other machine that can sign with the same wallet. The
+  // address is checked before signing, because signing with the wrong wallet
+  // would silently derive a different key and the failure would surface much
+  // later, as a grant that will not open.
+  if (j.derived === 'wallet') {
+    const sk = () => {
+      if (!writer) throw new Error('REGISTRAR_PRIVATE_KEY not set — nothing to derive from')
+      if (writer.account.address.toLowerCase() !== String(j.address).toLowerCase()) {
+        throw new Error(
+          `identity "${name}" belongs to ${j.address}, but the configured wallet is ` +
+          `${writer.account.address}. Deriving with this one would produce a different key.`)
+      }
+      return signAsOwner(identityMessage()).then(identitySecretFromSignature)
+    }
+    return {
+      name, pk, derived: 'wallet', address: j.address,
+      sharedWith: async (ephPub) => x25519.getSharedSecret(await sk(), ephPub),
     }
   }
 
@@ -298,6 +326,7 @@ export const padSecret = (text) => {
 export const unpadSecret = (text) => text.replace(/\u0000+$/, '')
 
 const INFO_EPH = 'nextkey/v2/eph'
+const INFO_ID = 'nextkey/v2/identity'
 const INFO_WRAP = 'nextkey/v2/wrap'
 const INFO_TAG = 'nextkey/v2/tag'
 const INFO_SEAL = 'nextkey/v2/eph-seal'
@@ -364,6 +393,38 @@ export const ephMessage = (name) => [
  *  bytes are a usable secret key. */
 export const ephSecretFromSignature = (signature, name) =>
   hkdf(sha256, hexToBytes(signature), utf8(INFO_EPH), utf8(name), 32)
+
+/**
+ * The identity key, derived rather than generated.
+ *
+ * The first version of this made a random X25519 secret and wrote it to a file:
+ * a brand-new thing to guard, which no ordinary person guards well, and whose
+ * loss costs every secret ever sent to them. This derives the same key from a
+ * signature instead. Nothing is created, so nothing has to be kept: the wallet
+ * the person already protects is the whole of the backup, and the key comes
+ * back byte for byte on any machine they can sign from.
+ *
+ * The message carries no name. An identity belongs to a wallet, not to a name,
+ * so one signature serves every ENS name that person holds — and the key stays
+ * the same when they move it to another name.
+ *
+ * `nextkey/v2/identity` is a new info string, not a changed one. Every key
+ * derived before this existed still derives exactly as it did.
+ */
+export const identityMessage = () => [
+  'NextKey — derive your identity key',
+  '',
+  'version: 2',
+  '',
+  'This signature is not a transaction. It moves nothing, approves nothing and',
+  'costs nothing. It derives the key other people encrypt to when they send you',
+  'a secret — the same key every time, from this wallet alone, so there is no',
+  'file to keep and nothing to lose. Sign it only on a NextKey page you opened',
+  'yourself, and never because someone asked you to.',
+].join('\n')
+
+export const identitySecretFromSignature = (signature) =>
+  hkdf(sha256, hexToBytes(signature), utf8(INFO_ID), utf8('identity'), 32)
 
 /**
  * Wrap the name's ephemeral private key to the owner's own identity key.

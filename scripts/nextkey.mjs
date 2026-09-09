@@ -50,6 +50,7 @@ import {
   randomX25519Secret, seal, unseal, grantFor, openGrant,
   readRecord, setRecord, shareSecret, signAsOwner,
   ephMessage, ephSecretFromSignature, ephSecretFor, sealEphSecret,
+  identityMessage, identitySecretFromSignature, writerAddress,
   grantForV2, grantKeyV2, openOwnGrantV2, padSecret, unpadSecret,
 } from './nextkey-core.mjs'
 
@@ -153,13 +154,38 @@ if (cmd === 'keygen') {
 
   From then on nothing about sending to you differs. Opening will ask you to
   approve on the device, every time.\n`)
+  } else if (rest.includes('--wallet')) {
+    // The recommended way, and the one that scales: nothing is generated, so
+    // nothing has to be kept. One signature with the wallet the person already
+    // has produces the same key every time, on every machine.
+    const sig = await signAsOwner(identityMessage())
+    const sk = identitySecretFromSignature(sig)
+    const pub = x25519.getPublicKey(sk)
+    const address = writerAddress()
+    writeFileSync(identityPath(name), JSON.stringify(
+      { derived: 'wallet', address, publicKey: b64(pub) }, null, 2))
+    console.log(`\n  identity    ${name}  (derived from ${address})`)
+    console.log(`  public key  ${b64(pub)}`)
+    console.log(`  stored in   .keys/${name}.json — public key and address only,`)
+    console.log(`              because the private half is not stored anywhere:`)
+    console.log(`              it comes back from the same signature whenever it is needed.`)
+    console.log(`
+  Publish it:
+    nextkey.mjs publish <your-name>.nextkey.eth ${name}
+
+  Lose the file and nothing is lost. Lose the wallet and everything is —
+  which is the same sentence that was already true of the wallet.\n`)
   } else {
     const sk = randomX25519Secret()
     const pub = x25519.getPublicKey(sk)
     writeFileSync(identityPath(name), JSON.stringify({ privateKey: b64(sk), publicKey: b64(pub) }, null, 2))
     console.log(`\n  identity    ${name}`)
     console.log(`  public key  ${b64(pub)}`)
-    console.log(`  stored in   .keys/${name}.json  (gitignored — losing it loses access)\n`)
+    console.log(`  stored in   .keys/${name}.json  (gitignored — losing it loses access)`)
+    console.log(`
+  A stored key is a thing to guard. --wallet derives one instead, from a
+  signature, and leaves nothing on disk to lose:
+    nextkey.mjs keygen ${name} --wallet\n`)
   }
 }
 

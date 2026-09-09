@@ -107,6 +107,22 @@ const ephMessage = (name) => [
   'yourself, and never because someone asked you to.',
 ].join('\n')
 
+const identityMessage = () => [
+  'NextKey — derive your identity key',
+  '',
+  'version: 2',
+  '',
+  'This signature is not a transaction. It moves nothing, approves nothing and',
+  'costs nothing. It derives the key other people encrypt to when they send you',
+  'a secret — the same key every time, from this wallet alone, so there is no',
+  'file to keep and nothing to lose. Sign it only on a NextKey page you opened',
+  'yourself, and never because someone asked you to.',
+].join('\n')
+
+const identitySecretFromSignature = (sig) =>
+  hkdf(sha256, new Uint8Array(Buffer.from(sig.replace(/^0x/, ''), 'hex')),
+    utf8b('nextkey/v2/identity'), utf8b('identity'), 32)
+
 const ephSecretFromSignature = (sig, name) =>
   hkdf(sha256, new Uint8Array(Buffer.from(sig.replace(/^0x/, ''), 'hex')),
     utf8b('nextkey/v2/eph'), utf8b(name), 32)
@@ -212,6 +228,18 @@ async function checks(where, nk) {
     const sig = `0x${'7b'.repeat(65)}`
     check(where, 'and derive the same ephemeral key from one signature',
       (await nk.deriveEph(sig, name)) === b64(ephSecretFromSignature(sig, name)))
+
+    // The identity key is derived the same way and carries the same risk, with
+    // one difference that makes it worse: an ephemeral key is per name, so a
+    // disagreement costs one name. The identity key is the address every secret
+    // anyone ever sends this person is wrapped to. It has no name in it, on
+    // purpose — one signature, one identity, every name that person holds.
+    check(where, 'both sides compose the same identity message',
+      (await nk.idMessage()) === identityMessage())
+    check(where, 'and derive the same identity key from one signature',
+      (await nk.deriveId(sig)) === b64(identitySecretFromSignature(sig)))
+    check(where, 'the identity key is not the ephemeral key of any name',
+      (await nk.deriveId(sig)) !== (await nk.deriveEph(sig, name)))
   }
 
   // 5 · v2 · grants in both directions, address included.
@@ -292,6 +320,8 @@ await checks('web/src/nk-crypto.mjs, in Node', {
 
   ephMessage: async (name) => NK.ephMessage(name),
   deriveEph: async (sig, name) => NK.b64(NK.ephSecretFromSignature(sig, name)),
+  idMessage: async () => NK.identityMessage(),
+  deriveId: async (sig) => NK.b64(NK.identitySecretFromSignature(sig)),
   locateV2: async (ephB64, skB64) => {
     const sk = NK.un64(skB64)
     return NK.locateGrantV2(NK.un64(ephB64), sk, NK.publicKeyOf(sk)).key
@@ -372,6 +402,8 @@ if (!chromium) {
       ephMessage: (name) => page.evaluate((n) => NK.ephMessage(n), name),
       deriveEph: (sig, name) => page.evaluate(([s, n]) =>
         NK.b64(NK.ephSecretFromSignature(s, n)), [sig, name]),
+      idMessage: () => page.evaluate(() => NK.identityMessage()),
+      deriveId: (sig) => page.evaluate((s) => NK.b64(NK.identitySecretFromSignature(s)), sig),
       locateV2: (ephB64, skB64) => page.evaluate(([e, k]) => {
         const sk = NK.un64(k)
         return NK.locateGrantV2(NK.un64(e), sk, NK.publicKeyOf(sk)).key
