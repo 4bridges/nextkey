@@ -10,9 +10,12 @@ import { chromium } from 'playwright'
 import { encodeAbiParameters, keccak256, toHex } from 'viem'
 import http from 'node:http'
 import { readFile } from 'node:fs/promises'
-import { extname, join } from 'node:path'
+import { dirname, extname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const ROOT = '/mnt/user-data/uploads/nextkey/web'
+// Resolved from this file, not from the working directory and not from an
+// absolute path: this suite has to run in a fresh clone on any machine.
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json',
                 '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.png': 'image/png' }
 
@@ -58,7 +61,9 @@ let lastTopics = null   // and its topics
 const topicLog = []     // every topics array the node was asked for
 
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH })
-const page = await browser.newPage()
+// locale pinned: the page's own language comes from ?lang=, but anything
+// formatted by the browser (numbers, dates) follows the browser instead.
+const page = await browser.newPage({ locale: 'en-US' })
 const errors = []
 page.on('pageerror', (e) => errors.push(String(e)))
 
@@ -105,7 +110,11 @@ const check = (what, ok) => {
   ok ? passed++ : failed++
 }
 
-await page.goto(`${base}/explorer.html`, { waitUntil: 'networkidle' })
+// ?lang=en, not bare: with no language in the address the page follows the
+// browser's own, so every assertion below about a sentence would depend on the
+// locale of whoever runs this. On a German machine the whole English half of
+// this suite failed while the page was working perfectly.
+await page.goto(`${base}/explorer.html?lang=en`, { waitUntil: 'networkidle' })
 await page.waitForSelector('#feed-out .ev', { timeout: 15_000 })
 
 const text = await page.textContent('#feed-out')
@@ -161,14 +170,14 @@ check('including the one written into the page',
   (asked ?? []).some((a) => a.toLowerCase() === '0x04b2db6567cc68d059c061215adf9a99add1ca65'))
 check('and a ?resolver= is taken as another one', await (async () => {
   const extra = '0x1111111111111111111111111111111111111111'
-  await page.goto(`${base}/explorer.html?resolver=${extra}`, { waitUntil: 'networkidle' })
+  await page.goto(`${base}/explorer.html?lang=en&resolver=${extra}`, { waitUntil: 'networkidle' })
   await page.waitForSelector('#feed-out .ev', { timeout: 15_000 })
   return (asked ?? []).some((a) => a.toLowerCase() === extra)
 })())
 
 // ── A node that will not answer must not read as a quiet chain ──
 refuse = true
-await page.goto(`${base}/explorer.html`, { waitUntil: 'networkidle' })
+await page.goto(`${base}/explorer.html?lang=en`, { waitUntil: 'networkidle' })
 await page.waitForFunction(() => {
   const el = document.getElementById('feed-out')
   return el && !el.hidden && !/…$/.test(el.textContent.trim())
@@ -216,8 +225,13 @@ check('and a withdrawal is not one of them', !/took a grant back/.test(grants))
 check('and it admits it could not ask the node', /cannot select these|by hand/.test(grants))
 
 await page.click('#feed-chips button[data-f="name"]')
-check('the name filter asks for a name first',
-  /Type a name to see only its writes/.test(await page.textContent('#feed-out')))
+// Caught as it appears rather than read afterwards, like the arrival mark
+// above: the previous filter's fill can still be in flight and land on top of
+// this message a moment later. Reading the element after the wait therefore
+// failed on some runs and passed on others, which is worse than either.
+check('the name filter asks for a name first', await page.waitForFunction(
+  () => /Type a name to see only its writes/.test(document.getElementById('feed-out').textContent),
+  null, { timeout: 15_000 }).then(() => true).catch(() => false))
 check('and offers a field to type it in', !(await page.locator('#feed-namerow').isHidden()))
 
 await page.goto(`${base}/explorer.html?show=post`, { waitUntil: 'networkidle' })

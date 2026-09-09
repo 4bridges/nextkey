@@ -12,9 +12,12 @@ import { chromium } from 'playwright'
 import { toHex, numberToHex, pad } from 'viem'
 import http from 'node:http'
 import { readFile } from 'node:fs/promises'
-import { extname, join } from 'node:path'
+import { dirname, extname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const ROOT = '/mnt/user-data/uploads/nextkey/web'
+// Resolved from this file, not from the working directory and not from an
+// absolute path: this suite has to run in a fresh clone on any machine.
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json',
                 '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.png': 'image/png' }
 
@@ -48,7 +51,11 @@ const GIFTS = [
 ]
 
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH })
-const page = await browser.newPage({ permissions: [] })
+// locale pinned, and this is the suite that proved why: the balances are
+// formatted with toLocaleString, which follows the browser and not ?lang=,
+// so on a German machine an English page printed 0,0123 and three checks
+// failed on a page that was working.
+const page = await browser.newPage({ permissions: [], locale: 'en-US' })
 const errors = []
 page.on('pageerror', (e) => errors.push(String(e)))
 

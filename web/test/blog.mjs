@@ -11,9 +11,12 @@ import { chromium } from 'playwright'
 import { encodeAbiParameters, keccak256, toHex, namehash, numberToHex } from 'viem'
 import http from 'node:http'
 import { readFile } from 'node:fs/promises'
-import { extname, join } from 'node:path'
+import { dirname, extname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const ROOT = '/mnt/user-data/uploads/nextkey/web'
+// Resolved from this file, not from the working directory and not from an
+// absolute path: this suite has to run in a fresh clone on any machine.
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json',
                 '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.png': 'image/png' }
 
@@ -65,7 +68,9 @@ const ARRIVAL = [
 
 let head = HEAD
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH })
-const page = await browser.newPage()
+// locale pinned: the page's own language comes from ?lang=, but anything
+// formatted by the browser (numbers, dates) follows the browser instead.
+const page = await browser.newPage({ locale: 'en-US' })
 const errors = []
 page.on('pageerror', (e) => errors.push(String(e)))
 
