@@ -1,4 +1,4 @@
-# NextKey
+# NextKey 🔑🔒
 
 **A human is involved. No human is in control.**
 
@@ -624,7 +624,6 @@ This project is submitted to three partner prizes:
 - [`FEEDBACK-WORLD.md`](./FEEDBACK-WORLD.md) — developer experience feedback for World
 - [`FEEDBACK-ENS.md`](./FEEDBACK-ENS.md) — developer experience feedback for ENS
 - [`FEEDBACK-LEDGER.md`](./FEEDBACK-LEDGER.md) — developer experience feedback for Ledger
-- [`HANDOVER.md`](./HANDOVER.md) — the complete handbook: how everything works, the rules, the addresses, the mistakes we made and what they taught us. Written so somebody with no context can continue
 - [`evidence/`](./evidence) — sponsor qualification evidence
 
 ---

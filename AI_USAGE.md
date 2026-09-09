@@ -86,8 +86,7 @@ nine translations, much of the test scaffolding, and boilerplate in the scripts
 and page code. In the final days that extended to the explorer, the community
 page and the donation page — drafted in a working session with the assistant,
 reviewed screen by screen by the author, and committed by him. Those commits say
-so in their trailers, and `HANDOVER.md` records the same division of labour for
-whoever continues.
+so in their trailers.
 
 ## Statement
 
