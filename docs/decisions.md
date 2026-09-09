@@ -656,3 +656,47 @@ AI-agent hold a wallet safely?` in the FAQ and its JSON-LD copy, and four
 translations reading *agente de IA de IA*, *agent IA IA*, *agente IA IA*. A
 blanket substitution cannot see a word it has already produced. Fixed at source
 and in the nine languages, then re-stamped.
+
+---
+
+## 2026-09-09 (night) — MIT was a checkbox; AGPL is a decision
+
+**The licence changes from MIT to AGPL-3.0-or-later.** MIT arrived in the very
+first commit because GitHub offers it as a checkbox next to the `.gitignore`
+template — it was never chosen. It is the most permissive licence in common use:
+anyone may take this code, close it, rename it and sell it, and owe nothing back.
+Ten days of work later that is no longer a neutral default.
+
+**Why not simply close the repository.** ENS's prize requires it: *"the code
+needs to be open source and accessible on Github or a similar platform."*
+ETHGlobal's own rules do not demand a public repository for the From-Scratch
+track — they demand a repository link and an honest commit history — but the ENS
+track is the strongest of the three, so private is not on the table. AGPL is the
+answer that satisfies both: it is OSI-approved open source, so the prize
+qualification holds, and section 13 closes the hole that matters for a project
+delivered over a network. Run a modified NextKey as a service and you owe your
+users your source.
+
+**What was rejected.** BUSL and the other source-available licences protect more
+and are explicitly *not* open source, which would forfeit the ENS track. A dual
+MIT/commercial arrangement gives away the thing being protected on the free side.
+Doing nothing was rejected once it was clear that nothing was ever decided.
+
+**What the licence cannot do, said plainly.** It does not reach backwards: every
+snapshot already published under MIT stays MIT for whoever holds it, and no
+relicensing changes that. It does not cover trademarks — the name, the logo, the
+domain and the ENS names are outside it, which the README now says. And it does
+not hide the protocol: the bundles are served from `nextkey.li` and the records
+are on a public chain, so the scheme is reconstructible by anyone who cares. What
+is protected is the implementation and the right to build on it commercially,
+not the idea.
+
+**Three files leave the repository at the same commit** — `docs/video-script.md`,
+`web/brand/README.md` and `web/brand/ethglobal/`. A shooting script, a brand guide
+and the renders made for the submission form are the product around the
+prototype, not the prototype, and nothing in the rules asks for them. They are
+`git rm --cached`, so they stay on the author's machine and remain in the history
+where they were already pushed: removing them from HEAD is not the same as
+erasing them, and rewriting history to pretend otherwise would break the promise
+the repository note makes at the top of the README. Nothing that the demo video
+shows or the submission claims was removed.
