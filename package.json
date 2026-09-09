@@ -6,7 +6,9 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npm run test:crypto && npm run test:pages",
+    "test:crypto": "node web/test/v2.mjs && node web/test/interop.mjs",
+    "test:pages": "node web/test/playground.mjs && node web/test/feed.mjs && node web/test/blog.mjs && node web/test/donate.mjs"
   },
   "repository": {
     "type": "git",
@@ -14,7 +16,7 @@
   },
   "keywords": [],
   "author": "4bridges",
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "type": "module",
   "bugs": {
     "url": "https://github.com/4bridges/nextkey/issues"
