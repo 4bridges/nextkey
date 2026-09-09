@@ -452,6 +452,41 @@ $('gen-recipient').addEventListener('click', () => {
  * carries a `nextkey.pubkey` record works here — including one the visitor
  * just made for themselves.
  */
+/**
+ * Reading a recipient's key, and telling three failures apart.
+ *
+ * `getEnsText` answers null for two entirely different situations: the name
+ * does not exist on this deployment at all, or it exists and simply carries no
+ * nextkey.pubkey. Reporting only the second sent a reader looking for a missing
+ * record on a name that was never here — the page said something true-sounding
+ * about a name it had not found. A third case hid behind an exception: a record
+ * that is there but is not a 32-byte key.
+ *
+ * Returns { pk } or { error, note } — the caller decides how to show it.
+ */
+const readRecipientKey = async (name) => {
+  let resolver = null
+  try { resolver = await reader.getEnsResolver({ name }) } catch { /* reported below */ }
+  if (!resolver || /^0x0+$/i.test(resolver)) return {
+    error: t('t.s2.noname', 'That name does not exist on this deployment.'),
+    note: t('t.s2.nonamenote', 'This is the ENSv2 hackathon deployment on Sepolia, a separate world from production ENS: a name you hold there is unknown here. Try anna.nextkey.eth or bob.nextkey.eth, or register a name on this deployment.'),
+  }
+
+  const pub = await reader.getEnsText({ name, key: RECORD_PUBKEY })
+  if (!pub) return {
+    error: t('t.s2.nokey', 'That name publishes no nextkey.pubkey record, so there is nothing to encrypt to.'),
+    note: t('t.s2.nokeynote', 'Try anna.nextkey.eth or bob.nextkey.eth, or publish a key on a name of your own and come back.'),
+  }
+
+  let pk
+  try { pk = un64(pub) } catch { pk = null }
+  if (!pk || pk.length !== 32) return {
+    error: t('t.s2.badkey', 'That name publishes a nextkey.pubkey record, but it is not readable as a key.'),
+    note: t('t.s2.badkeynote', 'A key is 32 bytes in base64. This record is something else, so the fault is in the record and not in this page — whoever owns the name has to write it again.'),
+  }
+  return { pk, pub }
+}
+
 $('lookup').addEventListener('click', async () => {
   const name = $('ens-name').value.trim().toLowerCase()
   const out = $('r-out')
@@ -459,15 +494,15 @@ $('lookup').addEventListener('click', async () => {
     <p>${t('t.s2.needname', 'Type a name first, or make a recipient here instead.')}</p>`)
   say(out, 'busy', `<p>${t('t.s2.looking', 'Reading their key from the chain…')}</p>`)
   try {
-    const pub = await reader.getEnsText({ name, key: RECORD_PUBKEY })
-    if (!pub) {
+    const found = await readRecipientKey(name)
+    if (found.error) {
       S.recipient = null
       return say(out, 'bad', `
-        <p>${t('t.s2.nokey', 'That name publishes no nextkey.pubkey record, so there is nothing to encrypt to.')}</p>
-        <p class="note">${t('t.s2.nokeynote', 'Try anna.nextkey.eth or bob.nextkey.eth, or publish a key on a name of your own and come back.')}</p>`)
+        <p>${found.error}</p>
+        <p class="note">${found.note}</p>`,
+        { step: 2, recipient: 'ens', name, publicKey: null })
     }
-    const pk = un64(pub)
-    if (pk.length !== 32) throw new Error(`expected a 32-byte key, got ${pk.length}`)
+    const { pk, pub } = found
     S.recipient = { pk, label: name, local: false }
     say(out, 'ok', `
       <dl>
@@ -1320,11 +1355,9 @@ $('grant-more').addEventListener('click', async () => {
   $('grant-more').disabled = true
   try {
     say(out, 'busy', `<p>${t('t.s2.looking', 'Reading their key from the chain…')}</p>`)
-    const pub = await reader.getEnsText({ name, key: RECORD_PUBKEY })
-    if (!pub) throw new Error(t('t.s2.nokey',
-      'That name publishes no nextkey.pubkey record, so there is nothing to encrypt to.'))
-    const pk = un64(pub)
-    if (pk.length !== 32) throw new Error(`expected a 32-byte key, got ${pk.length}`)
+    const found = await readRecipientKey(name)
+    if (found.error) throw new Error(found.error)
+    const { pk } = found
     if (b64(pk) === b64(S.recipient.pk)) throw new Error(t('t.s7.same',
       'That is the recipient who already holds it. A second grant to the same key would land at the same address.'))
 

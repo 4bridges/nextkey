@@ -263,7 +263,11 @@
     "b.write.title": "ein Titel",
     "b.body.ph": "was du sagen willst",
     "b.own.ph": "der Name, der dir gehört, z. B. deinname.eth",
-    "x.check.ph": "anna.nextkey.eth"
+    "x.check.ph": "anna.nextkey.eth",
+    "t.s2.noname": "Diesen Namen gibt es auf diesem Deployment nicht.",
+    "t.s2.nonamenote": "Dies ist das ENSv2-Hackathon-Deployment auf Sepolia — eine eigene Welt neben Produktions-ENS: ein Name, den du dort hältst, ist hier unbekannt. Versuche anna.nextkey.eth oder bob.nextkey.eth, oder registriere einen Namen auf diesem Deployment.",
+    "t.s2.badkey": "Dieser Name veröffentlicht einen nextkey.pubkey-Record, aber er ist nicht als Schlüssel lesbar.",
+    "t.s2.badkeynote": "Ein Schlüssel sind 32 Bytes in Base64. Dieser Record ist etwas anderes — der Fehler liegt also im Record und nicht in dieser Seite; wer den Namen besitzt, muss ihn neu schreiben."
   },
   "fr": {
     "b.write.p": "Un titre et un texte, écrits dans <span class=\"mono\">nextkey.post</span> sur un nom. Rien n’est chiffré — c’est la moitié publique du même mécanisme. Un nom peut porter jusqu’à cinq billets ; la publication prend le premier emplacement libre au lieu de remplacer l’existant. Le propriétaire peut vider n’importe lequel à tout moment.",
@@ -531,7 +535,11 @@
     "b.write.title": "un titre",
     "b.body.ph": "ce que vous voulez dire",
     "b.own.ph": "le nom que vous possédez, p. ex. votrenom.eth",
-    "x.check.ph": "anna.nextkey.eth"
+    "x.check.ph": "anna.nextkey.eth",
+    "t.s2.noname": "Ce nom n'existe pas sur ce déploiement.",
+    "t.s2.nonamenote": "Il s'agit du déploiement bêta ENSv2 sur Sepolia, un monde distinct de l'ENS de production : un nom que vous détenez là-bas est inconnu ici. Essayez anna.nextkey.eth ou bob.nextkey.eth, ou enregistrez un nom sur ce déploiement.",
+    "t.s2.badkey": "Ce nom publie un enregistrement nextkey.pubkey, mais il ne se lit pas comme une clé.",
+    "t.s2.badkeynote": "Une clé fait 32 octets en base64. Cet enregistrement est autre chose : le défaut est dans l’enregistrement et non dans cette page, et son propriétaire doit le réécrire."
   },
   "it": {
     "b.write.p": "Un titolo e un testo, scritti in <span class=\"mono\">nextkey.post</span> su un nome. Nulla viene cifrato — è la metà pubblica dello stesso meccanismo. Un nome può portare fino a cinque post; la pubblicazione occupa il primo posto libero invece di sostituire quanto c’è. Il proprietario può svuotarne uno qualsiasi in qualsiasi momento.",
@@ -797,7 +805,11 @@
     "b.write.title": "un titolo",
     "b.body.ph": "quello che vuoi dire",
     "b.own.ph": "il nome che possiedi, p. es. tuonome.eth",
-    "x.check.ph": "anna.nextkey.eth"
+    "x.check.ph": "anna.nextkey.eth",
+    "t.s2.noname": "Questo nome non esiste su questo deployment.",
+    "t.s2.nonamenote": "Questo è il deployment hackathon di ENSv2 su Sepolia, un mondo separato dall'ENS di produzione: un nome che possiedi lì qui è sconosciuto. Prova anna.nextkey.eth o bob.nextkey.eth, oppure registra un nome su questo deployment.",
+    "t.s2.badkey": "Questo nome pubblica un record nextkey.pubkey, ma non è leggibile come chiave.",
+    "t.s2.badkeynote": "Una chiave è di 32 byte in base64. Questo record è altro: il difetto sta nel record e non in questa pagina, e chi possiede il nome deve riscriverlo."
   },
   "es": {
     "b.write.p": "Un título y un texto, escritos en <span class=\"mono\">nextkey.post</span> sobre un nombre. Nada se cifra — es la mitad pública del mismo mecanismo. Un nombre puede llevar hasta cinco entradas; al publicar se ocupa el primer hueco libre en lugar de reemplazar lo que hay. El propietario puede vaciar cualquiera cuando quiera.",
@@ -1063,7 +1075,11 @@
     "b.write.title": "un título",
     "b.body.ph": "lo que quieres decir",
     "b.own.ph": "el nombre que posees, p. ej. tunombre.eth",
-    "x.check.ph": "anna.nextkey.eth"
+    "x.check.ph": "anna.nextkey.eth",
+    "t.s2.noname": "Ese nombre no existe en este despliegue.",
+    "t.s2.nonamenote": "Este es el despliegue del hackathon de ENSv2 en Sepolia, un mundo aparte del ENS de producción: un nombre que tengas allí aquí es desconocido. Prueba anna.nextkey.eth o bob.nextkey.eth, o registra un nombre en este despliegue.",
+    "t.s2.badkey": "Ese nombre publica un registro nextkey.pubkey, pero no se puede leer como una clave.",
+    "t.s2.badkeynote": "Una clave son 32 bytes en base64. Este registro es otra cosa: el fallo está en el registro y no en esta página, y quien posee el nombre debe volver a escribirlo."
   },
   "pt": {
     "b.write.p": "Um título e um texto, escritos em <span class=\"mono\">nextkey.post</span> num nome. Nada é cifrado — é a metade pública do mesmo mecanismo. Um nome pode levar até cinco publicações; publicar ocupa o primeiro lugar livre em vez de substituir o que lá está. O dono pode esvaziar qualquer uma a qualquer momento.",
@@ -1329,7 +1345,11 @@
     "b.write.title": "um título",
     "b.body.ph": "o que quer dizer",
     "b.own.ph": "o nome que lhe pertence, p. ex. oseunome.eth",
-    "x.check.ph": "anna.nextkey.eth"
+    "x.check.ph": "anna.nextkey.eth",
+    "t.s2.noname": "Esse nome não existe neste deployment.",
+    "t.s2.nonamenote": "Este é o deployment do hackathon de ENSv2 na Sepolia, um mundo à parte do ENS de produção: um nome que detenha lá é desconhecido aqui. Experimente anna.nextkey.eth ou bob.nextkey.eth, ou registe um nome neste deployment.",
+    "t.s2.badkey": "Esse nome publica um registo nextkey.pubkey, mas não é legível como uma chave.",
+    "t.s2.badkeynote": "Uma chave são 32 bytes em base64. Este registo é outra coisa: a falha está no registo e não nesta página, e quem detém o nome tem de o escrever de novo."
   },
   "ru": {
     "b.write.p": "Заголовок и текст, записанные в <span class=\"mono\">nextkey.post</span> на имени. Ничего не шифруется — это публичная половина того же механизма. Имя может нести до пяти записей; публикация занимает первое свободное место, а не заменяет то, что есть. Владелец может очистить любое из них в любой момент.",
@@ -1595,7 +1615,11 @@
     "b.write.title": "заголовок",
     "b.body.ph": "что вы хотите сказать",
     "b.own.ph": "имя, которым вы владеете, например yourname.eth",
-    "x.check.ph": "anna.nextkey.eth"
+    "x.check.ph": "anna.nextkey.eth",
+    "t.s2.noname": "Такого имени в этом развёртывании нет.",
+    "t.s2.nonamenote": "Это хакатонное развёртывание ENSv2 в Sepolia — отдельный мир от боевого ENS: имя, которым вы владеете там, здесь неизвестно. Попробуйте anna.nextkey.eth или bob.nextkey.eth либо зарегистрируйте имя в этом развёртывании.",
+    "t.s2.badkey": "Это имя публикует запись nextkey.pubkey, но она не читается как ключ.",
+    "t.s2.badkeynote": "Ключ — это 32 байта в base64. Эта запись — что-то другое: ошибка в записи, а не на этой странице, и владелец имени должен записать её заново."
   },
   "ua": {
     "b.write.p": "Заголовок і текст, записані в <span class=\"mono\">nextkey.post</span> на імені. Нічого не шифрується — це публічна половина того самого механізму. Ім’я може нести до п’яти дописів; публікація займає перше вільне місце, а не замінює наявне. Власник може спорожнити будь-яке з них будь-коли.",
@@ -1861,7 +1885,11 @@
     "b.write.title": "заголовок",
     "b.body.ph": "що ви хочете сказати",
     "b.own.ph": "ім'я, яким ви володієте, наприклад yourname.eth",
-    "x.check.ph": "anna.nextkey.eth"
+    "x.check.ph": "anna.nextkey.eth",
+    "t.s2.noname": "Такого імені в цьому розгортанні немає.",
+    "t.s2.nonamenote": "Це хакатонне розгортання ENSv2 у Sepolia — окремий світ від бойового ENS: ім’я, яким ви володієте там, тут невідоме. Спробуйте anna.nextkey.eth або bob.nextkey.eth чи зареєструйте ім’я в цьому розгортанні.",
+    "t.s2.badkey": "Це ім’я публікує запис nextkey.pubkey, але він не читається як ключ.",
+    "t.s2.badkeynote": "Ключ — це 32 байти в base64. Цей запис — щось інше: помилка в записі, а не на цій сторінці, і власник імені має записати його наново."
   },
   "cn": {
     "b.write.p": "一个标题和一段正文，写入某个名字上的 <span class=\"mono\">nextkey.post</span>。不加密——这是同一套机制的公开一半。一个名字最多可承载五篇帖子；发布会占用第一个空位，而不是覆盖已有内容。持有者随时可以清空其中任何一篇。",
@@ -2122,7 +2150,11 @@
     "b.write.title": "标题",
     "b.body.ph": "你想说的话",
     "b.own.ph": "你拥有的名称，例如 yourname.eth",
-    "x.check.ph": "anna.nextkey.eth"
+    "x.check.ph": "anna.nextkey.eth",
+    "t.s2.noname": "这个名称在此部署上不存在。",
+    "t.s2.nonamenote": "这里是 Sepolia 上的 ENSv2 黑客松部署，与生产环境的 ENS 是两个世界：你在那边持有的名称，在这里并不存在。试试 anna.nextkey.eth 或 bob.nextkey.eth，或者在这个部署上注册一个名称。",
+    "t.s2.badkey": "这个名称发布了 nextkey.pubkey 记录，但它无法作为密钥读取。",
+    "t.s2.badkeynote": "密钥是 base64 编码的 32 字节。这条记录是别的东西——问题出在记录上而不是这个页面，名称的持有者需要重新写入。"
   },
   "fa": {
     "b.write.p": "یک عنوان و یک متن، نوشته‌شده در <span class=\"mono\">nextkey.post</span> روی یک نام. چیزی رمزگذاری نمی‌شود — این نیمهٔ عمومی همان سازوکار است. هر نام می‌تواند تا پنج نوشته داشته باشد؛ انتشار نخستین جای خالی را می‌گیرد و آنچه هست را جایگزین نمی‌کند. مالک هر کدام را هر وقت بخواهد خالی می‌کند.",
@@ -2387,6 +2419,10 @@
     "b.write.title": "یک عنوان",
     "b.body.ph": "آنچه می‌خواهید بگویید",
     "b.own.ph": "نامی که مالک آن هستید، مثلاً yourname.eth",
-    "x.check.ph": "anna.nextkey.eth"
+    "x.check.ph": "anna.nextkey.eth",
+    "t.s2.noname": "این نام در این استقرار وجود ندارد.",
+    "t.s2.nonamenote": "این استقرار هکاتونی ENSv2 روی Sepolia است، دنیایی جدا از ENS اصلی: نامی که آنجا دارید اینجا ناشناخته است. anna.nextkey.eth یا bob.nextkey.eth را امتحان کنید، یا نامی روی همین استقرار ثبت کنید.",
+    "t.s2.badkey": "این نام یک رکورد nextkey.pubkey منتشر کرده، اما به‌عنوان کلید خوانا نیست.",
+    "t.s2.badkeynote": "یک کلید ۳۲ بایت در base64 است. این رکورد چیز دیگری است — ایراد از رکورد است نه از این صفحه، و صاحب نام باید دوباره آن را بنویسد."
   }
 }
