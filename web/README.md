@@ -104,7 +104,7 @@ Three modules are shared, so that two copies of a constant cannot drift apart:
 ## Ten languages, and where English lives
 
 The selector top right switches between EN, DE, FR, IT, ES, PT, CN, UA, RU and FA.
-**539 keys**, complete in all nine translated languages.
+**543 keys**, complete in all nine translated languages.
 
 **English is in the pages themselves, not in `i18n.js`.** Each page is therefore complete
 and readable before a single line of script runs, and a JavaScript failure degrades to
