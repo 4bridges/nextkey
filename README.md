@@ -638,4 +638,24 @@ An earlier project of ours, [pKeep](https://ethglobal.com/showcase/pkeep-unleash
 
 ## License
 
-MIT — see [LICENSE](./LICENSE).
+**AGPL-3.0-or-later** — see [LICENSE](./LICENSE). Copyright © 2026 web3Degens, Switzerland.
+
+Open source in the sense the words are meant to have: read it, run it, change it,
+share it. The one condition is reciprocity. Section 13 of the licence covers the
+case this project actually lives in — if you run a modified version as a service
+other people reach over a network, you owe those people the source of your
+version. Building on this in the open costs nothing. Taking it closed is the one
+thing the licence declines to allow.
+
+A commercial licence without the copyleft condition is available from the
+copyright holder; ask.
+
+**Relicensed on 9 September 2026.** Everything published before that commit went
+out under the MIT licence, and that grant cannot be withdrawn for the snapshots
+it covered — it is in the history, where the repository note above promises
+everything else will be. The terms here apply from that commit forward.
+
+**Trademarks are not licensed.** The name *NextKey*, the logo and lockup in
+`web/brand/`, the domain `nextkey.li` and the names under `nextkey.eth` are not
+covered by the licence, and it grants no right to use them. Fork the code; ship
+it under your own name.

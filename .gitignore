@@ -162,3 +162,12 @@ vite.config.ts.timestamp-*
 # repository so that what is published is the project, not my notes about it.
 /HANDOVER.md
 /private/
+
+# Not part of the submission.
+# ETHGlobal asks for the code the demo shows and a history that proves when it
+# was written. It does not ask for the shooting script, the brand guide or the
+# renders made for the submission form, and those are the product around the
+# prototype rather than the prototype. They stay on my machine.
+/docs/video-script.md
+/web/brand/README.md
+/web/brand/ethglobal/
