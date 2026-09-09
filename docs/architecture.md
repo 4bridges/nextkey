@@ -412,3 +412,61 @@ all need one. Each place that would want it says what it cannot show instead.
 **Storage is a text record.** Small secrets — a passphrase, a seed phrase — fit.
 Files do not, and would need IPFS or similar. That is a stretch goal and was
 never started, which is why nothing here mentions pinning.
+
+## How this scales
+
+The thing that decides whether NextKey is a demonstration or a product is not
+the cryptography. It is this: **you cannot encrypt to a name that publishes no
+key**, and until 9 September being publishable cost four separate things.
+
+| The wall | Why people do not climb it |
+|---|---|
+| Generate a key | A brand-new secret, in a file, that nobody backs up |
+| Keep it for ever | Losing it costs every secret ever sent to them |
+| Own an ENS name | A registration, a wallet, a decision |
+| Pay for a transaction | Gas, on a chain they may never have used |
+
+An Ethereum address does not help: it is the *hash* of a key, so nothing can be
+encrypted to one. The public key behind an address can be recovered from any
+signature that address ever made — but the recipient would then need software
+that decrypts with their account key, and no common wallet still offers that.
+Sending would work; opening would not, which is worse than refusing.
+
+### What is built
+
+**The key is derived, not generated.** `identityMessage()` is signed once with
+the wallet the person already has; HKDF over that signature with the info string
+`nextkey/v2/identity` yields their X25519 secret. The first two walls disappear
+together: nothing is created, so nothing has to be kept, and the same wallet
+returns the same key on any machine for ever. The message carries no name — an
+identity belongs to a wallet — so the key is unchanged when they move to another
+name later.
+
+**The name and the gas are lent.** The playground picks a free pool name and
+writes `nextkey.pubkey` with its own account. What is left of the four walls is:
+connect a wallet, sign once, no gas.
+
+**And a first secret can reach somebody with nothing.** A throwaway recipient
+key, made in the browser, travels in the URL fragment; the ciphertext and the
+grant sit on chain as always. Whoever holds that link can open the secret once —
+so it is a link-shaped secret and is described as one — and the person who opens
+it is offered a published key of their own. Each secret sent this way can leave
+behind a recipient who never needs a link again.
+
+### What is not built, and is the next thing
+
+The lent name is **ours, not theirs**. They can receive on it, they cannot
+change its records, and nothing but our own restraint stops us overwriting them.
+The honest version is a subname in the `UserRegistry` whose **owner is their
+address** — an ERC1155Singleton with one owner and its own Permissioned
+Resolver, exactly what a stored secret already gets from
+`scripts/register-subname.mjs`. After that the name is theirs: they set their own
+records, we cannot touch them, and the identity — which hangs on the wallet, not
+the name — is unaffected by the move.
+
+It was left out of the hackathon build on purpose. It needs a registry write per
+visitor, a field for the wanted label, collision handling, and a decision about
+who pays; a new write path introduced days before a deadline is exactly the
+change that breaks something that works. The pool is also finite: 200 names, and
+an identity now spends one permanently, which is comfortable for a submission
+and is precisely why an owned subname is the right answer for a product.

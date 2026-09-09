@@ -280,7 +280,10 @@
     "t.claim.h": "Schick es jemandem, der noch keinen Schlüssel hat:",
     "t.claim.note": "Der Schlüssel, der das öffnet, steht im Teil der Adresse nach dem #, den Browser nie an einen Server senden. Er reist aber mit dem Link: wer den Link hat, kann das Geheimnis einmal öffnen — behandle ihn wie die Nachricht selbst, nicht wie eine Adresse. Wer ihn öffnet, bekommt einen eigenen veröffentlichten Schlüssel angeboten, und das nächste Geheimnis an diese Person braucht gar keinen Link mehr.",
     "t.claim.arrived": "Dieser Link trägt ein Geheimnis und den Schlüssel, der es öffnet. Drück den Knopf, um es zu lesen — es wurde nichts irgendwohin gesendet.",
-    "t.claim.bad": "Dieser Link trägt etwas, das kein Schlüssel ist — damit lässt sich nichts öffnen. Bitte um einen frischen."
+    "t.claim.bad": "Dieser Link trägt etwas, das kein Schlüssel ist — damit lässt sich nichts öffnen. Bitte um einen frischen.",
+    "t.id.looking": "Wird geprüft, ob diese Wallet hier schon einen Namen hat…",
+    "t.id.already": "Du bist bereits empfangsbereit — dieselbe Wallet ergibt denselben Schlüssel, also gehört dir dieser Name weiterhin:",
+    "t.id.alreadynote": "Es wurde nichts geschrieben und kein Name verbraucht. Genau dafür wird der Schlüssel abgeleitet statt erzeugt: es gibt dich nur einmal, in wie vielen Browsern du auch drückst."
   },
   "fr": {
     "b.write.p": "Un titre et un texte, écrits dans <span class=\"mono\">nextkey.post</span> sur un nom. Rien n’est chiffré — c’est la moitié publique du même mécanisme. Un nom peut porter jusqu’à cinq billets ; la publication prend le premier emplacement libre au lieu de remplacer l’existant. Le propriétaire peut vider n’importe lequel à tout moment.",
@@ -565,7 +568,10 @@
     "t.claim.h": "Envoyez-le à quelqu'un qui n'a pas encore de clé :",
     "t.claim.note": "La clé qui l'ouvre se trouve après le # de l'adresse, une partie que les navigateurs n'envoient jamais à un serveur. Elle voyage toutefois avec le lien : quiconque l'a peut ouvrir le secret une fois — traitez-le comme le message lui-même, pas comme une adresse. La personne qui l'ouvre se voit proposer sa propre clé publiée, et le prochain secret ne demandera plus de lien.",
     "t.claim.arrived": "Ce lien porte un secret et la clé qui l'ouvre. Appuyez sur le bouton pour le lire — rien n'a été envoyé nulle part.",
-    "t.claim.bad": "Ce lien porte quelque chose qui n'est pas une clé : il n'y a rien pour ouvrir. Demandez-en un nouveau."
+    "t.claim.bad": "Ce lien porte quelque chose qui n'est pas une clé : il n'y a rien pour ouvrir. Demandez-en un nouveau.",
+    "t.id.looking": "Vérification : ce portefeuille a-t-il déjà un nom ici…",
+    "t.id.already": "Vous êtes déjà joignable — le même portefeuille donne la même clé, donc ce nom reste le vôtre :",
+    "t.id.alreadynote": "Rien n'a été écrit et aucun nom n'a été consommé. C'est tout l'intérêt de dériver la clé plutôt que de la générer : il n'y a qu'un seul vous, quel que soit le nombre de navigateurs."
   },
   "it": {
     "b.write.p": "Un titolo e un testo, scritti in <span class=\"mono\">nextkey.post</span> su un nome. Nulla viene cifrato — è la metà pubblica dello stesso meccanismo. Un nome può portare fino a cinque post; la pubblicazione occupa il primo posto libero invece di sostituire quanto c’è. Il proprietario può svuotarne uno qualsiasi in qualsiasi momento.",
@@ -848,7 +854,10 @@
     "t.claim.h": "Mandalo a qualcuno che non ha ancora una chiave:",
     "t.claim.note": "La chiave che lo apre sta nella parte dell’indirizzo dopo il #, che i browser non inviano mai a un server. Viaggia però con il link: chi ha il link può aprire il segreto una volta — trattalo come il messaggio stesso, non come un indirizzo. A chi lo apre viene offerta una chiave pubblicata propria, e il prossimo segreto non avrà bisogno di alcun link.",
     "t.claim.arrived": "Questo link porta un segreto e la chiave che lo apre. Premi il pulsante per leggerlo — non è stato inviato nulla da nessuna parte.",
-    "t.claim.bad": "Questo link porta qualcosa che non è una chiave, quindi non c’è nulla con cui aprire. Chiedine uno nuovo."
+    "t.claim.bad": "Questo link porta qualcosa che non è una chiave, quindi non c’è nulla con cui aprire. Chiedine uno nuovo.",
+    "t.id.looking": "Verifica se questo wallet ha già un nome qui…",
+    "t.id.already": "Sei già ricevibile — lo stesso wallet dà la stessa chiave, quindi questo nome resta tuo:",
+    "t.id.alreadynote": "Non è stato scritto nulla e nessun nome è stato consumato. È proprio il motivo per cui la chiave si deriva invece di generarla: di te ce n’è uno solo, in quanti browser tu lo prema."
   },
   "es": {
     "b.write.p": "Un título y un texto, escritos en <span class=\"mono\">nextkey.post</span> sobre un nombre. Nada se cifra — es la mitad pública del mismo mecanismo. Un nombre puede llevar hasta cinco entradas; al publicar se ocupa el primer hueco libre en lugar de reemplazar lo que hay. El propietario puede vaciar cualquiera cuando quiera.",
@@ -1131,7 +1140,10 @@
     "t.claim.h": "Envíaselo a alguien que todavía no tiene clave:",
     "t.claim.note": "La clave que lo abre está en la parte de la dirección después del #, que los navegadores nunca envían a un servidor. Pero viaja con el enlace: quien tenga el enlace puede abrir el secreto una vez; trátalo como el mensaje mismo, no como una dirección. A quien lo abra se le ofrece una clave publicada propia, y el siguiente secreto ya no necesitará enlace.",
     "t.claim.arrived": "Este enlace lleva un secreto y la clave que lo abre. Pulsa el botón para leerlo: no se ha enviado nada a ninguna parte.",
-    "t.claim.bad": "Este enlace lleva algo que no es una clave, así que no hay con qué abrir. Pide uno nuevo."
+    "t.claim.bad": "Este enlace lleva algo que no es una clave, así que no hay con qué abrir. Pide uno nuevo.",
+    "t.id.looking": "Comprobando si esta cartera ya tiene un nombre aquí…",
+    "t.id.already": "Ya eres receptivo: la misma cartera da la misma clave, así que este nombre sigue siendo tuyo:",
+    "t.id.alreadynote": "No se escribió nada ni se gastó ningún nombre. Para eso se deriva la clave en lugar de generarla: solo hay uno de ti, en cuantos navegadores lo pulses."
   },
   "pt": {
     "b.write.p": "Um título e um texto, escritos em <span class=\"mono\">nextkey.post</span> num nome. Nada é cifrado — é a metade pública do mesmo mecanismo. Um nome pode levar até cinco publicações; publicar ocupa o primeiro lugar livre em vez de substituir o que lá está. O dono pode esvaziar qualquer uma a qualquer momento.",
@@ -1414,7 +1426,10 @@
     "t.claim.h": "Envie-o a alguém que ainda não tem chave:",
     "t.claim.note": "A chave que o abre está na parte do endereço depois do #, que os navegadores nunca enviam a um servidor. Mas viaja com a ligação: quem tiver a ligação pode abrir o segredo uma vez — trate-a como a própria mensagem, não como um endereço. A quem a abrir é oferecida uma chave publicada própria, e o segredo seguinte já não precisa de ligação.",
     "t.claim.arrived": "Esta ligação traz um segredo e a chave que o abre. Carregue no botão para o ler — nada foi enviado para lado nenhum.",
-    "t.claim.bad": "Esta ligação traz algo que não é uma chave, por isso não há com que abrir. Peça uma nova."
+    "t.claim.bad": "Esta ligação traz algo que não é uma chave, por isso não há com que abrir. Peça uma nova.",
+    "t.id.looking": "A verificar se esta carteira já tem um nome aqui…",
+    "t.id.already": "Já é recetível — a mesma carteira dá a mesma chave, por isso este nome continua seu:",
+    "t.id.alreadynote": "Nada foi escrito e nenhum nome foi gasto. É precisamente por isso que a chave é derivada e não gerada: só existe um de si, em quantos navegadores o carregue."
   },
   "ru": {
     "b.write.p": "Заголовок и текст, записанные в <span class=\"mono\">nextkey.post</span> на имени. Ничего не шифруется — это публичная половина того же механизма. Имя может нести до пяти записей; публикация занимает первое свободное место, а не заменяет то, что есть. Владелец может очистить любое из них в любой момент.",
@@ -1697,7 +1712,10 @@
     "t.claim.h": "Отправьте тому, у кого ещё нет ключа:",
     "t.claim.note": "Ключ, который его открывает, стоит в части адреса после #, которую браузеры никогда не отправляют на сервер. Но он путешествует вместе со ссылкой: у кого ссылка, тот может один раз открыть секрет — обращайтесь с ней как с самим сообщением, а не как с адресом. Тому, кто откроет, предлагается собственный опубликованный ключ, и следующий секрет ссылки уже не потребует.",
     "t.claim.arrived": "Эта ссылка несёт секрет и ключ, который его открывает. Нажмите кнопку, чтобы прочитать, — никуда ничего не отправлялось.",
-    "t.claim.bad": "Эта ссылка несёт что-то, что не является ключом, — открывать нечем. Попросите новую."
+    "t.claim.bad": "Эта ссылка несёт что-то, что не является ключом, — открывать нечем. Попросите новую.",
+    "t.id.looking": "Проверяем, есть ли уже имя у этого кошелька…",
+    "t.id.already": "Вы уже получатель — тот же кошелёк даёт тот же ключ, поэтому это имя по-прежнему ваше:",
+    "t.id.alreadynote": "Ничего не записано и ни одно имя не потрачено. Ровно для этого ключ выводится, а не генерируется: вы один, в скольких браузерах ни нажимайте."
   },
   "ua": {
     "b.write.p": "Заголовок і текст, записані в <span class=\"mono\">nextkey.post</span> на імені. Нічого не шифрується — це публічна половина того самого механізму. Ім’я може нести до п’яти дописів; публікація займає перше вільне місце, а не замінює наявне. Власник може спорожнити будь-яке з них будь-коли.",
@@ -1980,7 +1998,10 @@
     "t.claim.h": "Надішліть тому, хто ще не має ключа:",
     "t.claim.note": "Ключ, який його відкриває, стоїть у частині адреси після #, яку браузери ніколи не надсилають на сервер. Але він подорожує разом із посиланням: хто має посилання, може один раз відкрити секрет — поводьтеся з ним як із самим повідомленням, а не як з адресою. Тому, хто відкриє, пропонується власний опублікований ключ, і наступний секрет посилання вже не потребуватиме.",
     "t.claim.arrived": "Це посилання несе секрет і ключ, який його відкриває. Натисніть кнопку, щоб прочитати, — нікуди нічого не надсилалося.",
-    "t.claim.bad": "Це посилання несе щось, що не є ключем, — відкривати нічим. Попросіть нове."
+    "t.claim.bad": "Це посилання несе щось, що не є ключем, — відкривати нічим. Попросіть нове.",
+    "t.id.looking": "Перевіряємо, чи має цей гаманець тут уже ім’я…",
+    "t.id.already": "Ви вже отримувач — той самий гаманець дає той самий ключ, тож це ім’я й далі ваше:",
+    "t.id.alreadynote": "Нічого не записано й жодного імені не витрачено. Саме для цього ключ виводиться, а не генерується: ви один, у скількох браузерах не натискайте."
   },
   "cn": {
     "b.write.p": "一个标题和一段正文，写入某个名字上的 <span class=\"mono\">nextkey.post</span>。不加密——这是同一套机制的公开一半。一个名字最多可承载五篇帖子；发布会占用第一个空位，而不是覆盖已有内容。持有者随时可以清空其中任何一篇。",
@@ -2258,7 +2279,10 @@
     "t.claim.h": "发给还没有密钥的人：",
     "t.claim.note": "打开它的密钥放在地址中 # 之后的部分，浏览器从不会把那一段发给服务器。但它会随链接一起传播：谁拿到链接，谁就能打开这个秘密一次——把它当作消息本身，而不是一个地址。打开它的人会收到属于自己的已发布密钥的提议，下一个秘密就不再需要链接了。",
     "t.claim.arrived": "这个链接带着一个秘密，以及打开它的密钥。按下按钮即可阅读——没有任何东西被发送到任何地方。",
-    "t.claim.bad": "这个链接带的不是密钥，因此没有可用来打开的东西。请对方重新发一个。"
+    "t.claim.bad": "这个链接带的不是密钥，因此没有可用来打开的东西。请对方重新发一个。",
+    "t.id.looking": "正在检查这个钱包在这里是否已经有名称……",
+    "t.id.already": "你已经可以接收了——同一个钱包给出同一个密钥，所以这个名称仍然是你的：",
+    "t.id.alreadynote": "没有写入任何东西，也没有消耗名称。这正是密钥要派生而不是生成的原因：无论你在多少个浏览器里按，你都只有一个。"
   },
   "fa": {
     "b.write.p": "یک عنوان و یک متن، نوشته‌شده در <span class=\"mono\">nextkey.post</span> روی یک نام. چیزی رمزگذاری نمی‌شود — این نیمهٔ عمومی همان سازوکار است. هر نام می‌تواند تا پنج نوشته داشته باشد؛ انتشار نخستین جای خالی را می‌گیرد و آنچه هست را جایگزین نمی‌کند. مالک هر کدام را هر وقت بخواهد خالی می‌کند.",
@@ -2540,6 +2564,9 @@
     "t.claim.h": "برای کسی بفرستید که هنوز کلیدی ندارد:",
     "t.claim.note": "کلیدی که آن را باز می‌کند در بخشی از نشانی پس از # قرار دارد؛ بخشی که مرورگرها هرگز به سرور نمی‌فرستند. اما همراه پیوند سفر می‌کند: هر کس پیوند را داشته باشد می‌تواند یک بار راز را باز کند — با آن مثل خود پیام رفتار کنید، نه مثل یک نشانی. به کسی که آن را باز کند کلید منتشرشدهٔ خودش پیشنهاد می‌شود و راز بعدی دیگر به هیچ پیوندی نیاز ندارد.",
     "t.claim.arrived": "این پیوند یک راز و کلیدی که آن را باز می‌کند با خود دارد. برای خواندن دکمه را بزنید — هیچ چیزی به جایی فرستاده نشد.",
-    "t.claim.bad": "این پیوند چیزی دارد که کلید نیست، پس چیزی برای باز کردن وجود ندارد. یکی تازه بخواهید."
+    "t.claim.bad": "این پیوند چیزی دارد که کلید نیست، پس چیزی برای باز کردن وجود ندارد. یکی تازه بخواهید.",
+    "t.id.looking": "در حال بررسی اینکه این کیف پول اینجا نامی دارد یا نه…",
+    "t.id.already": "شما از قبل قابل دریافت هستید — همان کیف پول همان کلید را می‌دهد، پس این نام همچنان مال شماست:",
+    "t.id.alreadynote": "چیزی نوشته نشد و نامی مصرف نشد. دقیقاً برای همین کلید مشتق می‌شود نه ساخته: شما فقط یکی هستید، در هر چند مرورگری که این را بزنید."
   }
 }

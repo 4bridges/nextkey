@@ -867,3 +867,83 @@ is in flight before anything else.
 It became visible only when the test was made to print *what the page said
 instead* of merely that a selector never appeared. Every failure today that
 looked like a flake was a real defect wearing a bad error message.
+
+---
+
+## 2026-09-09 (late) — the identity key stops being a file, and the demo stops overpromising
+
+**The question that started it was a user's, not a developer's:** why can I not
+send a secret to `simon.eth`? Because encrypting to somebody needs their public
+key, and a name that publishes none can receive nothing. Which exposed the fact
+that the page said the opposite — *"A name on ENS, any public address"* — and an
+address is the hash of a key, so nothing can ever be encrypted to one. That
+sentence is gone.
+
+**Underneath it was a scaling problem, not a wording problem.** Being receivable
+cost four things: generate a key, keep it for ever, own an ENS name, pay for a
+transaction. Ordinary people climb none of those walls, and the first is the
+worst — it invents a brand-new secret that nobody backs up and whose loss costs
+every secret ever sent to them. Three changes, in order of how much they matter:
+
+**1 · The identity key is derived, not generated.** One signature with the wallet
+the person already has, through HKDF with a new info string
+`nextkey/v2/identity`, gives the same X25519 key every time on any machine they
+can sign from. Nothing is created, so nothing has to be kept: the wallet is the
+whole of the backup. The message deliberately carries **no name** — an identity
+belongs to a wallet, not to a name, so one signature serves every name that
+person holds and the key survives moving between them. The machinery already
+existed for the per-name ephemeral key; this is the same trick pointed at a
+longer-lived purpose, and `nextkey/v2/identity` is a *new* string, so every key
+derived before today derives exactly as it did. `loadIdentity` checks the
+address before signing: deriving with the wrong wallet would silently produce a
+different key, and the failure would appear much later as a grant that will not
+open. Three interop checks now run in Node and in Chromium, including that the
+identity key is *not* the ephemeral key of any name — the separation is an
+arithmetic property rather than a claim.
+
+**2 · Becoming receivable costs one signature and no gas.** The page derives the
+key, lends a name from the pool and writes `nextkey.pubkey` with its own
+account. Four walls become: connect, sign once.
+
+**3 · A secret can be sent to somebody who has nothing at all.** When the
+recipient is a throwaway keypair made in the browser, its private half travels
+in the URL fragment — the part browsers never send to a server — while the
+ciphertext and the grant sit on the name as always. The cost is stated on the
+page, not only in the code: whoever holds the link can open the secret, so it is
+a link-shaped secret, like a password-reset mail, and only as private as the
+channel carrying it. It is offered as the way to reach somebody the *first* time,
+and the person who opens it is offered a published key of their own, after which
+no link is needed again. That is the growth loop, and it is also the only part of
+this design that trades privacy for reach.
+
+**What a manual run found that no test could.** Both flows work on chain. Three
+defects surfaced by using them:
+
+- **The same wallet, pressed twice, took two names.** Correct arithmetic, wrong
+  product: one identity on two names, neither canonical, and a finite pool spent
+  twice as fast. The page now looks for its own key in the pool first and says
+  *you are already receivable at …* instead of writing. Finding it is the honest
+  part — a chain cannot answer "which name carries this value" without an
+  indexer, the same limit the inbox already states about itself — so it reads the
+  pool ten at a time, shows the progress, and remembers the answer locally,
+  verifying that note against the chain before believing it.
+- **The claim link scrolled off the screen** the moment it appeared, because the
+  write jumps to the inbox. With a link in the result, it now scrolls there.
+- **"Sealed" was not sealed on screen.** The panel said *Sealed, and granted to
+  one recipient* while the eye above it still revealed the passphrase and the box
+  still showed the message. A page about cryptography contradicting itself two
+  inches apart. The reveal is removed rather than disabled, the text goes back
+  under its dots, and the input is put away.
+
+**And two checks that were testing the clock.** `it says it is live` sampled a
+label that appears when the first fill finishes; `marked as an arrival` searched
+for a mark that fades after six seconds, *after* waiting for the post to arrive —
+while its own comment claimed it was caught as it appeared. Both failed on a run
+where esbuild took three times as long as usual, and both passed on a slower run
+once the first was made to wait and the second's watcher was armed *before* the
+event. The comment that lied has been corrected too: a comment claiming a
+property the code does not have is worse than none, because it stops the next
+reader looking.
+
+**Deliberately not built before the deadline:** a free subname the visitor
+actually *owns*. See `docs/architecture.md`, "How this scales".

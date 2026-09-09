@@ -601,6 +601,18 @@ function lockChoices() {
                     'lookup', 'go-store', 'msg-edit']) $(id).disabled = true
   $('ens-name').readOnly = true
   phraseBox.readOnly = true
+
+  // Sealed has to mean sealed on screen too. The panel said "Sealed, and
+  // granted to one recipient" while the eye above it still revealed the
+  // passphrase and the message box still showed what had just been encrypted —
+  // a page about cryptography contradicting itself two inches apart. The
+  // reveal is removed rather than disabled, the text goes back under its dots,
+  // and the box the secret was typed into is put away: what was sealed is no
+  // longer on display.
+  document.querySelectorAll('.eyerow').forEach((el) => el.remove())
+  const shown = $('phrase-shown')
+  if (shown && S.phrase) shown.innerHTML = `<span class="covered">${esc(cover(S.phrase))}</span>`
+  phraseBox.hidden = true
   document.querySelectorAll('.step').forEach((el, i) => { if (i < 3) el.classList.add('done') })
   $('step1-state').textContent = t('t.locked',
     'Sealed. Reload the page to start again with a different secret.')
@@ -724,6 +736,47 @@ const recordsFor = async (name, signMessage) => {
  * it. The page therefore offers it as the way to reach somebody the first
  * time — and offers them, on arrival, the way not to need it again.
  */
+/**
+ * Which pool name already carries this key, if any.
+ *
+ * Pressing the button twice with the same wallet used to lend a second name and
+ * publish the same key on it — correct arithmetic, wrong product: two names for
+ * one identity, no canonical one, and a finite pool spent twice as fast. The
+ * derivation is deterministic, so the page can simply look for itself.
+ *
+ * There is no cheap way to ask a chain "which name carries this value": that is
+ * an indexer's job, and this page has none — the same limit the inbox states
+ * about itself. So it reads the pool, ten at a time, and remembers the answer
+ * locally afterwards so that the next visit on this browser costs one read
+ * instead of forty. The local note is a shortcut, never the source of truth:
+ * it is verified against the chain before it is believed.
+ */
+const REMEMBERED = 'nextkey.receivable'
+
+const poolNameWithKey = async (value, onProgress = () => {}) => {
+  try {
+    const kept = JSON.parse(localStorage.getItem(REMEMBERED) || 'null')
+    if (kept?.value === value && kept?.name) {
+      const still = await reader.getEnsText({ name: kept.name, key: RECORD_PUBKEY })
+      if (still === value) return kept.name
+    }
+  } catch { /* a browser that refuses storage just does the long way */ }
+
+  const names = POOL.map((l) => `${l}.${PARENT}`)
+  for (let i = 0; i < names.length; i += 10) {
+    onProgress(i, names.length)
+    const batch = names.slice(i, i + 10)
+    const found = await Promise.all(batch.map((n) =>
+      reader.getEnsText({ name: n, key: RECORD_PUBKEY }).catch(() => null)))
+    const hit = batch.find((_, k) => found[k] === value)
+    if (hit) {
+      try { localStorage.setItem(REMEMBERED, JSON.stringify({ name: hit, value })) } catch { /* fine */ }
+      return hit
+    }
+  }
+  return null
+}
+
 const claimLink = (name) => {
   const url = new URL(location.href)
   url.search = ''
@@ -786,8 +839,12 @@ const wroteIt = (out, name, hashes, moved, extra = '') => {
 
   // After a frame, so the two newly revealed sections are laid out before the
   // browser is asked to scroll to one of them.
+  // Scroll to whichever of the two the visitor needs next. With a claim link
+  // in the result, jumping to the inbox put the one thing they have to copy
+  // off the screen before they saw it.
+  const target = S.recipient.local ? out : $('step-open')
   requestAnimationFrame(() =>
-    $('step-open').scrollIntoView({ behavior: 'smooth', block: 'start' }))
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' }))
 }
 
 // ─── Lane one · no wallet ──────────────────────────────────────────────────
@@ -996,6 +1053,25 @@ $('be-receivable').addEventListener('click', async () => {
     const sig = await signer.signMessage({ message: identityMessage() })
     const sk = identitySecretFromSignature(sig)
     const pk = publicKeyOf(sk)
+    const value0 = b64(pk)
+
+    // Already receivable? Then say so instead of spending a second name.
+    say(out, 'busy', `<p>${t('t.id.looking', 'Checking whether this wallet already has a name here…')}</p>`)
+    const already = await poolNameWithKey(value0, (done, total) =>
+      say(out, 'busy', `<p>${t('t.id.looking', 'Checking whether this wallet already has a name here…')}
+        <span class="mono">${done}/${total}</span></p>`))
+    if (already) {
+      S.recipient = { pk, label: already, local: false }
+      refreshReady()
+      return say(out, 'ok', `
+        <p>${t('t.id.already', 'You are already receivable — the same wallet gives the same key, so this name is still yours:')} <span class="mono">${esc(already)}</span></p>
+        <dl>
+          <dt>${t('t.name', 'name')}</dt><dd class="mono">${esc(already)}</dd>
+          <dt>${t('t.pubkey', 'published key')}</dt><dd class="mono break">${esc(value0)}</dd>
+        </dl>
+        <p class="note">${t('t.id.alreadynote', 'Nothing was written and no name was spent. That is the point of deriving the key rather than generating one: there is only ever one of you, however many browsers you press this in.')}</p>`,
+        { step: 2, recipient: 'derived', name: already, publicKey: value0, wrote: false })
+    }
 
     say(out, 'busy', `<p>${t('t.chain.finding', 'Finding a name that is still free…')}</p>`)
     const name = await freePoolName()
@@ -1005,7 +1081,7 @@ $('be-receivable').addEventListener('click', async () => {
     const node = toHex(packetToBytes(name))
     const abi = SHAPES[0].abi
     const account = demoAccount()
-    const value = b64(pk)
+    const value = value0
 
     say(out, 'busy', `<p>${t('t.s6.simulating', 'Checking the write would succeed, before asking you to sign…')}</p>`)
     await reader.simulateContract({
@@ -1020,6 +1096,7 @@ $('be-receivable').addEventListener('click', async () => {
     await reader.waitForTransactionReceipt({ hash })
 
     S.recipient = { pk, label: name, local: false }
+    try { localStorage.setItem(REMEMBERED, JSON.stringify({ name, value })) } catch { /* fine */ }
     say(out, 'ok', `
       <p>${t('t.id.done', 'You can now be sent secrets at')} <span class="mono">${esc(name)}</span>.</p>
       <dl>

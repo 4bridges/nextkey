@@ -132,17 +132,31 @@ check('the resolver it read is on the page', /0x04B2DB6567Cc68d059c061215Adf9a99
 check('what it cannot say is said out loud', /does not run backwards/.test(text))
 
 // ── The live part ──
-check('it says it is live', /Live/.test(await page.textContent('#feed-live')))
+// The label is waited for, not sampled. The window says "Live" once its first
+// fill has finished, and on a loaded machine that is a second or two later than
+// this line is reached — a green check that depends on how busy the computer is
+// says nothing about the page.
+check('it says it is live', await page.waitForFunction(
+  () => /Live/.test(document.getElementById('feed-live')?.textContent ?? ''),
+  null, { timeout: 15_000 }).then(() => true).catch(() => false))
+
+// The watcher starts BEFORE the arrival is triggered.
+//
+// The mark fades after six seconds by design, so looking for it after waiting
+// for the post to appear is a race against that timer: the comment here used to
+// claim it was caught as it appeared, and it was not — it was searched for
+// afterwards, and on a slow run the class was already gone. Started first, the
+// watcher is armed when the class is added, whatever the machine is doing.
+const freshMark = page.waitForSelector('#feed-out .ev.fresh', { timeout: 20_000 })
+  .then(() => true).catch(() => false)
+
 head = 11661903n
 await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')))
 await page.waitForFunction(() => /Hello world/.test(document.getElementById('feed-out').textContent), null, { timeout: 10_000 })
 const after = await page.textContent('#feed-out')
 check('a new write arrives on its own', /published a post, in the clear/.test(after))
 check('and lands at the top', (await page.locator('#feed-out .ev').first().textContent()).includes('published a post'))
-// Caught as it appears rather than counted afterwards: the mark fades after
-// six seconds by design, so a slow assertion was testing the clock.
-check('marked as an arrival', await page.waitForSelector('#feed-out .ev.fresh', { timeout: 8_000 })
-  .then(() => true).catch(() => false))
+check('marked as an arrival', await freshMark)
 check('and nothing that was already there is lost', /granted access to somebody/.test(after))
 
 // ── Pause ──
