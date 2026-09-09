@@ -705,6 +705,40 @@ const recordsFor = async (name, signMessage) => {
  * response at all and the obvious thing to do was press it again. Which wrote
  * a second name.
  */
+/**
+ * A secret for somebody who publishes no key — and the trade that makes it work.
+ *
+ * The whole design says: encrypt to a key the recipient published, so nothing
+ * in the link opens anything. That is right, and it is also a wall in front of
+ * the first exchange with anyone who has never heard of NextKey. This is the
+ * door through the wall, and it is deliberately a different, weaker thing.
+ *
+ * The recipient key here was made in this browser and belongs to nobody yet, so
+ * its private half can travel — in the URL *fragment*, which browsers never put
+ * in a request. The chain half is unchanged: the ciphertext and the grant sit
+ * on the name exactly as always, addressed to that key.
+ *
+ * What it costs, said on the page as well as here: whoever holds the link can
+ * open the secret, once and for anyone. It is a link-shaped secret, like a
+ * password-reset mail, and it is only as private as the channel that carries
+ * it. The page therefore offers it as the way to reach somebody the first
+ * time — and offers them, on arrival, the way not to need it again.
+ */
+const claimLink = (name) => {
+  const url = new URL(location.href)
+  url.search = ''
+  url.hash = `claim=${encodeURIComponent(name)}&k=${encodeURIComponent(b64(S.recipient.sk))}` +
+             `&lang=${document.documentElement.dataset.i18nLang || 'en'}`
+  return url.toString()
+}
+
+const claimBlock = (name) => `
+  <div style="border-top:1px solid var(--line);margin-top:.9rem;padding-top:.9rem">
+    <p>${t('t.claim.h', 'Send it to somebody who has no key yet:')}</p>
+    <p class="mono break" style="background:var(--code);border:1px solid var(--line);border-radius:9px;padding:.6rem .75rem">${esc(claimLink(name))}</p>
+    <p class="note">${t('t.claim.note', 'The key that opens this lives in the part of the address after the #, which browsers never send to a server. It does travel with the link, so whoever holds the link can open the secret once — treat it like the message itself, not like an address. The person who opens it is offered a published key of their own, and the next secret you send them needs no link at all.')}</p>
+  </div>`
+
 const wroteIt = (out, name, hashes, moved, extra = '') => {
   // One secret, one name. The lane that was not used is not an option any
   // more, and a disabled button beside a finished result only invites the
@@ -739,6 +773,7 @@ const wroteIt = (out, name, hashes, moved, extra = '') => {
       <dd class="mono break"><a href="https://sepolia.etherscan.io/tx/${esc(h)}" target="_blank" rel="noopener noreferrer">${esc(clip(h, 26))}</a></dd>`).join('')}
     </dl>
     <p class="note"><a href="./explorer.html?name=${encodeURIComponent(name)}">${t('t.s6.explorer', 'See what this name now carries')}</a></p>
+    ${S.recipient.local ? claimBlock(name) : ''}
     ${why(t('t.why', 'Why this matters'), `
       ${extra}
       ${moved === S.grantKey ? '' : `
@@ -1579,6 +1614,28 @@ window.NEXTKEY = {
 {
   const q = new URLSearchParams(location.search)
   setMode(q.get('mode') === 'message' ? 'message' : 'wallet')
+
+  // A claim link: the name to look at, and the key to look with. Both come out
+  // of the fragment, which never left the sender's browser for a server and
+  // does not leave this one either.
+  const frag = new URLSearchParams(location.hash.replace(/^#/, ''))
+  const claim = frag.get('claim')
+  const claimKey = frag.get('k')
+  if (claim && claimKey) {
+    try {
+      const sk = un64(claimKey)
+      if (sk.length !== 32) throw new Error('not a 32-byte key')
+      S.recipient = { sk, pk: publicKeyOf(sk), label: null, local: true }
+      $('inbox-names').value = claim
+      show($('step-open'), true)
+      $('check-inbox').disabled = false
+      show($('open-remote-note'), false)
+      say($('open-out'), '', `<p>${t('t.claim.arrived', 'This link carries a secret and the key that opens it. Press the button to read it — nothing has been sent anywhere.')}</p>`)
+      requestAnimationFrame(() => $('step-open').scrollIntoView({ behavior: 'smooth', block: 'start' }))
+    } catch {
+      say($('open-out'), 'bad', `<p>${t('t.claim.bad', 'That link carries something that is not a key, so there is nothing to open with. Ask whoever sent it for a fresh one.')}</p>`)
+    }
+  }
 
   const to = q.get('to')
   if (to) {
