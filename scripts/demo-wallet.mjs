@@ -326,6 +326,30 @@ else if (cmd === 'prepare' || cmd === 'series') {
     '  Deploy the pool resolver first:  demo-wallet.mjs resolver')
   const { address } = load()
 
+  /**
+   * What this run costs, and what is left afterwards — two different questions.
+   *
+   * The first version answered both with one subtraction: the balance before
+   * minus the balance after. That is not the cost. It is the change in the
+   * balance, and money arriving during the run counts against it with the wrong
+   * sign. A top-up mid-run once made a fifty-name block report `spent
+   * -0.268 ETH`, which reads as a refund.
+   *
+   * Every receipt already carries what was actually paid, so the fees are added
+   * up as they come in. The balance is still printed, because "will it last"
+   * is the other thing you want to know before three hundred transactions —
+   * but it is now labelled as a balance rather than passed off as a cost.
+   */
+  let paid = 0n
+  const bill = (receipt) => {
+    // effectiveGasPrice is what the block charged, not what we offered. A node
+    // that omits it costs us the accounting for that one transaction rather
+    // than the run, so it is skipped rather than guessed at.
+    if (receipt?.gasUsed && receipt?.effectiveGasPrice) {
+      paid += receipt.gasUsed * receipt.effectiveGasPrice
+    }
+  }
+
   const before = await reader.getBalance({ address: writer.account.address })
   console.log(`\n  registrar     ${formatEther(before)} ETH`)
   console.log(`  demo wallet   ${address}`)
@@ -343,6 +367,7 @@ else if (cmd === 'prepare' || cmd === 'series') {
         address: REGISTRY, abi: registryAbi, functionName: 'register',
         args: [label, OWNER, zeroAddress, RESOLVER, OWNER_ROLES, expiry], chain: sepolia })
       const r = await reader.waitForTransactionReceipt({ hash })
+      bill(r)
       process.stdout.write(`${r.status} `)
     } else {
       process.stdout.write(`  ${label.padEnd(10)} exists   `)
@@ -361,12 +386,21 @@ else if (cmd === 'prepare' || cmd === 'series') {
       address: resolver, abi: resolverAbi, functionName: 'grantSetterRoles',
       args: [setterCall, address], chain: sepolia })
     const g = await reader.waitForTransactionReceipt({ hash: grant })
+    bill(g)
     console.log(g.status)
   }
 
   const after = await reader.getBalance({ address: writer.account.address })
-  console.log(`\n  spent         ${formatEther(before - after)} ETH`)
-  console.log(`  registrar     ${formatEther(after)} ETH left\n`)
+  const moved = before - after - paid
+  console.log(`\n  gas paid      ${formatEther(paid)} ETH`)
+  console.log(`  registrar     ${formatEther(after)} ETH left`)
+  // Anything the two numbers do not explain came in or went out while this ran,
+  // and saying so is cheaper than leaving somebody to work out why the
+  // arithmetic does not close.
+  if (moved !== 0n) {
+    console.log(`  ${moved < 0n ? 'received' : 'sent out'}      ${formatEther(moved < 0n ? -moved : moved)} ETH from elsewhere during the run`)
+  }
+  console.log()
 }
 
 else if (cmd === 'resolver') {
