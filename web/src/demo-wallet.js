@@ -59,5 +59,5 @@ export const POOL_RESOLVER = '0x04B2DB6567Cc68d059c061215Adf9a99adD1cA65'
  * On chain and in this constant are two separate facts: a name nobody lists
  * here is a name the page will never lend, however well registered it is.
  */
-export const POOL = Array.from({ length: 50 },
+export const POOL = Array.from({ length: 200 },
   (_, i) => `hero${String(i + 1).padStart(2, '0')}`)
