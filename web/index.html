@@ -80,7 +80,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     font-size:clamp(1.15rem,6vw,3.1rem);font-weight:640;
     max-width:32ch;text-wrap:balance
   }
-  h2,h3,.lead{text-wrap:pretty}
+  h2,h3,.lead,p,.note,figcaption{text-wrap:pretty}
   h2{font-size:1.45rem;font-weight:620;margin-bottom:1.6rem}
   h3{font-size:1.08rem;font-weight:640;margin-bottom:.3rem}
   p{margin:0 0 1rem;max-width:var(--measure)}
@@ -323,6 +323,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     <nav class="barnav" aria-label="Sections">
       <a class="navhome" href="./index.html" data-i18n-title="nav.home" title="Home" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.75 20v-5.5h4.5V20"/></svg><span class="vh" data-i18n="nav.home">Home</span></a>
       <a href="./demo.html" data-i18n="nav.demo">Demo</a>
+      <a href="./poc.html" data-i18n="nav.poc">PoC</a>
       <a href="./explorer.html" data-i18n="nav.explorer">Explorer</a>
       <a href="./blog.html" data-i18n="nav.blog">Blog</a>
       <a href="./donate.html" data-i18n="nav.donate">Donate</a>
@@ -366,15 +367,13 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 
   <!-- 1 — Hero -->
   <section class="hero">
-    <h1 data-i18n="hero.h1">Share a secret — human-in-the-loop</h1>
+    <h1 data-i18n="hero.h1">Share a secret — human-in-the-loop</h1>
     <p class="lead" data-i18n="hero.lead">
       Create a wallet on NextKey, seal and grant your secret, and get it back only with a
       human-in-the-loop. NextKey also provides you secure messaging.
     </p>
     <div class="actions">
       <a class="btn btn-primary" href="./demo.html" data-i18n="hero.cta2">Start demo</a>
-      <a class="btn btn-quiet" href="./explorer.html" data-i18n="x.cta">Explore a name</a>
-      <a class="btn btn-quiet" href="./poc.html" data-i18n="hero.cta">Proof of concept</a>
       <a class="btn btn-quiet" href="https://github.com/4bridges/nextkey" data-i18n="hero.gh" target="_blank" rel="noopener noreferrer">View on GitHub</a>
     </div>
     <figure class="handover">
@@ -451,15 +450,14 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     <form id="jump" class="actions" style="gap:.6rem;flex-wrap:wrap;margin-top:1.2rem">
       <input type="text" id="jump-name" spellcheck="false" autocomplete="off"
              aria-label="A name on the hackathon deployment"
-             data-i18n-ph="x.ph" placeholder="anna.nextkey.eth"
-             style="flex:1 1 18rem;min-width:0;font-size:1rem;line-height:1.55;color:var(--ink);
+             style="flex:0 1 24rem;min-width:0;font-size:1rem;line-height:1.55;color:var(--ink);
                     background:var(--surface);border:1px solid var(--line);border-radius:8px;
                     padding:.7rem .85rem">
       <button class="btn btn-primary" type="submit" data-i18n="x.btn">Look it up</button>
     </form>
     <p class="note" style="margin-top:.8rem;font-size:.93rem;color:var(--muted)">
       <span data-i18n="x.strip.try">Nothing to hand? Try</span>
-      <a href="./explorer.html?name=vault.nextkey.eth"><span class="mono">vault.nextkey.eth</span></a> ·
+      <a href="./explorer.html?name=hero01.nextkey.eth"><span class="mono">hero01.nextkey.eth</span></a> ·
       <a href="./explorer.html?name=anna.nextkey.eth"><span class="mono">anna.nextkey.eth</span></a>
     </p>
   </section>
@@ -680,12 +678,15 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 
 <footer class="wrap">
   <a href="https://github.com/4bridges/nextkey" target="_blank" rel="noopener noreferrer">GitHub</a>
-  <a href="./demo.html" data-i18n="foot.try">Start demo</a>
-  <a href="./poc.html" data-i18n="foot.demo">Proof of concept</a>
-  <a href="./blog.html" data-i18n="comm.cta">Read and write posts</a>
-  <a href="./explorer.html" data-i18n="x.cta">Explore a name</a>
-  <a href="https://github.com/4bridges/nextkey/blob/main/LICENSE" data-i18n="foot.lic" target="_blank" rel="noopener noreferrer">MIT License</a>
-  <a href="mailto:hello@4bridges.ch" data-i18n="foot.contact">Contact</a>
+  <a href="https://github.com/4bridges/nextkey/blob/main/LICENSE" data-i18n="foot.lic" target="_blank" rel="noopener noreferrer">AGPL-3.0 License</a>
+  <!-- The three deployments this prototype was built against. Named, not
+       badged: they are references, and the imprint says they imply no
+       endorsement. -->
+  <a href="https://ens.domains" target="_blank" rel="noopener noreferrer">ENS</a>
+  <a href="https://chain.link" target="_blank" rel="noopener noreferrer">Chainlink</a>
+  <a href="https://www.ledger.com" target="_blank" rel="noopener noreferrer">Ledger</a>
+  <a href="./imprint.html" data-i18n="foot.imprint">Imprint</a>
+  <a href="./privacy.html" data-i18n="foot.privacy">Privacy</a>
 </footer>
 
 <script type="application/ld+json">
@@ -730,7 +731,7 @@ document.addEventListener('submit', function (e) {
   location.href = './explorer.html' + (v ? '?name=' + encodeURIComponent(v) : '')
 })
 </script>
-<script src="./i18n.js?v=e11349a9"></script>
+<script src="./i18n.js?v=9ef3da6a"></script>
 <script>
 /**
  * Translation is applied over the page, not baked into it.

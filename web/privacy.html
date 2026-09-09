@@ -8,8 +8,8 @@
 <link rel="apple-touch-icon" href="./brand/apple-touch-icon.png">
 <link rel="manifest" href="./brand/site.webmanifest">
 <meta name="theme-color" content="#9a5218">
-<title>NextKey — read live from Sepolia</title>
-<meta name="description" content="A secret, its grants and an AI-agent's release proposal, read live from the ENSv2 hackathon deployment on Sepolia.">
+<title>NextKey — Privacy</title>
+<meta name="description" content="What nextkey.li stores (almost nothing), what your browser contacts, and why data on a public blockchain cannot be taken back.">
 <meta name="robots" content="noindex">
 <script>
 (function(){try{var t=localStorage.getItem('nextkey.theme')
@@ -192,7 +192,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     <nav class="barnav" aria-label="Sections">
       <a class="navhome" href="./index.html" data-i18n-title="nav.home" title="Home"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.75 20v-5.5h4.5V20"/></svg><span class="vh" data-i18n="nav.home">Home</span></a>
       <a href="./demo.html" data-i18n="nav.demo">Demo</a>
-      <a href="./poc.html" data-i18n="nav.poc" aria-current="page">PoC</a>
+      <a href="./poc.html" data-i18n="nav.poc">PoC</a>
       <a href="./explorer.html" data-i18n="nav.explorer">Explorer</a>
       <a href="./blog.html" data-i18n="nav.blog">Blog</a>
       <a href="./donate.html" data-i18n="nav.donate">Donate</a>
@@ -233,94 +233,101 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 </header>
 
 <div class="wrap" style="padding-top:2.6rem;padding-bottom:2rem;border-bottom:1px solid var(--line)">
-
-  <p class="eyebrow" data-i18n="d.eyebrow">Live from the chain</p>
-  <h1 data-i18n="d.h1">A secret, its grants, and an AI-agent asking to release it</h1>
-  <p class="lead" data-i18n="d.lead">
-    Every value below is read from the ENSv2 hackathon deployment on Sepolia when this
-    page loads. Nothing is cached or replayed. Read-only — no wallet, no signing.
-  </p>
-  <p class="meta"><span data-i18n="d.readat">Read at</span> <span id="read-at">—</span> · <span data-i18n="d.via">Universal Resolver</span>
-    <span class="mono">0xd26f2040…faf142</span></p>
+  <p class="eyebrow" data-i18n="l.eyebrow">Legal</p>
+  <h1 data-i18n="l.p.h1">Privacy</h1>
+  <p class="lead" data-i18n="l.p.lead">This site collects almost nothing. The part worth reading is not what we store — it is what a public blockchain stores, and why nobody can take that back.</p>
+  <p class="meta"><span data-i18n="l.updated">Last updated</span> <span class="mono">2026-09-09</span></p>
 </div>
 
 <main class="wrap">
 
-  <noscript>
-    <div class="fallback">
-      <p data-i18n-html="d.nojs1"><strong>This page reads the chain with JavaScript, which is switched off.</strong></p>
-      <p data-i18n-html="d.nojs2">The same values are readable without it. Open
-        <a href="https://hackathon-deployment-portal-app.ens-cf.workers.dev/" target="_blank" rel="noopener noreferrer">the ENS explorer</a>
-        and look up <span class="mono">visa.nextkey.eth</span>,
-        <span class="mono">anna.nextkey.eth</span> and
-        <span class="mono">agent.nextkey.eth</span> — or read
-        <a href="https://github.com/4bridges/nextkey#readme" target="_blank" rel="noopener noreferrer">the README</a>, which explains
-        what each record is for.</p>
-    </div>
-  </noscript>
+  <section class="step" style="padding-left:0">
+    <div data-i18n-html="l.p.controller"><h2>Who is responsible</h2>
+    <p class="mono" style="line-height:1.7">4bridges by Fundel<br>Goethestrasse 33<br>9008 St. Gallen<br>Switzerland</p>
+    <p>Controller within the meaning of the Swiss Federal Act on Data Protection (FADP) and, where
+       it applies, the GDPR. Contact for every data protection request:
+       <a href="mailto:hello@nextkey.li">hello@nextkey.li</a>.</p></div>
+  </section>
 
-  <div class="grid">
+  <section class="step" style="padding-left:0">
+    <div data-i18n-html="l.p.nothing"><h2>What this site does not do</h2>
+    <p>No accounts, no registration, no newsletter. <strong>No tracking cookies, no analytics, no
+       advertising, no social plugins.</strong> No content delivery network and no web fonts: every
+       script and every font is served from this domain, which is also why the pages are large.</p>
+    <p>Your browser stores two things locally, on your own device, and sends them nowhere: the
+       language you chose and whether you asked for the dark or light theme. Clearing your browser
+       data removes them.</p></div>
+  </section>
 
-    <section class="panel">
-      <h2 data-i18n="d.p1h">The secret</h2>
-      <p class="what"><span class="mono">visa.nextkey.eth</span> · <span class="mono">nextkey.secret</span></p>
-      <div class="body" id="p-secret" data-state="loading"></div>
-    </section>
+  <section class="step" style="padding-left:0">
+    <div data-i18n-html="l.p.host"><h2>Hosting and server logs</h2>
+    <p>The site is hosted by cyon GmbH, Basel, Switzerland, on servers in Switzerland. Like every
+       web server, it writes access logs: IP address, date and time, the page requested, the
+       referring page and the browser identification.</p>
+    <p>These logs exist to operate the site and to detect attacks and faults. They are not used to
+       build a profile and are not combined with other data. Legal basis: the overriding legitimate
+       interest in operating a secure service (Art. 31 FADP; Art. 6(1)(f) GDPR). They are deleted
+       once they are no longer needed for that purpose.</p></div>
+  </section>
 
-    <section class="panel">
-      <h2 data-i18n="d.p2h">The recipient</h2>
-      <p class="what"><span class="mono">anna.nextkey.eth</span> · <span data-i18n="d.p2w">her key, and the grant it addresses</span></p>
-      <div class="body" id="p-recipient" data-state="loading"></div>
-    </section>
+  <section class="step" style="padding-left:0">
+    <div data-i18n-html="l.p.third"><h2>What your browser contacts, and what that reveals</h2>
+    <p>Reading the chain means asking a node. Pages that show on-chain data send requests from
+       <em>your</em> browser to public Ethereum endpoints
+       (<span class="mono">ethereum-sepolia-rpc.publicnode.com</span> and, on the donation page,
+       <span class="mono">ethereum-rpc.publicnode.com</span>, operated by Allnodes). Those
+       operators see your IP address and the queries you make — including
+       <strong>which names you look up</strong>. We receive none of it, and we cannot promise
+       anything about what they do with it.</p>
+    <p>If you connect a wallet, the wallet is a separate program with its own privacy policy. The
+       page learns the address you connect and nothing else; your private key never reaches it, and
+       no transaction happens until you confirm it yourself.</p>
+    <p>Links to GitHub, Etherscan or the ENS portal only contact those services once you click
+       them.</p></div>
+  </section>
 
-    <section class="panel">
-      <h2 data-i18n="d.v2h">The same recipient, under v2</h2>
-      <p class="what"><span class="mono">vault.nextkey.eth</span> · <span data-i18n="d.v2w">where the panel above stops working</span></p>
-      <div class="body" id="p-v2" data-state="loading"></div>
-    </section>
+  <section class="step" style="padding-left:0">
+    <div data-i18n-html="l.p.chain"><h2>The blockchain, and what cannot be undone</h2>
+    <p>Anything written to the chain — a secret's ciphertext, a grant, a public key, a blog post,
+       a donation — is <strong>public, permanent and copied to computers all over the world</strong>.
+       It is not stored by us and it cannot be deleted by us. There is no button, no request and no
+       court order that removes it from every copy.</p>
+    <p>This has a plain consequence: the rights to erasure and rectification described below
+       <strong>cannot be fulfilled for data that is already on chain</strong>. Everything else can.
+       So decide before you write, not after — and do not put a name, an address, a message or any
+       other personal detail into a record or a post unless you are content for it to stay public
+       for good.</p>
+    <p>The demonstration lends visitors a name whose key is published in this repository on
+       purpose. Anything written under a lent name is public and attributable to that name. Use it
+       for demonstration content only.</p></div>
+  </section>
 
-    <section class="panel">
-      <h2 data-i18n="d.p5h">A recipient on hardware</h2>
-      <p class="what"><span class="mono">bob.nextkey.eth</span> · <span data-i18n="d.p5w">his key lives on a Ledger</span></p>
-      <div class="body" id="p-device" data-state="loading"></div>
-    </section>
+  <section class="step" style="padding-left:0">
+    <div data-i18n-html="l.p.rights"><h2>Your rights</h2>
+    <p>You may ask what data about you we hold, and ask for it to be corrected or deleted; you may
+       object to processing and, where the GDPR applies, ask for a copy in a portable form. One
+       email to <a href="mailto:hello@nextkey.li">hello@nextkey.li</a> is enough, and it costs you
+       nothing.</p>
+    <p>In practice the answer is usually short, because the only personal data we hold is in the
+       server logs. For anything on the blockchain, see the section above: we can neither retrieve
+       it for you nor remove it. You also have the right to complain to a supervisory authority —
+       in Switzerland the FDPIC, in the EU the authority of your country.</p></div>
+  </section>
 
-    <section class="panel">
-      <h2 data-i18n="d.p3h">The owner</h2>
-      <p class="what"><span class="mono">visa.nextkey.eth</span> · <span data-i18n="d.p3w">the owner's own grant</span></p>
-      <div class="body" id="p-owner" data-state="loading"></div>
-    </section>
+  <section class="step" style="padding-left:0">
+    <div data-i18n-html="l.p.changes"><h2>Changes, and the binding version</h2>
+    <p>This notice describes the site as it stands today. It will be updated when the site changes,
+       and the date below says when it last was.</p>
+    <p>This notice exists in several languages. <strong>The English version is the binding
+       one</strong>; the translations are offered for convenience.</p></div>
+  </section>
 
-    <section class="panel">
-      <h2 data-i18n="d.p4h">The AI-agent's proposal</h2>
-      <p class="what"><span class="mono">agent.nextkey.eth</span> · <span class="mono">nextkey.request</span><span data-i18n="d.p4w">, hashed here</span></p>
-      <div class="body" id="p-agent" data-state="loading"></div>
-    </section>
-
-  </div>
-
-  <div class="fallback">
-    <p data-i18n-html="d.notseen1"><strong>What you cannot see here, and why that is the point.</strong></p>
-    <p data-i18n="d.notseen2">The plaintext. Opening the secret needs a private key that lives on a recipient's
-       own machine and is never published, so no web page can do it for you — including
-       this one. What is on display is the whole public surface of a shared secret: the
-       ciphertext, who has been granted access, and the request an AI-agent filed to release
-       it. That surface reveals that something was shared. It does not reveal what.</p>
-    <p data-i18n="d.notseen3">The guardian approvals behind the AI-agent's request are also absent, and deliberately:
-       they are evaluated inside a confidential enclave. A public guardian list is a target
-       list.</p>
-  </div>
 </main>
 
 <footer class="wrap">
-  <p data-i18n="d.foot">Prototype · ENSv2 beta on Sepolia testnet · not audited. The seed phrase behind this
-     ciphertext was generated for the demonstration and guards nothing.</p>
   <p>
     <a class="foothome" href="./index.html" data-i18n-title="nav.home" title="Home"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.75 20v-5.5h4.5V20"/></svg><span class="vh" data-i18n="nav.home">Home</span></a>
-    <a href="./demo.html" data-i18n="foot.try">Start demo</a>
-    <a href="https://hackathon-deployment-portal-app.ens-cf.workers.dev/" target="_blank" rel="noopener noreferrer" data-i18n="foot.ens">ENS explorer</a>
     <a href="./imprint.html" data-i18n="foot.imprint">Imprint</a>
-    <a href="./privacy.html" data-i18n="foot.privacy">Privacy</a>
   </p>
 </footer>
 
@@ -479,6 +486,5 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   label()
 })()
 </script>
-<script type="module" src="./app.js?v=b0c2f875"></script>
 </body>
 </html>

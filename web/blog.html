@@ -362,6 +362,8 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
      "Home". The label is still there for anybody not looking at pixels. */
   .barnav .navhome{display:inline-flex;align-items:center}
   .barnav .navhome svg{width:1.15rem;height:1.15rem}
+  .foothome{display:inline-flex;align-items:center;vertical-align:middle}
+  .foothome svg{width:1.05rem;height:1.05rem}
   .vh{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
     clip-path:inset(50%);white-space:nowrap;border:0}
   .barnav a:hover{color:var(--ink)}
@@ -395,6 +397,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     <nav class="barnav" aria-label="Sections">
       <a class="navhome" href="./index.html" data-i18n-title="nav.home" title="Home"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.75 20v-5.5h4.5V20"/></svg><span class="vh" data-i18n="nav.home">Home</span></a>
       <a href="./demo.html" data-i18n="nav.demo">Demo</a>
+      <a href="./poc.html" data-i18n="nav.poc">PoC</a>
       <a href="./explorer.html" data-i18n="nav.explorer">Explorer</a>
       <a href="./blog.html" data-i18n="nav.blog" aria-current="page">Blog</a>
       <a href="./donate.html" data-i18n="nav.donate">Donate</a>
@@ -576,14 +579,15 @@ value: {"v":1,"title":"…","body":"…","at":"2026-09-08T12:00:00Z"}</pre>
   <p data-i18n="t.foot">Prototype · ENSv2 beta on Sepolia testnet · not audited · nothing on this page is
     sent to a server. Do not put a phrase here that guards real funds.</p>
   <p>
-    <a href="./index.html" data-i18n="t.about">About NextKey</a>
-    <a href="./demo.html" data-i18n="b.demo">The demo</a>
-    <a href="./explorer.html" data-i18n="x.cta">Explore a name</a>
-    <a href="https://github.com/4bridges/nextkey" data-i18n="t.source" target="_blank" rel="noopener noreferrer">Source</a>
+    <a class="foothome" href="./index.html" data-i18n-title="nav.home" title="Home"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.75 20v-5.5h4.5V20"/></svg><span class="vh" data-i18n="nav.home">Home</span></a>
+    <a href="./demo.html" data-i18n="foot.try">Start demo</a>
+    <a href="./explorer.html" data-i18n="nav.explorer">Explorer</a>
+    <a href="./imprint.html" data-i18n="foot.imprint">Imprint</a>
+    <a href="./privacy.html" data-i18n="foot.privacy">Privacy</a>
   </p>
 </footer>
 
-<script src="./i18n.js?v=e11349a9"></script>
+<script src="./i18n.js?v=9ef3da6a"></script>
 <script>
 /**
  * The same overlay as the other two pages, same storage keys, so a language or
