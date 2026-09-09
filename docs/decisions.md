@@ -733,7 +733,7 @@ now says exactly that instead of listing the bundles.
 suites — `feed.mjs`, `blog.mjs`, `donate.mjs`, 106 of the checks — carried a
 hard-coded absolute path to a container that is not this machine. They served
 404 for every file and timed out on a selector, which reads like a broken page.
-They had never run outside the sandbox they were written in, so the "208 checks"
+They had never run outside the sandbox they were written in, so the check count
 the README advertises had never been reproduced by anyone but their author.
 Resolved from `import.meta.url` now, like `playground.mjs` always did.
 
@@ -766,3 +766,11 @@ implementation. The browser must run them, so the key ships with them; it is
 obfuscation at best, it demands `unsafe-eval`, and on a page whose whole claim
 is that nothing leaves the browser, unreadable code is the argument against
 itself. The licence protects the implementation. Nothing else can.
+
+
+**A number that was wrong while nobody could check it.** The README counted
+`interop.mjs` as 13 checks; it runs those thirteen twice, once in Node and once
+inside Chromium, and prints 26. The suites together are **221**, not 208. The
+figure had stood since the suites were written and could not be caught by
+anyone who could not run them — which is the same finding as above, wearing a
+different hat.

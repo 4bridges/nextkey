@@ -23,7 +23,7 @@ i18n.stamp.json    the English baseline the checker compares against
 .htaccess          cache rules, and addresses without the extension
 
 src/               the sources the bundles are built from
-test/              six suites, 208 checks
+test/              six suites, 221 checks
 brand/             the mark, icons, social card and manifest
 ```
 
@@ -309,7 +309,7 @@ not get run.
 
 ```bash
 node web/test/v2.mjs           # 18 — the v2 construction, padding, backwards compatibility
-node web/test/interop.mjs      # 13 — browser and command line derive the same keys
+node web/test/interop.mjs      # 26 — the same 13 checks in Node and again in Chromium
 node web/test/playground.mjs   # 71 — demo.html in a real browser, in two languages
 node web/test/feed.mjs         # 43 — the explorer's live window and its filters
 node web/test/blog.mjs         # 42 — the community page, its names and its editing step

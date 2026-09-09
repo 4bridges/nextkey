@@ -442,12 +442,13 @@ merges into and it cannot be rebuilt from `i18n.patch.json` alone.
 And the tests, which need no chain at all:
 
 ```bash
-npm test                       # all six suites, 208 checks
-npm run test:crypto            # 31 — no browser and no bundle needed
+npm test                       # all six suites, 221 checks
+npm run test:crypto            # 44 — no bundle needed, and only interop wants a browser
 npm run test:pages             # 177 — builds first, then drives the pages in Chromium
 
 node web/test/v2.mjs           # 18 — the v2 construction, padding, backwards compatibility
-node web/test/interop.mjs      # 13 — browser and command line derive the same keys
+node web/test/interop.mjs      # 26 — browser and command line derive the same keys:
+                               #      the same 13 checks in Node and again inside Chromium
 node web/test/playground.mjs   # 71 — demo.html driven in a real browser, in two languages
 node web/test/feed.mjs         # 43 — the explorer's live window and its filters
 node web/test/blog.mjs         # 42 — the community page, its names and its editing step
