@@ -73,6 +73,22 @@ const t = (key, en) => {
   return dict?.[key] ?? en
 }
 
+// ─── Numbers ───────────────────────────────────────────────────────────────
+// A number follows the page's language, not the browser's. With `undefined`
+// here, a page switched to English still printed 0,0123 to anyone whose browser
+// is German — English words, German separators, on the one page where the
+// number is the point. `cn` and `ua` are our own labels for the selector; Intl
+// wants language tags, and an unknown tag throws rather than degrading, so the
+// call is guarded.
+const INTL = { cn: 'zh', ua: 'uk' }
+const numLocale = () => {
+  const lang = document.documentElement.dataset.i18nLang || 'en'
+  return INTL[lang] ?? lang
+}
+const num = (n, opts) => {
+  try { return n.toLocaleString(numLocale(), opts) } catch { return n.toLocaleString('en', opts) }
+}
+
 // ─── DOM ───────────────────────────────────────────────────────────────────
 const $ = (id) => document.getElementById(id)
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) =>
@@ -241,8 +257,8 @@ const amount = (v, decimals) => {
   const s = formatUnits(v, decimals)
   const n = Number(s)
   if (!Number.isFinite(n)) return s
-  return n >= 1 ? n.toLocaleString(undefined, { maximumFractionDigits: 2 })
-                : n.toLocaleString(undefined, { maximumSignificantDigits: 3 })
+  return n >= 1 ? num(n, { maximumFractionDigits: 2 })
+                : num(n, { maximumSignificantDigits: 3 })
 }
 
 const balances = async () => {
@@ -254,7 +270,7 @@ const balances = async () => {
   ])
 
   const rows = []
-  rows.push(`<div class="bal"><span class="balv">${eth === null ? '—' : esc(Number(formatEther(eth)).toLocaleString(undefined, { maximumFractionDigits: 4 }))}</span><span class="note">ETH</span></div>`)
+  rows.push(`<div class="bal"><span class="balv">${eth === null ? '—' : esc(num(Number(formatEther(eth)), { maximumFractionDigits: 4 }))}</span><span class="note">ETH</span></div>`)
   TOKENS.forEach((tk, i) => {
     const v = tokens[i]
     if (v === null || v === 0n) return
