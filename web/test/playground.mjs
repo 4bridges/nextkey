@@ -227,6 +227,55 @@ try {
     check('the lent-name lane has a panel of its own, under its button',
       await page.locator('#lane-demo #demo-out').count() === 1)
 
+    // ── A name of your own ─────────────────────────────────────────────────
+    // The second lane, and everything that can be checked about it without a
+    // wallet — which is most of what matters, because a visitor decides whether
+    // to press it from what the page says before they connect anything.
+    const own = await page.locator('#own-name-box').innerText()
+    check('the owned-name lane is a section of its own',
+      await page.locator('#own-name-box').count() === 1 &&
+      await page.locator('#own-name-box #claim-out').count() === 1)
+    // Below, not instead of. A visitor with no testnet ether must still meet
+    // the lane that asks them for nothing first.
+    check('and it comes after the lent name, not before it',
+      await page.evaluate(() => Boolean(
+        document.getElementById('be-receivable-box').compareDocumentPosition(
+          document.getElementById('own-name-box')) & Node.DOCUMENT_POSITION_FOLLOWING)))
+    check('it names the parent, so nobody has to guess the ending',
+      (await page.locator('#own-suffix').innerText()).trim() === '.nextkey.eth')
+    // An example in the box reads as a suggestion, and a suggestion in a field
+    // that spends your one allowance is a trap.
+    check('and offers no example to mistake for a suggestion',
+      !(await page.getAttribute('#own-label', 'placeholder')))
+    check('what it costs is said before anything is pressed',
+      /sepolia/i.test(own))
+
+    // Judged before a wallet is asked for. This browser has no wallet at all,
+    // so a page that checked for one first could not answer at all — and the
+    // visitor would learn their name was invalid only after installing one.
+    // Asserted by shape rather than by wording, because this runs in every
+    // language: a refusal is the panel in its 'bad' state with something in it
+    // and no links — links would mean the page had fallen through to the
+    // "install a wallet" answer instead of judging what was typed.
+    const refused = async () => {
+      const cls = await page.getAttribute('#claim-out', 'class')
+      const text = (await panel('claim-out')).trim()
+      const links = await page.locator('#claim-out a[href]').count()
+      return cls.includes('bad') && text.length > 0 && links === 0
+    }
+
+    await page.fill('#own-label', 'not a name')
+    await page.click('#claim-name')
+    check('a name that cannot be typed is refused without opening a wallet',
+      await refused())
+    check('and a refusal disables nothing — it can be corrected and pressed again',
+      !(await page.locator('#claim-name').isDisabled()) &&
+      !(await page.locator('#own-label').isDisabled()))
+
+    await page.fill('#own-label', '')
+    await page.click('#claim-name')
+    check('an empty name asks for one rather than guessing', await refused())
+
     // Headless Chromium has no wallet, which is exactly the situation of every
     // visitor on a phone — mobile browsers carry no wallet and no extensions.
     // "No wallet found" would be true and useless; the page must offer the way
