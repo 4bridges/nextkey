@@ -32,7 +32,10 @@ The lent lane spends a name from a pool of 200 rather than an address, so
 
 **Where things are:**
 
-- page: `https://nextkey.li/demo.html`
+- page: `https://nextkey.li/demo/id` — **both lanes live on the ID tab**, not on
+  the playground. `demo.html` still resolves, but it redirects, and where it
+  redirects to is itself a finding below.
+- explorer: `https://nextkey.li/demo/explorer`
 - registrar: `0xc3b7a8b73ed7022a594f236e60d33f5cc61b1863`
 - how many names are left: `node --env-file=.env scripts/deploy-names.mjs show 0xc3b7a8b73ed7022a594f236e60d33f5cc61b1863`
 
@@ -40,6 +43,21 @@ Run that last command before and after the session. `minted` should have gone up
 by exactly the number of successful claims you made. If it moved by more, a
 button fired twice — which is the defect the guard flag exists to prevent and
 worth a bug on its own.
+
+**The network is a path prefix.** `/demo/<tab>` is Sepolia; `/<tab>` is reserved
+for mainnet. Every address in this document carries the prefix, because a test
+run against the wrong half of that split proves nothing about either.
+
+---
+
+## What can be tested without a wallet
+
+Worth knowing before you spend an account: sections 1 and 2, the whole language
+pass, the mobile layout and the no-wallet fallback need **no** wallet and no
+gas, and a browser carrying no extension at all is the correct instrument for
+them — it is the state real visitors arrive in. Only sections 3 to 7 need
+MetaMask. Do the wallet-free half first; it costs nothing and it is where four
+of the five findings below came from.
 
 ---
 
@@ -51,6 +69,7 @@ worth a bug on its own.
 - [ ] The second section says what it costs — Sepolia ether — **before** you touch anything.
 - [ ] The input has no example text in it. An example reads as a suggestion, and a suggestion in a field that spends your one allowance is a trap.
 - [ ] `.nextkey.eth` is visible beside the field. Nobody should have to guess the ending or type it themselves.
+- [ ] The tab bar is a row of symbols. Hovering one names it, and the current tab is the one in the accent colour.
 
 ### 2 · A name that cannot work, with no wallet connected
 
@@ -58,11 +77,16 @@ Type `not a name` (with the spaces) and press the button.
 
 - [ ] It is refused **without MetaMask opening at all**.
 - [ ] The message says which characters are allowed.
+- [ ] There are **no links** in that message. A link means the page fell through to *install a wallet* instead of judging what you typed.
 - [ ] The button is still pressable and the field still editable — a refusal must not lock you out of correcting it.
 
 Now clear the field and press again.
 
 - [ ] It asks for a name rather than guessing one.
+
+Then type a label that is perfectly valid — `nk-probe-1` — and press.
+
+- [ ] The refusal is about the **wallet**, not about the name. A valid label answered with *type a name first* means the page is judging something other than the field.
 
 ### 3 · The lent lane, with `nk-lent`
 
@@ -93,8 +117,9 @@ After it confirms:
 
 Then check it from the outside:
 
-- [ ] `https://nextkey.li/explorer.html` shows the write.
-- [ ] The recipient field in step 2 accepts your new name and finds a key on it.
+- [ ] `https://nextkey.li/demo/explorer` shows the write.
+- [ ] `https://nextkey.li/demo/passphrase` accepts your new name as a recipient in step 2 and finds a key on it.
+- [ ] `https://api.nextkey.li/demo/v1/id/<your name>.nextkey.eth` answers with the same NextKey ID the page showed you. Two implementations disagreeing here is the failure that makes two people conclude they are looking at different keys.
 
 ### 5 · The second claim, same account
 
@@ -127,6 +152,7 @@ Safari or Chrome — mobile browsers carry no wallet.
 Repeat sections 1, 3 and 4 with `nk-claim-2`, and watch for the things that only
 go wrong on a small screen:
 
+- [ ] **Every tab in the header is reachable.** Count them: home, ID, passphrase, message, sandbox, explorer, blog, donate. A tab you cannot see is a tab that does not exist, and the bar does not scroll sideways to reveal one.
 - [ ] The two sections do not overlap and nothing runs off the right edge. Turn the phone sideways too.
 - [ ] The label field is wide enough to read what you typed, and `.nextkey.eth` has not wrapped onto its own line.
 - [ ] **After each press, the message appears where you can see it** without scrolling up or down to find it. This is the one that was wrong before: the page jumped and the answer was off screen, so it looked like the button had done nothing — and the obvious response is to press it again.
@@ -136,22 +162,71 @@ go wrong on a small screen:
 Then, in Safari or Chrome **without** a wallet:
 
 - [ ] Pressing either button offers links to reopen the page inside a wallet.
-- [ ] Those links carry `demo.html` and the language you were reading in.
+- [ ] Those links carry the **path you were on** — `/demo/id` — and the language you were reading in.
+- [ ] Read the message itself. It must describe the page you are actually on: no steps that this tab does not have, and no advice to use a lane that just refused you.
+
+A desktop browser with no extension is the same code path and a far easier place
+to run it. Use it for this block, then confirm on a phone.
 
 ---
 
 ## Languages
 
-Open `demo.html?lang=de`, and one right-to-left language: `demo.html?lang=fa`.
+Open `/demo/id?lang=de`, and one right-to-left language: `/demo/id?lang=fa`.
 
 - [ ] Both sections are fully translated — headings, paragraph, button, the cost note. Nothing shows an English sentence.
 - [ ] Press with a bad label: the refusal is in that language too.
-- [ ] In `fa` the layout mirrors, and `.nextkey.eth`, the addresses and the key stay in Latin script and read left to right.
+- [ ] In `fa` the layout mirrors, and `.nextkey.eth`, the addresses and the key stay in Latin script and read left to right. Watch the leading dot in particular: under `direction: rtl` it moves to the other end and `.nextkey.eth` renders as `nextkey.eth.`
+- [ ] No tag arrives as text. `<span class="mono">` printed mid-sentence means a translation carrying markup was written into `textContent`; English cannot show this fault, so it can only be found in one of the other nine.
+- [ ] The tab bar's symbols still name themselves on hover, in that language.
 
 The strings to watch are the twenty added on 10 September. They fall back to
 English silently when a translation is missing, which is correct behaviour and
 also the reason a missing one is invisible — the *Make me receivable* section ran
 in English in all nine languages for a day before anyone noticed.
+
+---
+
+## Open findings
+
+Found on 10 September in a browser carrying no wallet. Each one is here rather
+than in a checkbox above because it is known to fail today.
+
+**1 · Three tabs are unreachable on a phone.** `nav.barnav` was a flex row that
+never wrapped, and eight words needed 462px. At 375px *explorer*, *blog* and
+*donate* were cut off the right edge, and the page does not scroll sideways, so
+there was no way to reach them; at 414px two were still gone. Addressed by
+making the bar symbols and letting it wrap — re-check it here rather than
+assuming, at 320px as well as 375px.
+
+**2 · `/send` serves Sepolia from the mainnet namespace.** Every other legacy
+address redirects into the prefix — `/explorer.html` → `/demo/explorer`, `/id` →
+`/demo/id` — but `/send.html` redirects to `/send`, which answers 200 with the
+playground and no redirect. A testnet page sitting at a mainnet address, whose
+relative tab links then resolve into the mainnet space. Likely a leftover from
+the `demo.html` → `send.html` rename.
+
+**3 · `demo.html` lands on the wrong tab.** It was the playground; it now
+redirects to `/demo/id`. And `demo.html?mode=message` becomes
+`/demo/id?mode=message`, where `mode=message` means nothing — the query string
+quietly stopped meaning what it meant, which is the answer this project
+explicitly rejected when the tabs were split.
+
+**4 · Three sentences in the no-wallet panel do not describe the ID tab.**
+Identical in English and German, so not a translation artefact. *"This browser
+carries no wallet — mobile browsers cannot"* is asserted unconditionally and is
+false on the desktop browser where the panel actually appeared. *"The page
+starts again from step 1 there, because steps 1 to 5 happen entirely inside a
+tab"* describes the playground; the ID tab has no steps. *"Or use the lane
+above, which needs no wallet at all"* points at *Make me receivable* — the
+button that produced the panel. The German copy also switches to *Sie* in this
+one panel while the whole page says *du*.
+
+**5 · The current tab is marked wrongly, or not at all.** `poc.html` carries
+`aria-current="page"` on **Sandbox**, so the live view highlights a tab it is
+not. `send.html` carries it nowhere, so `/demo/passphrase` and `/demo/message`
+highlight nothing — one file serving two tabs cannot say in markup which one it
+is, and nothing sets it at runtime.
 
 ---
 

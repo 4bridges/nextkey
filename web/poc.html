@@ -152,11 +152,18 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     margin-inline-end:auto;font-size:.95rem;
     font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
   .barnav a{color:var(--muted);text-decoration:none;font-weight:600;white-space:nowrap}
-  /* The way back, as a house rather than a word: it is the one item in this bar
-     that needs no reading, and on a phone it costs a fifth of the width of
-     "Home". The label is still there for anybody not looking at pixels. */
-  .barnav .navhome{display:inline-flex;align-items:center}
-  .barnav .navhome svg{width:1.15rem;height:1.15rem}
+  /* The bar is symbols, not words. Eight words needed 462px and the bar is a
+     flex row that never wrapped, so below about 490px the last three — explorer,
+     blog, donate — were simply cut off the right edge with no way to scroll to
+     them. Eight icons need a third of that. Every one keeps its label in a
+     visually hidden span and in `title`, so a screen reader and a hover both
+     still say the word, and the translation keys stay in use rather than
+     becoming nine languages of dead weight. */
+  .barnav a{display:inline-flex;align-items:center}
+  .barnav a svg{width:1.2rem;height:1.2rem;display:block}
+  /* And it wraps now. The clipping above was not a width that was chosen badly;
+     it was a row with nowhere to go. A second line is always available. */
+  .barnav{flex-wrap:wrap;row-gap:.35rem}
   .foothome{display:inline-flex;align-items:center;vertical-align:middle}
   .foothome svg{width:1.05rem;height:1.05rem}
   .vh{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
@@ -197,13 +204,13 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     <a class="brand" href="/" aria-label="NextKey"><svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M32 4.5 54.8 17.75v26.5L32 57.5 9.2 44.25v-26.5z" stroke="currentColor" stroke-width="5.5" stroke-linejoin="round"/><circle cx="32" cy="27" r="7" stroke="currentColor" stroke-width="5"/><path d="M32 34v13" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg><b>NextKey</b></a>
     <nav class="barnav" aria-label="Sections">
       <a class="navhome" href="/" data-i18n-title="nav.home" title="Home"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.75 20v-5.5h4.5V20"/></svg><span class="vh" data-i18n="nav.home">Home</span></a>
-      <a href="./id" data-i18n="nav.id">ID</a>
-      <a href="./passphrase" data-i18n="nav.passphrase">Passphrase</a>
-      <a href="./message" data-i18n="nav.message">Message</a>
-      <a href="./sandbox" data-i18n="nav.sandbox" aria-current="page">Sandbox</a>
-      <a href="./explorer" data-i18n="nav.explorer">Explorer</a>
-      <a href="./blog" data-i18n="nav.blog">Blog</a>
-      <a href="./donate" data-i18n="nav.donate">Donate</a>
+      <a href="./id" data-i18n-title="nav.id" title="ID"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="10.8" r="2.1"/><path d="M5.9 16.3c.45-1.5 1.65-2.3 3.1-2.3s2.65.8 3.1 2.3"/><path d="M14.8 9.8h4.2M14.8 13.4h4.2"/></svg><span class="vh" data-i18n="nav.id">ID</span></a>
+      <a href="./passphrase" data-i18n-title="nav.passphrase" title="Passphrase"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.8" cy="12" r="3.6"/><path d="M11.4 12H20.5"/><path d="M18 12v3.1"/><path d="M14.7 12v2.4"/></svg><span class="vh" data-i18n="nav.passphrase">Passphrase</span></a>
+      <a href="./message" data-i18n-title="nav.message" title="Message"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.2"/><path d="m3.9 7.2 8.1 5.9 8.1-5.9"/></svg><span class="vh" data-i18n="nav.message">Message</span></a>
+      <a href="./sandbox" data-i18n-title="nav.sandbox" title="Sandbox" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.2"/><path d="m7.2 9.9 2.6 2.3-2.6 2.3"/><path d="M12.6 14.9H17"/></svg><span class="vh" data-i18n="nav.sandbox">Sandbox</span></a>
+      <a href="./explorer" data-i18n-title="nav.explorer" title="Explorer"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.6" cy="10.6" r="5.9"/><path d="m14.9 14.9 5.1 5.1"/></svg><span class="vh" data-i18n="nav.explorer">Explorer</span></a>
+      <a href="./blog" data-i18n-title="nav.blog" title="Blog"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12.1c0 3.9-3.8 7.1-8.5 7.1-1 0-2-.15-2.9-.42L4.2 20.4l1.6-3.6c-1.4-1.3-2.3-3-2.3-4.7C3.5 8.2 7.3 5 12 5s8.5 3.2 8.5 7.1Z"/></svg><span class="vh" data-i18n="nav.blog">Blog</span></a>
+      <a href="./donate" data-i18n-title="nav.donate" title="Donate"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.2S4.3 15.4 4.3 10.5A4.1 4.1 0 0 1 12 8.2a4.1 4.1 0 0 1 7.7 2.3c0 4.9-7.7 9.7-7.7 9.7Z"/></svg><span class="vh" data-i18n="nav.donate">Donate</span></a>
     </nav>
     <div class="barctl">
       <button class="iconbtn" id="themebtn" type="button"
