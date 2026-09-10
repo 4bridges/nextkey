@@ -1381,3 +1381,128 @@ running its thirteen checks twice. This is the third time a count in that file
 has been corrected, and the pattern is always the same — a number written once
 and never recomputed. It is now printed per suite, so the next drift is visible
 in a diff rather than only in a test run nobody reads to the end.
+
+---
+
+## 2026-09-10 (evening) — The page said `<span class="mono">` out loud
+
+**A tag was showing up as text on the Sandbox page, in German, and the search
+for others found nine — two of which had been wrong for weeks.**
+
+`data-i18n` sets `textContent`; `data-i18n-html` sets `innerHTML`. The English
+fallback for `sb.api.override` carries a `<span class="mono">` because it is
+real markup sitting in the page. The translations carry the same markup as a
+*string*, and a string written into `textContent` arrives on screen as
+characters: `<span class="mono">?api=https://…</span>`, mid-sentence, in all
+nine languages.
+
+**English is structurally incapable of showing this fault**, which is why it can
+ship for weeks. Its markup never goes through the overlay at all — it is already
+in the document. Every other language does. So the one language the author reads
+is the one language that looks right, and this is the third time that shape has
+cost this project something.
+
+Nine keys. Seven were written today. Two — `t.own.p` and `t.s4.remote` on the
+playground — have been putting `<span class="mono">` into the middle of a
+sentence for every non-English reader since they were written. Nothing reported
+them: `i18n-check` asked whether a key was *present*, and present and correct are
+different questions.
+
+It asks both now, and the check was watched failing before it was believed —
+the bug was put back deliberately and the run said so, naming the key and the
+nine languages. A check nobody has seen fail is not a check.
+
+---
+
+**Two blind spots in `i18n-check.mjs`, and the second was worse than recorded.**
+
+The log entry this morning called them known and unfixed. Fixing them turned up
+that one of the two had been described too kindly.
+
+**The array spelling.** `t('key', 'English')` was the only form the extractor
+knew. `MODE_TEXT` in the playground is written `['key', 'English']` and handed to
+`t(...pair)`, so the entire message-side vocabulary — every heading and lead
+behind `/demo/message` — sat outside the check and shipped English to nine
+languages without ever being reported missing.
+
+The first version of the new pattern promptly produced a phantom key:
+`['vault.nextkey.eth', 'nextkeyv2.eth', 'anna…', 'bob…']`, a list of ENS names
+in the explorer, came back as a translation key with the remaining three names
+as its English. A lazy quantifier closed by a backreference had reached across
+the whole array. It was caught in the first run because it was reported missing
+in all nine languages — loud, which is the property that was being bought.
+Excluding the quote from the value is what stops a two-element pattern spanning
+a four-element list.
+
+**And the stamp file was a symptom, not the cause.** This morning's entry said
+`i18n.stamp.json` covered 338 of the keys. True, and it was covering exactly the
+ones the checker could see the English of: the extractor read English out of the
+JavaScript and recorded `null` for everything in the markup — *"English lives in
+the element"* — after which every step downstream skipped them. The staleness
+check, the whole reason that file exists, had never applied to a single sentence
+on a single page. It reads the element now, whitespace normalised so a
+re-wrapped paragraph is not a changed sentence.
+
+**The report says what it cannot judge.** `0 stale` reads as *the translations
+still match their English* and means nothing of the kind while a third of the
+keys have no baseline. It prints `338 of them checked for staleness; 315 have no
+baseline` until they are stamped, because a checker that cannot judge something
+has to say so in the same breath as its verdict.
+
+All 653 keys are stamped now — six more than were visible this morning, and the
+number went up because the checker learned to see, not because anything was
+added.
+
+---
+
+**The NextKey ID reaches the places a judge actually goes.**
+
+It was on the ID tab, in the playground, in the explorer and in the API, and not
+in the two places somebody following the README ends up: `nextkey.mjs keygen`
+printed 44 characters of base64 at all three of its paths, and the live view
+showed Anna's and Bob's raw published key. `publish` — the command whose entire
+purpose is to make somebody reachable — printed the record it wrote and nothing
+a person could pass on.
+
+`web/src/app.js` imports the ID rather than reimplementing it, three lines below
+where it deliberately reimplements `fingerprint` against WebCrypto to avoid a
+dependency. The difference is written there: `fingerprint` is three lines; the ID
+has a check character, a bit layout and an alphabet. A second copy would not
+crash. It would show one ID here and a different one on the ID page for the same
+key, and whoever compared them would conclude — correctly by their own reasoning,
+and wrongly in fact — that they were looking at two different people.
+
+---
+
+**`nextkey.li` moved to Cloudflare's nameservers, and mail was the thing to get
+right.**
+
+A Workers custom domain needs the zone in the same account, so `api.nextkey.li`
+meant moving DNS for the domain the whole site runs on. Two days before a
+deadline, that is worth doing carefully or not at all.
+
+What made it safe was mirroring the zone before touching the delegation, so both
+answered identically throughout and it did not matter which one a resolver
+asked. Cloudflare's import had missed two records — the DKIM key and the
+autodiscover SRV — and had set every imported record to *proxied*, including
+`mail`. The MX points at `mail.nextkey.li`; a proxied A record there answers with
+Cloudflare addresses, and Cloudflare speaks no SMTP. Left alone, inbound post
+would have been delivered to an edge with no mailbox behind it, and nobody would
+have noticed until somebody complained about a bounce.
+
+Everything pointing at Cyon is DNS-only on purpose. The site lives on its own
+cache headers and its own `.htaccess` rewrites, and a second caching layer with
+its own rules is how the page-and-bundle mismatch those headers exist for gets
+reintroduced.
+
+**Rollback was a prerequisite, not an afterthought**: the pre-switch zone was
+captured with `Resolve-DnsName` before anything moved, and `DNSSEC:N` at the
+registry meant there was no signature chain to break — the one failure mode that
+takes a domain fully dark.
+
+Two smaller things went wrong and both are the same species: a value that looks
+like it should be current. `compatibility_date` was set to the day the worker was
+written, and the local runtime refuses a date it does not know — the date selects
+*behaviour*, it is not a version stamp. And the route was written
+`api.nextkey.li/*`; a custom domain hands the worker the whole hostname, so
+there is nothing to filter and a path is rejected.

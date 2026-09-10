@@ -43,9 +43,13 @@ no_bundle = true
 # about the worker, which is not where anyone looks first.
 #
 # So: check the dashboard says Active before `npm run api:deploy`. If it is not
-# yet, comment these three lines out again and deploy — the worker lands on
+# yet, comment out the [[routes]] block below and deploy — the worker lands on
 # <name>.<subdomain>.workers.dev, answers exactly the same routes, and the
 # Sandbox page takes it with ?api= while you wait.
+# The bare hostname, with no path and no wildcard. A custom domain hands the
+# whole hostname to the worker, so there is nothing to filter and `/*` is
+# rejected — `pattern` only takes a path when `custom_domain` is absent, which
+# is the other kind of route, the one that shares a hostname with an origin.
 [[routes]]
-pattern = "api.nextkey.li/*"
+pattern = "api.nextkey.li"
 custom_domain = true

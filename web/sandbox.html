@@ -435,7 +435,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     </div>
     <div class="out" id="api-health" hidden></div>
 
-    <p class="note" data-i18n="sb.api.override">This page reads whichever address it is pointed at:
+    <p class="note" data-i18n-html="sb.api.override">This page reads whichever address it is pointed at:
       <span class="mono">?api=https://…</span> overrides it, so a deployment can be checked before it is
       written into anything.</p>
   </section>
@@ -463,23 +463,23 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 GET <span data-api-base>…</span>/name/anna.nextkey.eth
 GET <span data-api-base>…</span>/id/anna.nextkey.eth
 GET <span data-api-base>…</span>/openapi.json</pre>
-    <p data-i18n="sb.routes.prefix">The network is a path prefix, exactly as on this site:
+    <p data-i18n-html="sb.routes.prefix">The network is a path prefix, exactly as on this site:
       <span class="mono">/demo/v1</span> reads the hackathon deployment on Sepolia, and
       <span class="mono">/v1</span> is reserved for mainnet. Asking <span class="mono">/v1</span> today
       answers 501 and names the address that does work — not 404, which would read as a spelling mistake.</p>
 
     <details class="more">
       <summary data-i18n="sb.routes.no.h">Two kinds of "no", and why they never share a code</summary>
-      <p data-i18n="sb.routes.no.p1"><span class="mono">404 no_published_key</span> is a fact about the chain:
+      <p data-i18n-html="sb.routes.no.p1"><span class="mono">404 no_published_key</span> is a fact about the chain:
         this name publishes nothing, so nothing can be sealed to it. <span class="mono">502
         upstream_unavailable</span> is a fact about our luck: the node did not answer, the reply says in its
         own words that it tells you nothing about the name, and it is never cached.</p>
-      <p data-i18n="sb.routes.no.p3">And a fourth, which is the one a reader will meet most:
+      <p data-i18n-html="sb.routes.no.p3">And a fourth, which is the one a reader will meet most:
         <span class="mono">404 not_on_this_deployment</span>. A name registered on production ENS is not
         registered here, and a text lookup answers the same empty value for a name that carries nothing and
         for a name that is not there at all. The two are separated by asking which resolver answers — and
         when that lookup itself fails, the reply says the answer is unknown rather than guessing at either.</p>
-      <p data-i18n="sb.routes.no.p2">There is a third, because the chain permits it.
+      <p data-i18n-html="sb.routes.no.p2">There is a third, because the chain permits it.
         <span class="mono">422 key_not_x25519</span> is a name whose record holds something that is not a
         32-byte key. Anyone may write any string to their own name, and inventing a NextKey ID for one would
         put a confident, checkable-looking identifier under a value that identifies nobody.</p>
@@ -527,7 +527,7 @@ nextkey.mjs eph    &lt;name&gt;</pre>
   <!-- In the page ────────────────────────────────────────────────────────── -->
   <section class="step" style="padding-left:0">
     <h2 data-i18n="sb.page.h">Inside the pages</h2>
-    <p data-i18n="sb.page.p">An agent driving a browser does not have to read the prose.
+    <p data-i18n-html="sb.page.p">An agent driving a browser does not have to read the prose.
       <span class="mono">window.NEXTKEY.state()</span> returns what has happened so far as JSON, every result
       panel carries the same thing on a <span class="mono">data-nk</span> attribute, and no private key
       appears in either. A prepared state is one link: the address chooses what is being sent —
@@ -560,7 +560,7 @@ nextkey.mjs eph    &lt;name&gt;</pre>
       configuration file has none of them attached, which is a stronger statement than a policy saying we
       choose not to. There are no API keys either, so there is nothing to correlate lookups with even in
       principle.</p>
-    <p data-i18n="sb.cost.p2">The residue we do not control is Cloudflare's own edge logging. That is in the
+    <p data-i18n-html="sb.cost.p2">The residue we do not control is Cloudflare's own edge logging. That is in the
       <a href="/privacy">privacy notice</a> rather than left out of it. If none of this is acceptable to you,
       read the chain directly — the records above are all you need, and that path never involves us at all.</p>
   </details>

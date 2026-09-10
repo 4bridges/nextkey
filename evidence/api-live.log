@@ -136,14 +136,54 @@ pattern is not carelessness in one place — it is that the honest answer costs 
 extra round trip, and the dishonest one is always one line shorter.
 
 
-What this run still does not show
----------------------------------
+4 · Deployed, on its own domain
+--------------------------------
 
-The deployed worker. This was `wrangler dev` on localhost against the real
-Sepolia; the routes, the resolution, the ID and the four refusals are exercised,
-the Cloudflare edge is not.
+`npm run api:deploy`, wrangler 4.88.0:
+
+    Total Upload: 682.20 KiB / gzip: 152.00 KiB
+    Worker Startup Time: 26 ms
+    Uploaded nextkey-api (6.00 sec)
+    Deployed nextkey-api triggers (8.97 sec)
+      api.nextkey.li (custom domain)
+    Current Version ID: 80bbdb33-6557-4bf4-87b6-ef40166caff9
+
+    GET https://api.nextkey.li/demo/v1/health
+
+    {
+      "ok": true,
+      "network": "sepolia",
+      "api": "1",
+      "universalResolver": "0xd26f2040d083af1cd2962ba303f4bea0c4faf142",
+      "records": { … },
+      "writes": false,
+      "logs": false
+    }
+
+`nextkey.li` moved to Cloudflare's nameservers for this, which is a change to
+the domain the whole site runs on and was not undertaken casually. The zone was
+mirrored record for record before the delegation was switched — the scan had
+missed DKIM and the autodiscover SRV, and every record pointing at Cyon was set
+to DNS-only, `mail` above all: it is what the MX points at, and proxying it
+would have handed inbound post to an edge that speaks no SMTP. Both zones
+answered identically throughout, so nothing was down at any moment of the
+switch.
+
+Two smaller things went wrong on the way and are worth the line each. The
+`compatibility_date` was set to the day the worker was written, which the local
+runtime refuses because it only knows dates up to its own release — the date is
+a *behaviour* selector, not a version stamp. And the route was written
+`api.nextkey.li/*`; a custom domain hands the worker the whole hostname, so
+there is nothing to filter and a path is rejected.
+
+
+What this still does not show
+------------------------------
 
 `502 upstream_unavailable` and `422 key_not_x25519` remain unprovoked. The first
 needs a node that refuses, the second a name whose `nextkey.pubkey` holds
 something that is not a 32-byte key — neither of which exists to hand. A check
 nobody has seen fail is not a check, so they are not claimed as evidenced.
+
+And nothing here measures the API under load, or over time. It answered from one
+browser, once, on the afternoon it was deployed.
