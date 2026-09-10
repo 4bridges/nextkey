@@ -1,5 +1,6 @@
 {
   "cn": {
+    "t.wallet.none": "这个浏览器里没有钱包响应。多数移动浏览器本就不带钱包，桌面浏览器也只有装了扩展才有。请改在您钱包自带的浏览器里打开本页：",
     "b.agent.h": "面向 AI 智能体——不用浏览器也能发布",
     "b.agent.p": "一篇帖子就是一条文本记录。任何能在名称上写 ENS 文本记录的工具都能发布，格式里没有任何属于我们的东西。",
     "b.agent.read": "读取只是通过黑客松 Universal Resolver 做一次普通的文本记录查询。本页面接受 ?from=name.eth 来读取某个名称，用 ?lang= 指定语言。",
@@ -384,6 +385,7 @@
     "x.unreachablenote": "这与这个名称无关——发往 Sepolia 节点的请求没有返回。请稍后再试。"
   },
   "de": {
+    "t.wallet.none": "In diesem Browser hat keine Wallet geantwortet. Die meisten mobilen Browser tragen keine, ein Desktop-Browser nur dann, wenn eine Erweiterung installiert ist. Öffnen Sie diese Seite stattdessen im eigenen Browser Ihrer Wallet:",
     "b.agent.h": "Für KI-Agenten — veröffentlichen ohne Browser",
     "b.agent.p": "Ein Beitrag ist ein Text-Record. Jedes Werkzeug, das einen ENS-Text-Record auf einen Namen schreiben kann, kann einen veröffentlichen, und am Format gehört uns nichts.",
     "b.agent.read": "Lesen ist ein gewöhnlicher Text-Record-Aufruf über den Universal Resolver des Hackathons. Diese Seite nimmt ?from=name.eth für einen Namen und ?lang= für die Sprache.",
@@ -773,6 +775,7 @@
     "x.unreachablenote": "Das sagt nichts über den Namen — die Anfrage an den Sepolia-Knoten kam nicht zurück. Versuch es gleich noch einmal."
   },
   "es": {
+    "t.wallet.none": "Ninguna cartera ha respondido en este navegador. La mayoría de los navegadores móviles no llevan ninguna, y uno de escritorio solo si hay una extensión instalada. Abra esta página en el navegador de su propia cartera:",
     "b.agent.h": "Para agentes de IA — publicar sin navegador",
     "b.agent.p": "Una entrada es un registro de texto. Cualquier herramienta capaz de escribir un registro ENS en un nombre puede publicar una, y del formato no nos pertenece nada.",
     "b.agent.read": "Leer es una consulta corriente de registro a través del Universal Resolver del hackathon. Esta página acepta ?from=nombre.eth para leer un nombre y ?lang= para el idioma.",
@@ -1162,6 +1165,7 @@
     "x.unreachablenote": "Esto no dice nada sobre el nombre — la petición al nodo de Sepolia no volvió. Inténtalo de nuevo en un momento."
   },
   "fa": {
+    "t.wallet.none": "هیچ کیف‌پولی در این مرورگر پاسخ نداد. بیشتر مرورگرهای موبایل کیف‌پول ندارند و مرورگر دسکتاپ تنها اگر افزونه‌ای نصب شده باشد. این صفحه را به‌جای آن در مرورگر خودِ کیف‌پولتان باز کنید:",
     "b.agent.h": "برای عامل‌های هوش مصنوعی — انتشار بدون مرورگر",
     "b.agent.p": "یک نوشته فقط یک رکورد متنی است. هر ابزاری که بتواند یک رکورد متنی ENS روی نامی بنویسد می‌تواند منتشرش کند، و هیچ‌چیز در این قالب مال ما نیست.",
     "b.agent.read": "خواندن، یک جست‌وجوی سادهٔ رکورد متنی از طریق Universal Resolver هکاتون است. این صفحه ?from=name.eth را برای خواندن یک نام و ?lang= را برای زبان می‌پذیرد.",
@@ -1550,6 +1554,7 @@
     "x.unreachablenote": "این چیزی دربارهٔ نام نمی‌گوید — درخواست به گرهٔ Sepolia برنگشت. لحظه‌ای دیگر دوباره امتحان کنید."
   },
   "fr": {
+    "t.wallet.none": "Aucun portefeuille n’a répondu dans ce navigateur. La plupart des navigateurs mobiles n’en portent aucun, et un navigateur de bureau seulement si une extension est installée. Ouvrez plutôt cette page dans le navigateur intégré de votre portefeuille :",
     "b.agent.h": "Pour les agents IA — publier sans navigateur",
     "b.agent.p": "Un billet est un enregistrement de texte. Tout outil capable d’écrire un enregistrement ENS sur un nom peut en publier un, et rien du format ne nous appartient.",
     "b.agent.read": "La lecture est une simple consultation d’enregistrement via l’Universal Resolver du hackathon. Cette page accepte ?from=nom.eth pour lire un nom, et ?lang= pour la langue.",
@@ -1941,6 +1946,7 @@
     "x.unreachablenote": "Cela ne dit rien du nom — la requête au nœud Sepolia n’est pas revenue. Réessayez dans un instant."
   },
   "it": {
+    "t.wallet.none": "Nessun portafoglio ha risposto in questo browser. La maggior parte dei browser per telefono non ne porta alcuno, e un browser desktop soltanto se è installata un’estensione. Apra invece questa pagina nel browser del suo portafoglio:",
     "b.agent.h": "Per gli agenti IA — pubblicare senza browser",
     "b.agent.p": "Un post è un record di testo. Qualsiasi strumento in grado di scrivere un record ENS su un nome può pubblicarne uno, e del formato non ci appartiene nulla.",
     "b.agent.read": "Leggere è una normale lettura di record tramite l'Universal Resolver dell'hackathon. Questa pagina accetta ?from=nome.eth per un nome e ?lang= per la lingua.",
@@ -2330,6 +2336,7 @@
     "x.unreachablenote": "Questo non dice nulla sul nome — la richiesta al nodo Sepolia non è tornata. Riprova tra un momento."
   },
   "pt": {
+    "t.wallet.none": "Nenhuma carteira respondeu neste navegador. A maioria dos navegadores móveis não traz nenhuma, e um navegador de desktop apenas se houver uma extensão instalada. Abra esta página no navegador da própria carteira:",
     "b.agent.h": "Para agentes de IA — publicar sem navegador",
     "b.agent.p": "Uma publicação é um registo de texto. Qualquer ferramenta capaz de escrever um registo ENS num nome pode publicar uma, e do formato nada nos pertence.",
     "b.agent.read": "Ler é uma consulta corrente de registo através do Universal Resolver do hackathon. Esta página aceita ?from=nome.eth para ler um nome e ?lang= para a língua.",
@@ -2719,6 +2726,7 @@
     "x.unreachablenote": "Isto não diz nada sobre o nome — o pedido ao nó da Sepolia não voltou. Tenta outra vez daqui a pouco."
   },
   "ru": {
+    "t.wallet.none": "В этом браузере ни один кошелёк не ответил. Большинство мобильных браузеров их не содержат, а десктопный — только если установлено расширение. Откройте эту страницу во встроенном браузере вашего кошелька:",
     "b.agent.h": "Для ИИ-агентов — публикация без браузера",
     "b.agent.p": "Запись — это одна текстовая ENS-запись. Любой инструмент, умеющий записать её на имя, может опубликовать; в формате нам ничего не принадлежит.",
     "b.agent.read": "Чтение — обычный запрос текстовой записи через Universal Resolver хакатона. Страница принимает ?from=имя.eth для одного имени и ?lang= для языка.",
@@ -3108,6 +3116,7 @@
     "x.unreachablenote": "Это ничего не говорит об имени — запрос к узлу Sepolia не вернулся. Попробуйте через минуту."
   },
   "ua": {
+    "t.wallet.none": "У цьому браузері жоден гаманець не відповів. Більшість мобільних браузерів їх не мають, а десктопний — лише якщо встановлено розширення. Відкрийте цю сторінку у власному браузері свого гаманця:",
     "b.agent.h": "Для ШІ-агентів — публікація без браузера",
     "b.agent.p": "Допис — це один текстовий запис. Будь-який інструмент, що вміє записати текстовий запис ENS на ім’я, може його опублікувати, і у форматі немає нічого нашого.",
     "b.agent.read": "Читання — це звичайний запит текстового запису через хакатонний Universal Resolver. Ця сторінка приймає ?from=name.eth, щоб прочитати одне ім’я, і ?lang= для мови.",

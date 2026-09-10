@@ -194,6 +194,28 @@ const eye = (label) => `
  */
 const PAGE = /(^|\/)id(\.html)?$/.test(location.pathname) ? 'id' : 'send'
 
+/**
+ * Mark the tab we are on, for the one page that cannot say so in its markup.
+ *
+ * Every other page carries `aria-current="page"` in the bar, because every
+ * other page is one address. This file answers to two — /demo/passphrase and
+ * /demo/message — so which tab it is, is a property of the address and not of
+ * the file, and the markup that serves both can only be wrong about it. It was
+ * simply absent instead, which is honest and still leaves the visitor on a page
+ * the navigation does not admit to having.
+ *
+ * Derived from the address rather than from `S.mode`, so it is right before the
+ * mode is read and cannot drift from it afterwards. It runs on the ID tab too,
+ * where it sets the attribute the markup already has — writing the same value
+ * to the same element, which is cheaper than a branch that has to stay true.
+ */
+for (const a of document.querySelectorAll('nav.barnav a[href^="./"]')) {
+  const tab = a.getAttribute('href').slice(2)
+  if (location.pathname.replace(/\.html$/, '').replace(/\/$/, '').endsWith('/' + tab)) {
+    a.setAttribute('aria-current', 'page')
+  }
+}
+
 const NEEDED_EVERYWHERE = [
   'connect', 'wallet-out',
   'be-receivable', 'be-receivable-box', 'recv-state', 'id-out',
@@ -1067,12 +1089,39 @@ const hereFor = () => {
   return url.toString()
 }
 
+/**
+ * The panel a visitor with no wallet meets — and the three sentences it used to
+ * get wrong, all in the same way: written for the playground, then shown
+ * unchanged on the ID tab when one bundle started serving three pages.
+ *
+ * `t.s6.mobile` said "mobile browsers cannot", which is a claim about the
+ * reader rather than about the page, and false on the desktop browser without
+ * an extension — which is where it most often appears. The key changed with the
+ * sentence rather than being edited under the old one: an edited English string
+ * leaves nine translations in place that quietly stop matching it, and a new key
+ * is reported missing loudly. Loud is the property being bought.
+ *
+ * It is `t.wallet.none` and not `t.s6.nowallet`, which was the obvious name and
+ * is already taken — by a retired sentence from an older version of this panel,
+ * still sitting in all nine languages. `i18n-merge` refused to overwrite it and
+ * said so; without that refusal this page would now be showing a translation
+ * written for a sentence that no longer exists, in every language except
+ * English, which is the one nobody would have checked.
+ *
+ * The other two are not wrong, they are elsewhere. Steps 1 to 5 exist on the
+ * send tabs and nowhere else, and the lane that needs no wallet is the lane at
+ * step 4 — on the ID tab both ways of becoming receivable need one, so
+ * "use the lane above" pointed at the button that had just refused. They are
+ * gated on PAGE now instead of being reworded into something vague enough to be
+ * true on both.
+ */
 const offerDeepLinks = () => say(walletOut, 'bad', `
-  <p>${t('t.s6.mobile', 'This browser carries no wallet — mobile browsers cannot. Open this page inside your wallet’s own browser instead:')}</p>
+  <p>${t('t.wallet.none', 'No wallet answered in this browser. Most mobile browsers carry none, and a desktop browser carries one only if an extension is installed. Open this page inside your wallet’s own browser instead:')}</p>
   <p>${WALLET_LINKS.map((w) =>
     `<a class="act" href="${esc(w.href(hereFor()))}" rel="noopener">${esc(w.name)}</a>`).join(' ')}</p>
+  ${PAGE === 'send' ? `
   <p class="note">${t('t.s6.mobilenote', 'The page starts again from step 1 there, because steps 1 to 5 happen entirely inside a tab and nothing was stored to carry across. That is the same property that makes them safe.')}</p>
-  <p class="note">${t('t.chain.orlend', 'Or use the lane above, which needs no wallet at all.')}</p>
+  <p class="note">${t('t.chain.orlend', 'Or use the lane above, which needs no wallet at all.')}</p>` : ''}
   <p class="note">${t('t.s6.otherwallets', 'Another wallet? Open its browser and paste this address:')}</p>
   <p class="note mono break">${esc(hereFor())}</p>`)
 
