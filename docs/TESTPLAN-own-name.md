@@ -210,8 +210,12 @@ list is tabs, and the catch-all then found `send.html` on disk and served it
 `?mode=message` to a page where it means nothing. Five explicit 301s now answer
 the old spellings with the tab they meant.
 
-Check with `curl -sI`, **not** in a browser — these are 301s and a browser will
-cache a wrong answer for a long time.
+Check with `curl.exe -sI`, **not** in a browser, and not with PowerShell's
+`curl` either — that is an alias for `Invoke-WebRequest`, which does not take
+curl's flags. These are 301s and a browser caches them hard: a fetch with
+`cache: 'reload'` still answered 200 for an address that curl showed
+redirecting, which reads exactly like the rule failing and is not. When a
+redirect check disagrees with itself, believe the client that has no cache.
 
 - [ ] `curl -sI https://nextkey.li/send.html` → 301 to `/demo/passphrase`
 - [ ] `curl -sI https://nextkey.li/send` → 301 to `/demo/passphrase`
