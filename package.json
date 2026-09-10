@@ -9,6 +9,8 @@
     "build": "npm run build:bundles && node scripts/stamp-assets.mjs",
     "build:bundles": "esbuild web/src/app.js --bundle --format=esm --minify --target=es2022 --outfile=web/app.js && esbuild web/src/send.js --bundle --format=esm --minify --target=es2022 --outfile=web/send.js && esbuild web/src/explorer.js --bundle --format=esm --minify --target=es2022 --outfile=web/explorer.js && esbuild web/src/blog.js --bundle --format=esm --minify --target=es2022 --outfile=web/blog.js && esbuild web/src/donate.js --bundle --format=esm --minify --target=es2022 --outfile=web/donate.js && esbuild web/src/sandbox.js --bundle --format=esm --minify --target=es2022 --outfile=web/sandbox.js",
     "build:api": "esbuild api/src/worker.js --bundle --format=esm --target=es2022 --outfile=api/worker.js",
+    "api:dev": "npm run build:api && npx --yes wrangler@4 dev -c api/wrangler.toml",
+    "api:deploy": "npm run build:api && npx --yes wrangler@4 deploy -c api/wrangler.toml",
     "build:contract": "node scripts/build-contract.mjs",
     "verify:stamps": "node scripts/stamp-assets.mjs --check",
     "test": "npm run test:crypto && npm run test:pages",

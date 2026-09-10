@@ -52,6 +52,7 @@ import {
   ephMessage, ephSecretFromSignature, ephSecretFor, sealEphSecret,
   identityMessage, identitySecretFromSignature, writerAddress,
   grantForV2, grantKeyV2, openOwnGrantV2, padSecret, unpadSecret,
+  nextkeyId,
 } from './nextkey-core.mjs'
 
 // Everything above the command list now lives in nextkey-core.mjs, because
@@ -142,9 +143,10 @@ if (cmd === 'keygen') {
     await disconnect()
 
     writeFileSync(identityPath(name), JSON.stringify(
-      { device: 'ledger', path, address, publicKey: b64(pub) }, null, 2))
+      { device: 'ledger', path, address, nextkeyId: nextkeyId(pub), publicKey: b64(pub) }, null, 2))
     console.log(`\n  identity    ${name}  (Ledger)`)
     console.log(`  address     ${address}`)
+    console.log(`  NextKey ID  ${nextkeyId(pub)}`)
     console.log(`  public key  ${b64(pub)}`)
     console.log(`  stored in   .keys/${name}.json — public key and path only,`)
     console.log(`              because the private half exists nowhere but the device`)
@@ -163,8 +165,9 @@ if (cmd === 'keygen') {
     const pub = x25519.getPublicKey(sk)
     const address = writerAddress()
     writeFileSync(identityPath(name), JSON.stringify(
-      { derived: 'wallet', address, publicKey: b64(pub) }, null, 2))
+      { derived: 'wallet', address, nextkeyId: nextkeyId(pub), publicKey: b64(pub) }, null, 2))
     console.log(`\n  identity    ${name}  (derived from ${address})`)
+    console.log(`  NextKey ID  ${nextkeyId(pub)}`)
     console.log(`  public key  ${b64(pub)}`)
     console.log(`  stored in   .keys/${name}.json — public key and address only,`)
     console.log(`              because the private half is not stored anywhere:`)
@@ -178,8 +181,10 @@ if (cmd === 'keygen') {
   } else {
     const sk = randomX25519Secret()
     const pub = x25519.getPublicKey(sk)
-    writeFileSync(identityPath(name), JSON.stringify({ privateKey: b64(sk), publicKey: b64(pub) }, null, 2))
+    writeFileSync(identityPath(name), JSON.stringify(
+      { privateKey: b64(sk), nextkeyId: nextkeyId(pub), publicKey: b64(pub) }, null, 2))
     console.log(`\n  identity    ${name}`)
+    console.log(`  NextKey ID  ${nextkeyId(pub)}`)
     console.log(`  public key  ${b64(pub)}`)
     console.log(`  stored in   .keys/${name}.json  (gitignored — losing it loses access)`)
     console.log(`
@@ -208,7 +213,13 @@ else if (cmd === 'publish') {
   const label = ensName.replace(`.${PARENT}`, '')
   console.log(`\n  publishing ${identity}'s public key to ${ensName} · ${RECORD_PUBKEY}`)
   await setRecord(label, RECORD_PUBKEY, b64(id.pk))
-  console.log()
+  console.log(`\n  ${ensName} can now be sent secrets.`)
+  console.log(`  NextKey ID  ${nextkeyId(id.pk)}`)
+  console.log(`
+  That is the published key in a form a person can read out and compare — it is
+  derived from the key and held by no record, so it is the same everywhere and
+  there is nothing to keep. Whoever verifies rather than reads compares the key
+  itself, which stays in ${RECORD_PUBKEY}.\n`)
 }
 
 else if (cmd === 'store') {

@@ -474,6 +474,11 @@ GET <span data-api-base>…</span>/openapi.json</pre>
         this name publishes nothing, so nothing can be sealed to it. <span class="mono">502
         upstream_unavailable</span> is a fact about our luck: the node did not answer, the reply says in its
         own words that it tells you nothing about the name, and it is never cached.</p>
+      <p data-i18n="sb.routes.no.p3">And a fourth, which is the one a reader will meet most:
+        <span class="mono">404 not_on_this_deployment</span>. A name registered on production ENS is not
+        registered here, and a text lookup answers the same empty value for a name that carries nothing and
+        for a name that is not there at all. The two are separated by asking which resolver answers — and
+        when that lookup itself fails, the reply says the answer is unknown rather than guessing at either.</p>
       <p data-i18n="sb.routes.no.p2">There is a third, because the chain permits it.
         <span class="mono">422 key_not_x25519</span> is a name whose record holds something that is not a
         32-byte key. Anyone may write any string to their own name, and inventing a NextKey ID for one would
@@ -574,7 +579,7 @@ nextkey.mjs eph    &lt;name&gt;</pre>
   </p>
 </footer>
 
-<script src="/i18n.js?v=fed6a38c"></script>
+<script src="/i18n.js?v=e36cd5e5"></script>
 <script>
 /**
  * The same overlay as the other two pages, same storage keys, so a language or

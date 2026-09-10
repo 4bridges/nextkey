@@ -188,6 +188,10 @@ vite.config.ts.timestamp-*
 # building its own: two bundlers producing the deployed artefact is one too many.
 /api/worker.js
 
+# wrangler's local state and its dev-server cache. Machine-specific, rebuilt on
+# demand, and nothing in it is worth reading twice.
+/api/.wrangler/
+
 # Where deliveries from the assistant land on the author's machine. Working
 # material, not the project.
 /Claude outputs/

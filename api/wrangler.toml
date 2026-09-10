@@ -5,22 +5,47 @@
 # Durable Objects. There is nowhere for this worker to write anything down,
 # which is a stronger statement than a policy saying we choose not to.
 #
-#   npm run build:api      bundle src/worker.js → worker.js
-#   npx wrangler dev       run it locally, against the real Sepolia
-#   npx wrangler deploy    publish it
+# This file is in api/, not in the repository root, so wrangler has to be told
+# where it is — `-c api/wrangler.toml`. Run from the root, wrangler looks for a
+# config beside package.json, finds none, and reports a missing entry point,
+# which sends you looking for the wrong thing. The npm scripts pass the flag:
+#
+#   npm run api:dev        build, then run locally against the real Sepolia
+#   npm run api:deploy     build, then publish
+#   npm run build:api      just the bundle
+#
+# `main` below is resolved relative to *this* file, not to where you ran it.
 
 name = "nextkey-api"
 main = "worker.js"
-compatibility_date = "2026-09-01"
+# Not today's date, which is the obvious guess and the one that failed: the
+# local runtime binary bundled with wrangler only knows dates up to its own
+# release, so a compatibility_date in the future refuses to start with
+# "the newest date supported by this server binary is …". The date is a
+# *behaviour* selector, not a version stamp — it says which set of runtime
+# semantics this worker was written against, and nothing here depends on
+# anything newer. Raise it deliberately, after reading what changed, not to
+# make it match the calendar.
+compatibility_date = "2026-05-11"
 
 # The bundle is produced by esbuild with the same pinned version the site's
 # bundles use, so wrangler is given a finished file rather than asked to build
 # one. Two bundlers producing the deployed bytes is one bundler too many.
 no_bundle = true
 
-# Uncomment once the DNS record exists. Until then `wrangler deploy` publishes
-# to <name>.<subdomain>.workers.dev, which is a perfectly good address to
-# develop against — and the Sandbox page reads whichever one it is pointed at.
-# [[routes]]
-# pattern = "api.nextkey.li/*"
-# custom_domain = true
+# The worker's own address.
+#
+# `custom_domain = true` means wrangler creates the DNS record for
+# api.nextkey.li itself and issues the certificate — nothing to add by hand in
+# the dashboard. It requires the zone to be **active** in the same Cloudflare
+# account: a zone that is still pending activation has no DNS for wrangler to
+# write into, and the deploy fails with a message about the zone rather than
+# about the worker, which is not where anyone looks first.
+#
+# So: check the dashboard says Active before `npm run api:deploy`. If it is not
+# yet, comment these three lines out again and deploy — the worker lands on
+# <name>.<subdomain>.workers.dev, answers exactly the same routes, and the
+# Sandbox page takes it with ?api= while you wait.
+[[routes]]
+pattern = "api.nextkey.li/*"
+custom_domain = true

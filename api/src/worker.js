@@ -46,7 +46,7 @@
  * See api/README.md.
  */
 
-import { createPublicClient, http } from 'viem'
+import { createPublicClient, http, zeroAddress } from 'viem'
 import { sepolia } from 'viem/chains'
 import { un64, nextkeyId } from '../../web/src/nk-crypto.mjs'
 
@@ -136,8 +136,22 @@ const idOf = (value) => {
  * same reason for having them: answering every name with the same five
  * absences describes a recipient as a defective vault, which a reader then has
  * to undo before learning anything.
+ *
+ * The fifth role is the one this endpoint shipped without and should not have.
+ * A text lookup answers `null` for a name that carries no such record *and* for
+ * a name that does not exist on this deployment at all, and the first version
+ * called both of them `empty` — "this name carries none of NextKey's records",
+ * which quietly asserts that the name exists. Asked about `vitalik.eth`, which
+ * is registered on production ENS and not here, it produced a confident
+ * description of a name it had never found.
+ *
+ * That is the same fault as the event scanner that reported "no events found"
+ * when all forty-five of its requests had been refused, and as the simulation
+ * that approved a write to the zero address: absence and failure-to-find are
+ * different statements, and this project has now conflated them three times.
  */
-const roleOf = (r) => {
+const roleOf = (r, resolver) => {
+  if (resolver === null) return 'unregistered'
   const holds = !!(r[RECORDS.eph] || r[RECORDS.secret])
   const receives = !!r[RECORDS.pubkey]
   if (holds && receives) return 'both'
@@ -146,10 +160,38 @@ const roleOf = (r) => {
   return 'empty'
 }
 
+/**
+ * Which resolver answers for this name, if any.
+ *
+ * Three outcomes, and they are deliberately not two. An address means the name
+ * exists here and something is answering for it. `null` means the deployment
+ * has no resolver for it — it is not registered here, or its resolver was never
+ * attached. `undefined` means we could not find out, because the lookup itself
+ * failed, and that is not the same as "no".
+ *
+ * The temptation is a try/catch returning null, which is one line shorter and
+ * turns every RPC hiccup into a confident "this name does not exist". The whole
+ * point of this function is to stop making that claim.
+ */
+const resolverFor = async (name) => {
+  try {
+    const address = await reader.getEnsResolver({ name })
+    return !address || address === zeroAddress ? null : address
+  } catch (e) {
+    // viem raises this for a name nothing resolves — an answer, not a failure.
+    const m = String(e?.name ?? '') + String(e?.shortMessage ?? e?.message ?? '')
+    if (/ResolverNotFound|resolver.*not.*found|reverse|Ens.*NotFound/i.test(m)) return null
+    return undefined
+  }
+}
+
 async function readName (name) {
   const keys = Object.values(RECORDS)
-  const values = await Promise.all(keys.map((key) => reader.getEnsText({ name, key })))
-  return Object.fromEntries(keys.map((k, i) => [k, values[i] ?? null]))
+  const [resolver, ...values] = await Promise.all([
+    resolverFor(name),
+    ...keys.map((key) => reader.getEnsText({ name, key })),
+  ])
+  return { resolver, records: Object.fromEntries(keys.map((k, i) => [k, values[i] ?? null])) }
 }
 
 // ─── Routes ────────────────────────────────────────────────────────────────
@@ -161,9 +203,9 @@ async function nameRoute (name, { idOnly }) {
       { name })
   }
 
-  let records
+  let read
   try {
-    records = await readName(name)
+    read = await readName(name)
   } catch (e) {
     // The node refused, timed out, or answered something viem could not read.
     // This says nothing about the name, and the status code says so: 502 is
@@ -173,10 +215,19 @@ async function nameRoute (name, { idOnly }) {
       { name, node: new URL(RPC).host, detail: String(e?.shortMessage ?? e?.message ?? e).slice(0, 200) })
   }
 
+  const { resolver, records } = read
   const pubkey = records[RECORDS.pubkey]
   const id = idOf(pubkey)
 
   if (idOnly) {
+    // "Nothing resolves for this name here" comes first, because it is the
+    // answer to a different question than "this name published no key", and a
+    // caller who has typed a production ENS name will meet it constantly.
+    if (!pubkey && resolver === null) {
+      return fail(404, 'not_on_this_deployment',
+        'Nothing resolves for this name on the hackathon deployment — it is not registered here, or has no resolver attached. This is not the same as a name that exists and publishes no key.',
+        { name })
+    }
     if (!pubkey) {
       return fail(404, 'no_published_key',
         'This name publishes no key, so nothing can be sealed to it and it has no NextKey ID. Publishing a key is the whole of the opt-in — see ' + SITE + '/demo/id',
@@ -193,18 +244,32 @@ async function nameRoute (name, { idOnly }) {
     return json({ network: 'sepolia', name, nextkeyId: id, pubkey })
   }
 
+  const role = roleOf(records, resolver)
+
+  // Said in the answer rather than only in the documentation, because an agent
+  // reads the answer and a person reads the documentation. Each of these is a
+  // different statement about the world and none of them stands in for another.
+  const note =
+    role === 'unregistered'
+      ? 'Nothing resolves for this name on the hackathon deployment. The empty records below are what the resolver was not there to answer, not what it answered.'
+    : resolver === undefined
+      ? 'A resolver could not be looked up for this name, so the empty records below may mean the name is not here at all rather than that it carries nothing.'
+    : id
+      ? 'The NextKey ID is derived from nextkey.pubkey and is held by no record. Compare the key, not the ID, when verifying.'
+      : 'No NextKey ID: this name publishes no X25519 key under nextkey.pubkey.'
+
   return json({
     network: 'sepolia',
     name,
-    role: roleOf(records),
+    role,
+    // The address that answered, so a reader can tell an absent record from an
+    // absent name without having to trust the word above.
+    resolver: resolver ?? null,
+    resolverKnown: resolver !== undefined,
     receivable: !!pubkey,
     nextkeyId: id,
     records,
-    // Said in the answer rather than only in the documentation, because an
-    // agent reads the answer and a person reads the documentation.
-    note: id
-      ? 'The NextKey ID is derived from nextkey.pubkey and is held by no record. Compare the key, not the ID, when verifying.'
-      : 'No NextKey ID: this name publishes no X25519 key under nextkey.pubkey.',
+    note,
   })
 }
 

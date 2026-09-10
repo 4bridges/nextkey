@@ -111,6 +111,11 @@ check('the record format is offered as the real interface',
   /nextkey\.pubkey/.test(body) && /nextkey\.eph/.test(body) && /nextkey\.secret/.test(body))
 check('the two kinds of "no" are both named',
   /no_published_key/.test(body) && /upstream_unavailable/.test(body))
+// The one a reader meets most: a name that exists on production ENS and not
+// here. Reporting that as "carries no records" asserts the name exists, which
+// is the confusion this project has now made three times.
+check('and so is the difference between an empty name and an absent one',
+  /not_on_this_deployment/.test(body))
 // The sentence that admits what running a server costs. It is the one a reader
 // who cares about privacy is here for, and the easiest to lose in a tidy-up.
 check('what the API costs in privacy is stated, not implied',

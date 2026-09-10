@@ -56,10 +56,25 @@ nobody.
 ## Deploying
 
 ```
-npm run build:api
-npx wrangler dev        # against the real Sepolia, on localhost
-npx wrangler deploy
+npm run api:dev         # builds, then runs against the real Sepolia on localhost
+npm run api:deploy      # builds, then publishes
 ```
+
+Both pass `-c api/wrangler.toml`, because the config is not in the repository
+root. Run `wrangler` from the root without it and it reports a missing entry
+point — which sends you looking for a problem in the worker rather than in the
+path. `main` inside the file is resolved relative to the file, not to where you
+ran the command.
+
+Try it against the live chain once it is up:
+
+```
+http://localhost:8787/demo/v1/health
+http://localhost:8787/demo/v1/id/anna.nextkey.eth
+```
+
+`502 upstream_unavailable` there means the node did not answer and says so in
+its own message. It is not a statement about the name.
 
 `wrangler.toml` has `no_bundle = true`: esbuild produces the deployed bytes
 with the same pinned version the site's bundles use. Two bundlers producing the

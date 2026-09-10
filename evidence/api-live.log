@@ -1,0 +1,149 @@
+NextKey API — first run against the real chain
+==============================================
+
+2026-09-10, `npm run api:dev` (wrangler 4.88.0, local runtime, Windows).
+
+The worker had never seen a chain before this: it was written and reviewed in a
+container whose proxy refuses the Sepolia RPC. So this is the run that turns
+"written" into "works", and it is kept for the two things it settles rather than
+for the fact that it answered at all.
+
+
+1 · The Universal Resolver override took
+----------------------------------------
+
+    GET http://localhost:8787/demo/v1/health
+
+    {
+      "ok": true,
+      "network": "sepolia",
+      "api": "1",
+      "universalResolver": "0xd26f2040d083af1cd2962ba303f4bea0c4faf142",
+      "records": {
+        "pubkey": "nextkey.pubkey",
+        "eph": "nextkey.eph",
+        "sealed": "nextkey.eph.sealed",
+        "secret": "nextkey.secret"
+      },
+      "writes": false,
+      "logs": false
+    }
+
+`0xd26f…f142` is the hackathon deployment's resolver, not the one viem ships for
+Sepolia. That distinction is the whole reason this field is in the health
+response: without the override every lookup quietly queries the *production*
+deployment and returns null — no error, no warning, and an empty answer that
+looks exactly like a name with nothing on it. This project lost a day to that
+once, and the health route now states which resolver it is reading rather than
+leaving it to be inferred from an empty result.
+
+`writes: false` and `logs: false` are the other two: no route writes, and no
+storage is attached for a name to be written into. Said in the answer that
+reports health, because a health check that only ever says "ok" teaches a caller
+nothing about the shape of what they are talking to.
+
+
+2 · A real name, and an ID that two independent implementations agree on
+------------------------------------------------------------------------
+
+    GET http://localhost:8787/demo/v1/id/anna.nextkey.eth
+
+    {
+      "network": "sepolia",
+      "name": "anna.nextkey.eth",
+      "nextkeyId": "NK-X3B7Q-6AG76-YWZG5",
+      "pubkey": "k5aC2G4AISBxAIweGzqdC+6mHGhxu3aucfwz8V0V6wA="
+    }
+
+The key was read live from `nextkey.pubkey` on `anna.nextkey.eth`. The ID was
+then recomputed from that base64 value by a separate implementation of the rule,
+written from the specification rather than imported from the source, and it
+matched character for character:
+
+    key bytes : 32
+    computed  : NK-X3B7Q-6AG76-YWZG5
+    API said  : NK-X3B7Q-6AG76-YWZG5
+    agree     : true
+
+Worth being precise about what that does and does not prove. `web/test/interop.mjs`
+already checks that the browser and the command line derive the same ID, in Node
+and again inside Chromium — but both of those import the same module, so they
+agree by construction. This is the first check against an implementation that
+does not, and against a key that came off the chain rather than out of a test.
+
+A NextKey ID is presentation, not cryptography, which is exactly why a
+disagreement would be expensive: two people comparing IDs — one reading the
+Sandbox page, one reading a command line — would conclude they were talking
+about different keys, and the correct response to that is to not send the
+secret. A wrong "no" costs as much as a wrong "yes".
+
+
+3 · The refusals, provoked rather than described
+------------------------------------------------
+
+The first version of this log said these were written, reviewed and never seen
+to fire. They have now fired, and one of them exists because of what happened
+when they were tried.
+
+    GET /demo/v1/id/hero01.nextkey.eth      404 no_published_key
+    GET /demo/v1/name/vitalik.eth           200 role "unregistered"
+    GET /demo/v1/id/vitalik.eth             404 not_on_this_deployment
+    GET /v1/health                          501 network_not_live
+
+`hero01.nextkey.eth` and `vitalik.eth` are the pair that matters, because they
+are the two answers this endpoint got wrong on its first run. `hero01` is one of
+the lent pool names: registered here, resolver attached, no key published yet —
+so it is `no_published_key`, a fact about what the name carries. `vitalik.eth`
+is registered on production ENS and not on this deployment at all, and the first
+version answered it with
+
+    "role": "empty"
+
+— "this name carries none of NextKey's records", which quietly asserts that the
+name exists. It was a confident description of a name the endpoint had never
+found.
+
+The cause is that a text lookup answers the same empty value for a name that
+carries nothing and for a name that is not there. They are separated now by
+asking which resolver answers, with three outcomes rather than two: an address,
+`null` for nothing resolving, and *unknown* when that lookup itself fails. The
+one-line version — a try/catch returning null — would have turned every RPC
+hiccup into "this name does not exist", which is the failure being fixed rather
+than a smaller one.
+
+    "role": "unregistered",
+    "resolver": null,
+    "resolverKnown": true,
+    "note": "Nothing resolves for this name on the hackathon deployment. The
+             empty records below are what the resolver was not there to answer,
+             not what it answered."
+
+And the name that does resolve now says which resolver answered, so a reader can
+tell an absent record from an absent name without taking the note's word for it:
+
+    "name": "anna.nextkey.eth",
+    "role": "recipient",
+    "resolver": "0x52A02f288AA5dde082206D85d4001880D64F4101",
+    "receivable": true,
+    "nextkeyId": "NK-X3B7Q-6AG76-YWZG5"
+
+Worth recording plainly: this is the third time in this repository that absence
+and failure-to-find have been spelled the same way. The event scanner reported
+"no events found" when all forty-five of its requests had been refused. The
+simulation approved a write to an address with no code, because silence is the
+valid answer for a setter with no return value. Both are in this log. The
+pattern is not carelessness in one place — it is that the honest answer costs an
+extra round trip, and the dishonest one is always one line shorter.
+
+
+What this run still does not show
+---------------------------------
+
+The deployed worker. This was `wrangler dev` on localhost against the real
+Sepolia; the routes, the resolution, the ID and the four refusals are exercised,
+the Cloudflare edge is not.
+
+`502 upstream_unavailable` and `422 key_not_x25519` remain unprovoked. The first
+needs a node that refuses, the second a name whose `nextkey.pubkey` holds
+something that is not a 32-byte key — neither of which exists to hand. A check
+nobody has seen fail is not a check, so they are not claimed as evidenced.

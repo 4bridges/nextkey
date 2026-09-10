@@ -36,7 +36,7 @@ i18n.stamp.json    the English baseline the checker compares against
 .htaccess          cache rules, and addresses without the extension
 
 src/               the sources the bundles are built from
-test/              eight suites, 317 checks
+test/              eight suites, 318 checks
 brand/             the mark, icons, social card and manifest
 ```
 
@@ -332,7 +332,7 @@ node web/test/feed.mjs         # 43 — the explorer's live window and its filte
 node web/test/blog.mjs         # 42 — the community page, its names and its editing step
 node web/test/donate.mjs       # 23 — the donation page: the ENS name, the address, the QR code, balances
 node web/test/legal.mjs        # 36 — the imprint and the privacy notice
-node web/test/sandbox.mjs      # 24 — the API page, and that it never claims an endpoint is live
+node web/test/sandbox.mjs      # 25 — the API page, and that it never claims an endpoint is live
 ```
 
 `sandbox.mjs` is the odd one and worth a sentence. It points the page at a port nothing is

@@ -12,6 +12,15 @@
 
 import { createPublicClient, http, keccak256, stringToHex } from 'viem'
 import { sepolia } from 'viem/chains'
+// The NextKey ID, imported rather than rewritten. `fingerprint` below is
+// reimplemented against WebCrypto on purpose — it is three lines and avoids a
+// dependency on a read-only page. The ID is not: it has a check character, a
+// bit layout and an alphabet, and a second copy of that would be a second thing
+// to keep in step. A disagreement would not crash; it would show one ID here
+// and a different one on the ID page for the same key, and whoever compared
+// them would conclude, correctly by their own reasoning and wrongly in fact,
+// that they were looking at two different people.
+import { nextkeyId } from './nk-crypto.mjs'
 
 // The hackathon deployment's Universal Resolver. viem ships its own Sepolia
 // address, and forgetting to override it fails silently by resolving against
@@ -178,6 +187,7 @@ async function renderRecipient() {
     setState(el, 'ok', `
       <dl>
         <dt>${t('d.name', 'name')}</dt><dd class="mono">${esc(RECIPIENT_NAME)}</dd>
+        <dt>${t('t.id.label', 'NextKey ID')}</dt><dd class="mono break nkid">${esc(nextkeyId(b64ToBytes(pub)))}</dd>
         <dt>${t('d.pubkey', 'published key')}</dt><dd class="mono break">${esc(pub)}</dd>
         <dt>${t('d.derived', 'derived here')}</dt><dd class="mono">${esc(grantKey)}</dd>
       </dl>
@@ -211,6 +221,7 @@ async function renderDevice() {
     setState(el, 'ok', `
       <dl>
         <dt>${t('d.name', 'name')}</dt><dd class="mono">${esc(DEVICE_NAME)}</dd>
+        <dt>${t('t.id.label', 'NextKey ID')}</dt><dd class="mono break nkid">${esc(nextkeyId(b64ToBytes(pub)))}</dd>
         <dt>${t('d.pubkey', 'published key')}</dt><dd class="mono break">${esc(pub)}</dd>
         <dt>${t('d.derived', 'derived here')}</dt><dd class="mono">${esc(grantKey)}</dd>
       </dl>

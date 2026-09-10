@@ -91,6 +91,24 @@ So NextKey splits the two concerns rather than conflating them. **Confidentialit
 
 Each user's **notification channel** is a text record too, which is why step 3 above works for people who have never heard of NextKey.
 
+### The NextKey ID
+
+`nextkey.pubkey` holds 44 characters of base64 — `k5aC2G4AISBxAIweGzqdC+6mHGhxu3aucfwz8V0V6wA=`. It is the correct thing for the arithmetic and the wrong thing to put in front of a person, and each way it is wrong is a way to send a secret to the wrong one: it cannot be read aloud, it cannot be compared at a glance, a truncated copy looks exactly like a complete one, and its punctuation does not survive a chat window that thinks a slash starts a command.
+
+```
+NK-X3B7Q-6AG76-YWZG5
+```
+
+Seventy bits of a SHA-256 over the published key, in Crockford's Base32 — no I, L, O or U, so a one cannot be read as an el — grouped in fives, plus one position-weighted check character. Weighted rather than a plain sum, because an unweighted one does not move when two neighbouring characters are swapped, and transposing two characters is exactly what happens when somebody reads an ID off one screen and types it into another.
+
+**Derived, never issued**, and that is the decision rather than an implementation detail. An allocated ID needs a registry; a registry needs an indexer, which a site served from static files does not have; and a collision needs somebody to resolve it. Deriving costs none of that: nothing is written to the chain for an ID, no record changes, the same key gives the same ID to anybody who computes it offline on any machine, and **every name that already publishes a key already has one**. There is nothing to keep, so there is nothing to lose.
+
+**What it is not**, said on the page as well as here: not a secret, not a permission, and not a replacement for the key. The key stays in `nextkey.pubkey` and is what everything is wrapped to; the ID is what the interface says. Seventy bits is not a cryptographic commitment and is not offered as one — it is enough that two people in a room never see the same ID. Anyone verifying rather than reading compares the key, and every place that shows an ID shows the key on the line below it.
+
+One implementation, in `web/src/nk-crypto.mjs`; `scripts/nextkey-core.mjs` re-exports it rather than carrying a copy. That is the opposite of the choice made for the wrapping rule, and deliberately: two implementations of the *cryptography* earn their cost because `web/test/interop.mjs` checks them against each other. A presentation rule in two places could only ever be a second thing to keep in step. It is checked in interop all the same, in Node and in Chromium — because two people comparing IDs over the phone, one reading the page and one reading a command line, would conclude from a disagreement that they were talking about different keys, and the right response to that is to not send the secret. A wrong "no" costs as much as a wrong "yes".
+
+Shown wherever a published key is shown: [the ID tab](https://nextkey.li/demo/id), the playground's recipient panel, the explorer, the live view, `nextkey.mjs keygen` and `publish`, and the API's `/demo/v1/id/<name>`. Verified against an independent implementation and a key read live off the chain in [`evidence/api-live.log`](./evidence/api-live.log).
+
 ### Where a grant lives is itself a secret
 
 Our first design stored a grant under the recipient's key fingerprint — `nextkey.grant.<first 16 hex of sha256(publicKey)>` — with their name inside the value, for readability. Addressing by key rather than by name was right: names move, and the key that opens a grant does not.
@@ -442,9 +460,9 @@ merges into and it cannot be rebuilt from `i18n.patch.json` alone.
 And the tests, which need no chain at all:
 
 ```bash
-npm test                       # all eight suites, 317 checks
+npm test                       # all eight suites, 318 checks
 npm run test:crypto            # 60 — no bundle needed, and only interop wants a browser
-npm run test:pages             # 257 — builds first, then drives the pages in Chromium
+npm run test:pages             # 258 — builds first, then drives the pages in Chromium
 
 node web/test/v2.mjs           # 18 — the v2 construction, padding, backwards compatibility
 node web/test/interop.mjs      # 42 — browser and command line derive the same keys and the same
@@ -455,7 +473,7 @@ node web/test/feed.mjs         # 43 — the explorer's live window and its filte
 node web/test/blog.mjs         # 42 — the community page, its names and its editing step
 node web/test/donate.mjs       # 23 — the donation page: the ENS name, the address, the QR code, balances
 node web/test/legal.mjs        # 36 — the imprint and the privacy notice: what they must say, and what they must not load
-node web/test/sandbox.mjs      # 24 — the API page, and that it never claims an endpoint is live
+node web/test/sandbox.mjs      # 25 — the API page, and that it never claims an endpoint is live
 ```
 
 The last four answer a mocked node, which is what lets them assert what a reader ends up looking at:
