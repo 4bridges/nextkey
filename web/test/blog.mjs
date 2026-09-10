@@ -252,6 +252,50 @@ for (const p of ['index.html', 'poc.html', 'send.html', 'blog.html', 'explorer.h
     !!seen && seen.icon > 8 && seen.label <= 2 && seen.href === '/')
 }
 
+// ── The bar, at the width a phone actually has ──
+//
+// This is the part of the page 318 checks could not see. The bar was eight
+// words in a flex row that never wrapped: 462px of them in a 375px window, so
+// explorer, blog and donate were cut off the right edge — and because the page
+// does not scroll sideways, there was no gesture that reached them. Three
+// destinations simply did not exist on a phone, and every existing check passed
+// while that was true, because every one of them asks whether an element is
+// *there* and none asks whether it is *reachable*.
+//
+// So: all eight, inside the window, at the narrowest width worth supporting.
+await page.setViewportSize({ width: 320, height: 720 })
+await page.goto(`${base}/blog.html?lang=en`, { waitUntil: 'domcontentloaded' })
+await page.waitForTimeout(200)
+
+const bar = await page.evaluate(() => {
+  const d = document.documentElement
+  const links = [...document.querySelectorAll('.barnav > a')]
+  const lang = document.getElementById('langbtn')
+  return {
+    count: links.length,
+    named: links.every((a) => {
+      const svg = a.querySelector('svg')
+      const vh = a.querySelector('.vh')
+      return svg && svg.getBoundingClientRect().width > 8
+        && vh && vh.textContent.trim().length > 0
+        && (a.getAttribute('title') || '').trim().length > 0
+    }),
+    clipped: links.filter((a) => a.getBoundingClientRect().right > d.clientWidth + 1).length,
+    sideways: d.scrollWidth > d.clientWidth + 1,
+    lastRight: links.length ? Math.round(links[links.length - 1].getBoundingClientRect().right) : 0,
+    langRight: lang ? Math.round(lang.getBoundingClientRect().right) : -1,
+  }
+})
+
+check('every destination in the bar is a symbol with a name behind it',
+  bar.count === 8 && bar.named)
+check('and none of them is cut off at 320px',
+  bar.clipped === 0 && !bar.sideways)
+// The row above ends at the language button. The bar is spread to the same
+// edge, so a drift here is the layout quietly going back to hugging one side.
+check('and the bar reaches the same edge as the controls above it',
+  Math.abs(bar.lastRight - bar.langRight) <= 2)
+
 check('and the page raised no errors at all', errors.length === 0)
 if (errors.length) console.log(errors)
 
