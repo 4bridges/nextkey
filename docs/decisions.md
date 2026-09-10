@@ -1095,3 +1095,51 @@ test, which is the only reason the contract survived the accusation.
 assertions hold against the chain. The first contract, `0x7716…ca98`, has been
 revoked: one door, not two. The names either of them handed out are untouched by
 any of that, which is the property the whole arrangement exists to have.
+
+## 2026-09-10 (later) — the second lane, and what it is honest about
+
+The registrar reaches the page. `demo.html` has a second section under *Make me
+receivable*: a field, the ending `.nextkey.eth` beside it, one button. Connect,
+one signature for the identity key, one transaction the visitor pays for, and
+the name is theirs with the key already on it.
+
+**Under the lent name, not instead of it.** The lent name costs a signature and
+no gas, and on a testnet most visitors have nothing to pay a transaction with.
+Offering only the owned name would turn those people away at the door; offering
+only the lent one would mean nobody ever owns anything. The test asserts the
+order with `compareDocumentPosition` rather than a line number, because a line
+number goes quietly wrong at the next rearrangement.
+
+**The contract is asked before the wallet is.** `nameOf(address)` is read before
+a signature is requested — being told "you already have one" *after* signing is
+worse than being told before, and the answer costs one call. And the typed label
+is judged before either: a visitor with no wallet at all should still learn that
+their name would not have worked, rather than installing one to find out.
+
+**Every refusal is a sentence.** `LabelTaken`, `CapReached`, `AlreadyClaimed`,
+`Paused`, `Denied`, `LabelTooLong`, `NotYoursToClaim` — each turned into
+something a person typing into a box can act on, with a fall-through to the raw
+message rather than an invented one. `LabelTaken` explains why the refusal is
+good news: nothing can take a name from whoever holds it, us included. An error
+message is the most honest place to demonstrate a property.
+
+**And what is still ours is in the same box as the good news.** This project
+holds `ROLE_SET_TEXT` at the root of that resolver, so the key on somebody's own
+name could be overwritten by us. That sentence sits in the result panel beside
+"it is yours", in all ten languages, with the way out named — point the name at a
+resolver you control.
+
+**Twenty new strings, and three old ones that had never arrived.** The merge
+reported 23 per language, not 20: `t.recv.h`, `t.recv.p` and `t.recv.at` were
+translated into the patch file yesterday and never folded into `i18n.js`. The
+whole *Make me receivable* section had been running in English in all nine
+languages, and nobody noticed because the fallback is silent and correct. A
+graceful fallback hides exactly the failure it protects against, which is an
+argument for the checker, not against the fallback.
+
+**Seven new checks, none of which reads a sentence.** They assert shape — the
+panel in its `bad` state, with text, and with *no links* in it, because links
+would mean the page had fallen through to "install a wallet" instead of judging
+what was typed. A check written against English prose passes on one machine and
+fails on another while nothing is broken; that already cost a morning in
+`feed.mjs` and will not cost a second one.

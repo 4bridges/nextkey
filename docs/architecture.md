@@ -453,20 +453,45 @@ so it is a link-shaped secret and is described as one — and the person who ope
 it is offered a published key of their own. Each secret sent this way can leave
 behind a recipient who never needs a link again.
 
-### What is not built, and is the next thing
+### And the name can be theirs
 
-The lent name is **ours, not theirs**. They can receive on it, they cannot
+The lent name is **ours, not theirs**: they can receive on it, they cannot
 change its records, and nothing but our own restraint stops us overwriting them.
-The honest version is a subname in the `UserRegistry` whose **owner is their
-address** — an ERC1155Singleton with one owner and its own Permissioned
-Resolver, exactly what a stored secret already gets from
-`scripts/register-subname.mjs`. After that the name is theirs: they set their own
-records, we cannot touch them, and the identity — which hangs on the wallet, not
-the name — is unaffected by the move.
+So the playground offers a second lane underneath, and `contracts/NextKeyNames.sol`
+is what makes it safe to offer.
 
-It was left out of the hackathon build on purpose. It needs a registry write per
-visitor, a field for the wanted label, collision handling, and a decision about
-who pays; a new write path introduced days before a deadline is exactly the
-change that breaks something that works. The pool is also finite: 200 names, and
-an identity now spends one permanently, which is comfortable for a submission
-and is precisely why an owned subname is the right answer for a product.
+`claim(label, to, pubkey)` registers a subname in the `UserRegistry` whose
+**owner is their address**, gives them `SET_RESOLVER` and `SET_SUBREGISTRY`, and
+publishes `nextkey.pubkey` on it — one transaction, signed and paid for by the
+person receiving the name. The identity is unchanged by the move, because it
+hangs on the wallet and not on the name: the same signature over the same
+message gives the same key, whichever name carries it.
+
+**Why a contract and not a key.** `ROLE_REGISTRAR` is one bit. A key holding it
+may register as often as its balance allows, and "one name per address" written
+into a web page binds only the people who use the page. The contract holds the
+role instead, and the rules are where the chain enforces them: one name per
+address for ever, a hard cap, a deny list, a pause. It holds no funds, cannot
+transfer or edit a name, and cannot take one back — revoking its roles or losing
+its operator key leaves every name already handed out exactly where it is.
+
+**Two roles, not one.** Owning a name turned out not to include being able to
+use it: on this deployment's resolver, writing a text record needs
+`ROLE_SET_TEXT`, granted at the root and not per name, so the new owner cannot
+publish anything. The contract therefore holds that role too and writes the
+record itself, for the name it created moments earlier in the same call. It is
+the same role the demo page's key already has — the difference is that a key is
+bounded by whoever holds it and a contract is bounded by its code.
+
+### What is still not theirs
+
+`ROLE_SET_TEXT` at the root of that resolver means this project *could*
+overwrite the key on a name it handed out. The page says so where the good news
+is, not in a footnote, and names the way out: point the name at a resolver you
+control and even that stops being true.
+
+The lent lane stays, and stays first. It costs one signature and no gas, which
+is the difference between a stranger trying this and a stranger leaving; the
+owned name costs a transaction they pay for, and on a testnet most visitors have
+nothing to pay it with. Offering only the second would turn those people away.
+Offering only the first would mean nobody ever owns anything.
