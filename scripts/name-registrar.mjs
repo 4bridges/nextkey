@@ -59,6 +59,17 @@ const RPC = process.env.SEPOLIA_RPC_URL ?? 'https://ethereum-sepolia-rpc.publicn
 // "may register" has to mean and exactly why nothing else is granted with it.
 // It is not resource 0 passed to the ordinary functions — see the ABI below.
 const ROLE_REGISTRAR = 1n << 0n
+/**
+ * Writing a text record is a permission of the *resolver*, not of the registry,
+ * and it is granted at the root — there is no per-name version of it that the
+ * deployed resolver will accept. Measured, not assumed: the owner of a freshly
+ * claimed name is refused with EACUnauthorizedAccountRoles(resource, 0x10, …).
+ *
+ * So a name is not usable by the person who receives it unless somebody with
+ * this role writes the first record. That is why the registrar contract holds
+ * it too, and why it is granted and revoked from here beside the other one.
+ */
+const ROLE_SET_TEXT = 1n << 4n
 const ROLE_SET_SUBREGISTRY = 1n << 20n
 const ROLE_SET_RESOLVER = 1n << 24n
 const admin = (role) => role << 128n
@@ -144,6 +155,8 @@ Usage:
   name-registrar.mjs check <address>           does it hold the role?
   name-registrar.mjs register <label> <owner>  mint one subname
   name-registrar.mjs revoke <address>          take the role back
+  name-registrar.mjs grant-write <address>     resolver: may write text records
+  name-registrar.mjs revoke-write <address>    take that back
 `)
   process.exit(1)
 }
@@ -248,16 +261,76 @@ else if (command === 'revoke') {
   if (still) process.exitCode = 1
 }
 
+else if (command === 'grant-write' || command === 'revoke-write') {
+  // The resolver speaks the same EnhancedAccessControl as the registry, so the
+  // same three functions work — only the contract being asked is different.
+  const granting = command === 'grant-write'
+  const [account] = rest
+  if (!account) usage()
+  if (!writer) {
+    console.log(`\n  REGISTRAR_PRIVATE_KEY is not set. Only the resolver's owner can do this.\n`)
+    process.exit(1)
+  }
+
+  const fn = granting ? 'grantRootRoles' : 'revokeRootRoles'
+  const before = await reader.readContract({
+    address: POOL_RESOLVER, abi: registryAbi, functionName: 'hasRootRoles',
+    args: [ROLE_SET_TEXT, account] })
+  console.log(`\n  resolver    ${POOL_RESOLVER}`)
+  console.log(`  account     ${account}`)
+  console.log(`  role        ROLE_SET_TEXT (bit 4), as a root role`)
+  console.log(`  holds it    ${before ? 'yes' : 'no'}`)
+  if (before === granting) {
+    console.log(`\n  Nothing to do.\n`)
+    process.exit(0)
+  }
+
+  await reader.simulateContract({
+    address: POOL_RESOLVER, abi: registryAbi, functionName: fn,
+    args: [ROLE_SET_TEXT, account], account: writer.account.address })
+
+  const hash = await writer.writeContract({
+    address: POOL_RESOLVER, abi: registryAbi, functionName: fn,
+    args: [ROLE_SET_TEXT, account], chain: sepolia })
+  console.log(`  tx          ${hash}`)
+  await reader.waitForTransactionReceipt({ hash })
+
+  const after = await reader.readContract({
+    address: POOL_RESOLVER, abi: registryAbi, functionName: 'hasRootRoles',
+    args: [ROLE_SET_TEXT, account] })
+  console.log(`  confirmed   ${after === granting ? 'yes' : '✗ unchanged'}`)
+  console.log(`
+  This role reaches every name on this resolver, so it is worth saying what it
+  does and does not mean. Held by a key, it is bounded by whoever holds the key.
+  Held by a contract, it is bounded by that contract's code — which is the whole
+  argument for putting it there. Revoking it never touches a record that was
+  already written.\n`)
+  if (after !== granting) process.exitCode = 1
+}
+
 else if (command === 'check') {
   const [account] = rest
   if (!account) usage()
   const ask = (bitmap) => reader.readContract({
     address: NEXTKEY_REGISTRY, abi: registryAbi, functionName: 'hasRootRoles',
     args: [bitmap, account] })
-  const [canRegister, canGrant] = await Promise.all([ask(ROLE_REGISTRAR), ask(admin(ROLE_REGISTRAR))])
+  const askResolver = (bitmap) => reader.readContract({
+    address: POOL_RESOLVER, abi: registryAbi, functionName: 'hasRootRoles',
+    args: [bitmap, account] })
+  const [canRegister, canGrant, canWrite, canGrantWrite] = await Promise.all([
+    ask(ROLE_REGISTRAR), ask(admin(ROLE_REGISTRAR)),
+    askResolver(ROLE_SET_TEXT), askResolver(admin(ROLE_SET_TEXT)),
+  ])
   console.log(`\n  account     ${account}`)
   console.log(`  may register        ${canRegister ? 'yes' : 'no'}`)
   console.log(`  may grant the role  ${canGrant ? '✗ YES — that is more than it should have' : 'no, as intended'}`)
+  // Both halves, because a grantee with one and not the other is the failure
+  // that looks like success: names get created and then cannot be used.
+  console.log(`  may write records   ${canWrite ? 'yes' : 'no'}`)
+  console.log(`  may grant that      ${canGrantWrite ? '✗ YES — that is more than it should have' : 'no, as intended'}`)
+  if (canRegister !== canWrite) console.log(`
+  Only half of what a registrar needs. A name it creates will exist and carry
+  no key, which fails later and somewhere else — grant-write fixes it.`)
   // What limits this grantee is not the same question for a key and for a
   // contract, and printing one answer for both was wrong: a contract pays no
   // gas — its callers do — so its balance says nothing at all about how many
@@ -273,7 +346,7 @@ else if (command === 'check') {
   A contract pays no gas of its own, so read its cap, minted and denied list
   instead:  node --env-file=.env scripts/deploy-names.mjs show ${account}`)
   console.log()
-  if (canGrant) process.exitCode = 1
+  if (canGrant || canGrantWrite) process.exitCode = 1
 }
 
 else if (command === 'register') {

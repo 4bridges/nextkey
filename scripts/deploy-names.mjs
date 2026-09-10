@@ -102,22 +102,31 @@ console.log(`  contract    ${receipt.contractAddress}`)
 console.log(`  gas used    ${receipt.gasUsed}`)
 
 console.log(`
-  It can do nothing yet. Two steps, in this order:
+  It can do nothing yet. Three steps, in this order:
 
-    1  give it the role — one transaction, only the registry owner can:
+    1  let it register names — only the registry owner can:
          node --env-file=.env scripts/name-registrar.mjs grant ${receipt.contractAddress}
+
+    2  let it publish the key on the name it just made — only the resolver's
+       owner can, and without it every name it hands out is unusable by the
+       person who receives it:
+         node --env-file=.env scripts/name-registrar.mjs grant-write ${receipt.contractAddress}
          node --env-file=.env scripts/name-registrar.mjs check ${receipt.contractAddress}
 
-    2  if the page is to pay the gas for visitors, name the relayer:
+    3  if the page is to pay the gas for visitors, name the relayer:
          cast send ${receipt.contractAddress} "setRelayer(address)" <the page's key address>
        Leave it unset and every claimant pays their own gas, which is the
        version with nothing of ours in it at all.
 
-  Then prove it from outside before any of it reaches the page: claim a name
-  for an address you control and check that the registry says that address owns
-  it — and that a second claim for the same address is refused.
+  Then prove it from outside before any of it reaches the page:
+    node --env-file=.env scripts/prove-names.mjs ${receipt.contractAddress}
 
-  If it ever needs to stop: setPaused(true) halts new claims, and
-  name-registrar.mjs revoke ${receipt.contractAddress} ends it entirely.
-  Neither touches a name that was already handed out.
+  And take both roles off whatever held them before, so there is one door and
+  not two:
+    node --env-file=.env scripts/name-registrar.mjs revoke <the old contract>
+    node --env-file=.env scripts/name-registrar.mjs revoke-write <the old contract>
+
+  If it ever needs to stop: setPaused(true) halts new claims, and revoke plus
+  revoke-write end it entirely. None of the three touches a name that was
+  already handed out, or a record already written on one.
 `)

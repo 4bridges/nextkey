@@ -8,10 +8,15 @@
  *
  *   1  a stranger, paying their own gas, can claim a name
  *   2  the registry says that stranger owns it — not us
- *   3  the same stranger cannot claim a second one
- *   4  we cannot claim one *for* somebody else while no relayer is set
+ *   3  the key they asked for is published on it, in the same transaction
+ *   4  the same stranger cannot claim a second one
+ *   5  we cannot claim one *for* somebody else while no relayer is set
+ *   6  a name already held cannot be handed to anybody else
  *
- * The fourth is the one worth spending a transaction on. Without it a passer-by
+ * The third is what the second version of this contract is for: a name whose
+ * owner cannot write to it is a name they cannot receive on, and the resolver
+ * grants that permission at the root only. The fifth is the one worth spending
+ * a transaction on. Without it a passer-by
  * could burn a victim's single allowance on a name the victim never wanted, and
  * that failure would look like nothing at all until somebody complained.
  *
@@ -24,7 +29,7 @@
  * that exists for ninety seconds and is then gone — which is itself the point
  * being demonstrated, since the contract cannot take it back either.
  */
-import { createPublicClient, createWalletClient, http, formatEther, parseEther, zeroAddress } from 'viem'
+import { createPublicClient, createWalletClient, http, formatEther, parseEther } from 'viem'
 import { privateKeyToAccount, generatePrivateKey } from 'viem/accounts'
 import { sepolia } from 'viem/chains'
 import { readFileSync } from 'node:fs'
@@ -49,6 +54,28 @@ const registryAbi = [{
   name: 'findOwner', type: 'function', stateMutability: 'view',
   inputs: [{ name: 'label', type: 'string' }], outputs: [{ type: 'address' }],
 }]
+
+/**
+ * Read the record back the way the page reads it, not the way we wrote it.
+ *
+ * Asking the resolver directly is the obvious move and it is wrong twice over.
+ * It reverts — the deployed resolver has neither text(bytes,string) nor
+ * text(bytes32,string), measured, and a missing function reverts with empty
+ * data exactly like a refusal. And even if it answered, it would prove the
+ * wrong thing: what has to be true is that a *visitor's browser* can find the
+ * key, and a browser goes through the Universal Resolver.
+ *
+ * Which one it goes through matters. Forgetting to override it does not raise
+ * an error; it silently resolves against production ENS and returns nothing,
+ * which reads exactly like "that name has no record".
+ */
+const UNIVERSAL_RESOLVER = process.env.UNIVERSAL_RESOLVER
+  ?? '0xd26f2040d083af1cd2962ba303f4bea0c4faf142'
+const hackathonSepolia = {
+  ...sepolia,
+  contracts: { ...sepolia.contracts, ensUniversalResolver: { address: UNIVERSAL_RESOLVER } },
+}
+const resolving = createPublicClient({ chain: hackathonSepolia, transport: http(RPC) })
 
 const reader = createPublicClient({ chain: sepolia, transport: http(RPC) })
 const pk = process.env.REGISTRAR_PRIVATE_KEY
@@ -99,9 +126,13 @@ await reader.waitForTransactionReceipt({ hash: fundHash })
 console.log(`  funded      ${formatEther(FUNDING)} ETH  tx ${fundHash}\n`)
 
 // ─── 1 · a stranger can claim, paying their own gas ─────────────────────────
+// A key-shaped value, so the record that lands looks like the real thing
+// rather than like a test string somebody forgot to remove.
+const pubkey = Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString('base64')
+
 const claimHash = await stranger.writeContract({
   address: contract, abi: artifact.abi, functionName: 'claim',
-  args: [label, stranger.account.address], chain: sepolia })
+  args: [label, stranger.account.address, pubkey], chain: sepolia })
 const claimReceipt = await reader.waitForTransactionReceipt({ hash: claimHash })
 check('a stranger can claim a name, paying their own gas',
   claimReceipt.status === 'success', `gas ${claimReceipt.gasUsed}`)
@@ -116,25 +147,35 @@ const recorded = await reader.readContract({
   address: contract, abi: artifact.abi, functionName: 'nameOf', args: [stranger.account.address] })
 check('the contract recorded which name went to them', recorded === label, recorded || '(empty)')
 
+// ─── 2b · and the key is published on it, in the same transaction ───────────
+let published = null
+try {
+  published = await resolving.getEnsText({ name: `${label}.nextkey.eth`, key: 'nextkey.pubkey' })
+} catch (e) {
+  published = `(the lookup itself failed: ${e.shortMessage ?? e.message})`
+}
+check('the key is published on it, and a browser can find it',
+  published === pubkey, published ? `${String(published).slice(0, 16)}…` : '(nothing there)')
+
 // ─── 3 · not a second one ───────────────────────────────────────────────────
 await mustRevert('the same address cannot claim a second name', 'AlreadyClaimed', () =>
   reader.simulateContract({
     address: contract, abi: artifact.abi, functionName: 'claim',
-    args: [`${label}-again`, stranger.account.address], account: stranger.account.address }))
+    args: [`${label}-again`, stranger.account.address, ''], account: stranger.account.address }))
 
 // ─── 4 · and nobody can claim on somebody else's behalf ─────────────────────
 const victim = privateKeyToAccount(generatePrivateKey()).address
 await mustRevert('we cannot claim a name for somebody else', 'NotYoursToClaim', () =>
   reader.simulateContract({
     address: contract, abi: artifact.abi, functionName: 'claim',
-    args: [`${label}-victim`, victim], account: owner.account.address }))
+    args: [`${label}-victim`, victim, ''], account: owner.account.address }))
 
 // ─── 5 · a name already held cannot be taken ────────────────────────────────
 const fresh = privateKeyToAccount(generatePrivateKey()).address
 await mustRevert('an existing name cannot be handed to anybody else', 'LabelTaken', () =>
   reader.simulateContract({
     address: contract, abi: artifact.abi, functionName: 'claim',
-    args: [label, fresh], account: fresh }))
+    args: [label, fresh, ''], account: fresh }))
 
 // ─── What the counters say afterwards ───────────────────────────────────────
 const [minted, remaining] = await Promise.all(['minted', 'remaining'].map((fn) =>
@@ -144,8 +185,8 @@ console.log(`  remaining   ${remaining}`)
 
 console.log(`
   ${failures === 0
-    ? 'All five hold. The role is on a contract whose rules are public, and the'
+    ? 'All six hold. The role is on a contract whose rules are public, and the'
     + '\n  name it handed out belongs to an address nothing here can reach.'
-    : `${failures} of five did not hold. Nothing goes near the page until they do.`}
+    : `${failures} of six did not hold. Nothing goes near the page until they do.`}
 `)
 if (failures) process.exitCode = 1
