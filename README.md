@@ -460,9 +460,9 @@ merges into and it cannot be rebuilt from `i18n.patch.json` alone.
 And the tests, which need no chain at all:
 
 ```bash
-npm test                       # all eight suites, 318 checks
+npm test                       # all eight suites, 321 checks
 npm run test:crypto            # 60 — no bundle needed, and only interop wants a browser
-npm run test:pages             # 258 — builds first, then drives the pages in Chromium
+npm run test:pages             # 261 — builds first, then drives the pages in Chromium
 
 node web/test/v2.mjs           # 18 — the v2 construction, padding, backwards compatibility
 node web/test/interop.mjs      # 42 — browser and command line derive the same keys and the same
@@ -470,7 +470,8 @@ node web/test/interop.mjs      # 42 — browser and command line derive the same
 node web/test/playground.mjs   # 89 — send.html driven in a real browser, in two languages, at both
                                #      of the addresses it answers to
 node web/test/feed.mjs         # 43 — the explorer's live window and its filters
-node web/test/blog.mjs         # 42 — the community page, its names and its editing step
+node web/test/blog.mjs         # 45 — the community page, its names, its editing step, and the
+                               #      tab bar: eight destinations, none of them clipped at 320px
 node web/test/donate.mjs       # 23 — the donation page: the ENS name, the address, the QR code, balances
 node web/test/legal.mjs        # 36 — the imprint and the privacy notice: what they must say, and what they must not load
 node web/test/sandbox.mjs      # 25 — the API page, and that it never claims an endpoint is live
