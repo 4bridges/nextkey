@@ -48,6 +48,7 @@ import {
   identityMessage, identitySecretFromSignature,
   grantForV2, locateGrantV2, openGrantV2,
   locateAckV2, ackKeyForSender,
+  nextkeyId,
 } from './nk-crypto.mjs'
 
 // ─── The deployment ────────────────────────────────────────────────────────
@@ -174,21 +175,62 @@ const eye = (label) => `
  * behind is broken from the start, and finding out three steps in is worse than
  * finding out immediately.
  */
-const REQUIRED_ELEMENTS = [
-  'mode-wallet', 'mode-message', 'pane-wallet', 'pane-message',
+
+/**
+ * Which page is this?
+ *
+ * One bundle now serves three tabs. /demo/id asks "how does anyone send
+ * anything to me"; /demo/passphrase and /demo/message ask "who am I sending
+ * this to". They are different questions asked by different people, which is
+ * why they are different addresses — but they are the same arithmetic, the same
+ * record names and the same wallet handling underneath, and this project has
+ * already paid once for having one rule in two implementations. So the code
+ * stays in one file and the file knows where it is.
+ *
+ * The pool scan, the derived identity and the claim contract are the ID tab's;
+ * the five steps are the send tabs'; everything from `nk-crypto` down is
+ * shared. What that costs is one bundle on a page that uses half of it, most of
+ * which is viem, which the ID tab needs anyway.
+ */
+const PAGE = /(^|\/)id(\.html)?$/.test(location.pathname) ? 'id' : 'send'
+
+const NEEDED_EVERYWHERE = [
+  'connect', 'wallet-out',
+  'be-receivable', 'be-receivable-box', 'recv-state', 'id-out',
+  'own-name-box', 'own-label', 'claim-name', 'own-state', 'claim-out',
+]
+
+const NEEDED_TO_SEND = [
+  't-eyebrow', 't-h1', 't-lead',
+  'pane-wallet', 'pane-message',
   'phrase', 'gen', 'wallet-made', 'message-made', 'pane-message-box',
   'msg-edit', 'msg-edit-row', 'step1-state',
   's1-h', 's1-p', 's2-h', 's2-p',
-  'gen-recipient', 'be-receivable', 'recv-state', 'id-out', 'r-out', 'ens-name', 'lookup',
-  'own-name-box', 'own-label', 'claim-name', 'own-state', 'claim-out',
+  'gen-recipient', 'r-out', 'ens-name', 'lookup',
   'go-store', 'store-out',
   'step-chain', 'write-demo', 'demo-out', 'demo-state',
-  'connect', 'wallet-out', 'own-name', 'publish', 'publish-out',
+  'own-name', 'publish', 'publish-out',
   'step-open', 'inbox-names', 'check-inbox', 'open-other', 'open-out', 'open-remote-note',
   'receipt-row', 'send-ack', 'check-ack', 'ack-out',
   'step-more', 'more-name', 'grant-more', 'more-out',
   'step-revoke', 'revoke', 'revoke-out',
 ]
+
+const REQUIRED_ELEMENTS = PAGE === 'send'
+  ? [...NEEDED_EVERYWHERE, ...NEEDED_TO_SEND]
+  : NEEDED_EVERYWHERE
+
+/**
+ * Wire a handler, if this page has the thing to wire it to.
+ *
+ * The alternative was a second bundle, and the alternative to that was letting
+ * `$('go-store').addEventListener` throw on the ID tab — which is the exact
+ * "Cannot set properties of null" the check above exists to prevent, except
+ * this time we would have shipped it deliberately. A missing element is a
+ * mismatch only when the contract above says the page should have had it, and
+ * that is the one place it is judged.
+ */
+const on = (id, ev, fn) => { const el = document.getElementById(id); if (el) el.addEventListener(ev, fn) }
 
 {
   const missing = REQUIRED_ELEMENTS.filter((id) => !document.getElementById(id))
@@ -261,8 +303,16 @@ const S = {
 //
 // One loop, two contents. A wallet is a phrase this page generates; a message
 // is text somebody types. Everything from step 2 on is identical — which is
-// the honest reason a "messenger" is not a second product here, and why it is
-// a switch rather than a second page.
+// the honest reason a "messenger" is not a second product here, and why one
+// file answers to both tabs rather than being copied into two.
+//
+// What changed with the tab bar is where the choice lives. It used to be a
+// segmented control on the page: a visitor arrived at "the demo" and then said
+// what kind of demo it was. Now the two are addresses — /passphrase and
+// /message — so the choice is made before the page loads, it can be linked to,
+// bookmarked and shared, and the back button undoes it. The page reads the tab
+// off its own path; nothing on it can change the tab, because changing it means
+// going to the other one.
 //
 // The generator is the default, and in wallet mode there is no box to paste a
 // real seed phrase into. That is what removed the standing warning this page
@@ -272,12 +322,18 @@ const phraseBox = $('phrase')
 
 const MODE_TEXT = {
   wallet: {
+    eyebrow: ['nav.passphrase', 'Passphrase'],
+    hero: ['t.h1', 'Wallet recovery with a human-in-the-loop'],
+    lead: ['t.lead', 'Create a wallet here with social recovery to a human-in-the-loop. Only that human can recover the wallet.'],
     h1: ['t.s1.h', 'Create wallet'],
     p1: ['t.s1.p', 'A fresh twelve-word phrase.'],
     h2: ['t.s2.h', 'Choose your grant'],
     p2: ['t.s2.p', 'A name on ENS, any public address. Your grant will receive it — no need to register with NextKey.'],
   },
   message: {
+    eyebrow: ['nav.message', 'Message'],
+    hero: ['t.h1.msg', 'A message only one person can open'],
+    lead: ['t.lead.msg', 'Write something here, seal it to one recipient, and put it where they can reach it from any machine. Nobody else can read it — not a server, not us, not the chain it is stored on.'],
     h1: ['t.s1.h.msg', 'The message'],
     p1: ['t.s1.p.msg', 'Anything you would rather not put in an email.'],
     h2: ['t.s2.h.msg', 'Who it is addressed to'],
@@ -285,14 +341,30 @@ const MODE_TEXT = {
   },
 }
 
+/**
+ * Which tab is this? The path decides.
+ *
+ * `?mode=message` still works, because links to it are in the README, in the
+ * decision log and in whatever somebody has already sent to somebody else, and
+ * a query string that quietly stops meaning anything is a worse answer than one
+ * that keeps meaning what it meant. The path wins where both are present.
+ */
+function modeFromLocation () {
+  const path = location.pathname.replace(/\.html$/, '')
+  if (/(^|\/)message$/.test(path)) return 'message'
+  if (/(^|\/)passphrase$/.test(path)) return 'wallet'
+  return new URLSearchParams(location.search).get('mode') === 'message' ? 'message' : 'wallet'
+}
+
 function setMode(next) {
   S.mode = next === 'message' ? 'message' : 'wallet'
-  $('mode-wallet').setAttribute('aria-pressed', String(S.mode === 'wallet'))
-  $('mode-message').setAttribute('aria-pressed', String(S.mode === 'message'))
   show($('pane-wallet'), S.mode === 'wallet')
   show($('pane-message'), S.mode === 'message')
 
   const txt = MODE_TEXT[S.mode]
+  $('t-eyebrow').textContent = t(...txt.eyebrow)
+  $('t-h1').textContent = t(...txt.hero)
+  $('t-lead').textContent = t(...txt.lead)
   $('s1-h').textContent = t(...txt.h1)
   $('s1-p').textContent = t(...txt.p1)
   $('s2-h').textContent = t(...txt.h2)
@@ -319,8 +391,6 @@ function setMode(next) {
   syncPhrase()
 }
 
-$('mode-wallet').addEventListener('click', () => setMode('wallet'))
-$('mode-message').addEventListener('click', () => setMode('message'))
 
 // ─── Step 1 · a wallet, or a message ───────────────────────────────────────
 
@@ -335,7 +405,7 @@ $('mode-message').addEventListener('click', () => setMode('message'))
  *
  * It is also worth nothing, and this page never funds it.
  */
-$('gen').addEventListener('click', () => {
+on('gen', 'click', () => {
   const phrase = generateMnemonic(english)
   const account = mnemonicToAccount(phrase)
   phraseBox.value = phrase
@@ -365,7 +435,7 @@ $('gen').addEventListener('click', () => {
 const cover = (phrase) => phrase.split(/\s+/).map((w) => '•'.repeat(w.length)).join(' ')
 
 let revealTimer = null
-const wireReveal = (panel) => panel.addEventListener('click', (e) => {
+const wireReveal = (panel) => panel && panel.addEventListener('click', (e) => {
   if (!e.target.closest('#reveal')) return
   const dd = $('phrase-shown')
   if (!dd) return
@@ -401,9 +471,9 @@ const showMessageCovered = () => {
   show($('msg-edit-row'), true)
 }
 
-phraseBox.addEventListener('blur', () => { if (S.mode === 'message') showMessageCovered() })
+if (phraseBox) phraseBox.addEventListener('blur', () => { if (S.mode === 'message') showMessageCovered() })
 
-$('msg-edit').addEventListener('click', () => {
+on('msg-edit', 'click', () => {
   clearTimeout(revealTimer)
   $('message-made').hidden = true
   $('message-made').innerHTML = ''
@@ -412,9 +482,10 @@ $('msg-edit').addEventListener('click', () => {
   phraseBox.focus()
 })
 
-phraseBox.addEventListener('input', () => { S.generated = false; syncPhrase() })
+if (phraseBox) phraseBox.addEventListener('input', () => { S.generated = false; syncPhrase() })
 
 function syncPhrase() {
+  if (!phraseBox) return
   S.phrase = phraseBox.value.trim()
   $('step1-state').textContent = S.phrase && S.mode === 'message'
     ? t('t.s1.typed', 'Your own text — this page keeps it in memory only.')
@@ -431,17 +502,18 @@ function syncPhrase() {
 // the only way somebody with no name on this deployment can finish the loop.
 
 /** A recipient who exists only here, so the loop can be finished by anyone. */
-$('gen-recipient').addEventListener('click', () => {
+on('gen-recipient', 'click', () => {
   const sk = randomSecret()
   const pk = publicKeyOf(sk)
   S.recipient = { sk, pk, label: t('t.s2.you', 'the recipient (you, in a moment)'), local: true }
   say($('r-out'), 'ok', `
     <dl>
+      <dt>${t('t.id.label', 'NextKey ID')}</dt><dd class="mono break nkid">${esc(nextkeyId(pk))}</dd>
       <dt>${t('t.pubkey', 'public key')}</dt><dd class="mono break">${esc(b64(pk))}</dd>
     </dl>
     ${why(t('t.why', 'Why this matters'), `
       <p>${t('t.s2.localnote', 'This keypair was made in your browser a second ago. The private half never leaves it, and reloading the page destroys it.')}</p>`)}`,
-    { step: 2, recipient: 'local', publicKey: b64(pk) })
+    { step: 2, recipient: 'local', nextkeyId: nextkeyId(pk), publicKey: b64(pk) })
   refreshReady()
 })
 
@@ -489,7 +561,7 @@ const readRecipientKey = async (name) => {
   return { pk, pub }
 }
 
-$('lookup').addEventListener('click', async () => {
+on('lookup', 'click', async () => {
   const name = $('ens-name').value.trim().toLowerCase()
   const out = $('r-out')
   if (!name) return say(out, 'bad', `
@@ -508,6 +580,7 @@ $('lookup').addEventListener('click', async () => {
     S.recipient = { pk, label: name, local: false }
     say(out, 'ok', `
       <dl>
+        <dt>${t('t.id.label', 'NextKey ID')}</dt><dd class="mono break nkid">${esc(nextkeyId(pk))}</dd>
         <dt>${t('t.name', 'name')}</dt><dd class="mono">${esc(name)}</dd>
         <dt>${t('t.pubkey', 'published key')}</dt><dd class="mono break">${esc(pub)}</dd>
         <dt>${t('t.grantaddr', 'their grant will live at')}</dt>
@@ -516,7 +589,7 @@ $('lookup').addEventListener('click', async () => {
       ${why(t('t.why', 'Why this matters'), `
         <p>${t('t.s2.ensnote', 'Read live from the hackathon deployment. They never registered with NextKey and were not asked for permission — publishing a key is the whole of the opt-in.')}</p>
         <p>${t('t.s2.addrnote', 'Note what is missing: the record their grant will occupy. Everything on this line is public, and from public values alone that address cannot be worked out — not by this page, and not by anyone watching the chain. It takes one of the two private keys, which is why the next step is where it appears.')}</p>`)}`,
-      { step: 2, recipient: 'ens', name, publicKey: pub })
+      { step: 2, recipient: 'ens', name, nextkeyId: nextkeyId(pk), publicKey: pub })
   } catch (e) {
     S.recipient = null
     say(out, 'bad', `<p>${t('t.chainfail', 'Could not read that from the chain.')}</p>
@@ -526,12 +599,15 @@ $('lookup').addEventListener('click', async () => {
 })
 
 function refreshReady() {
-  $('go-store').disabled = !(S.phrase && S.recipient)
+  // Called from the ID tab too, by way of `receivableAt`, where there is no
+  // step 3 to enable.
+  const go = $('go-store')
+  if (go) go.disabled = !(S.phrase && S.recipient)
 }
 
 // ─── Step 3 · encrypt and grant ────────────────────────────────────────────
 
-$('go-store').addEventListener('click', async () => {
+on('go-store', 'click', async () => {
   const out = $('store-out')
   try {
     S.contentKey = crypto.getRandomValues(new Uint8Array(32))
@@ -592,13 +668,17 @@ $('go-store').addEventListener('click', async () => {
  * Everything steps 1 and 2 offered, switched off.
  *
  * The page used to leave all of it live: after sealing, a visitor could still
- * generate a second wallet, look up a different recipient, or flip the mode
- * switch, and the panels below would go on describing the first one. Nothing
- * broke — it just quietly stopped being true, which on a page about
- * cryptography is worse than breaking.
+ * generate a second wallet or look up a different recipient, and the panels
+ * below would go on describing the first one. Nothing broke — it just quietly
+ * stopped being true, which on a page about cryptography is worse than
+ * breaking.
+ *
+ * The mode switch used to be in this list and is not any more: switching is a
+ * different address now, so it reloads the page and there is nothing stale left
+ * to disable.
  */
 function lockChoices() {
-  for (const id of ['mode-wallet', 'mode-message', 'gen', 'gen-recipient',
+  for (const id of ['gen', 'gen-recipient',
                     'lookup', 'go-store', 'msg-edit']) $(id).disabled = true
   $('ens-name').readOnly = true
   phraseBox.readOnly = true
@@ -826,7 +906,7 @@ const wroteIt = (out, name, hashes, moved, extra = '') => {
       <dt class="mono">${esc(k)}</dt>
       <dd class="mono break"><a href="https://sepolia.etherscan.io/tx/${esc(h)}" target="_blank" rel="noopener noreferrer">${esc(clip(h, 26))}</a></dd>`).join('')}
     </dl>
-    <p class="note"><a href="./explorer.html?name=${encodeURIComponent(name)}">${t('t.s6.explorer', 'See what this name now carries')}</a></p>
+    <p class="note"><a href="./explorer?name=${encodeURIComponent(name)}">${t('t.s6.explorer', 'See what this name now carries')}</a></p>
     ${S.recipient.local ? claimBlock(name) : ''}
     ${why(t('t.why', 'Why this matters'), `
       ${extra}
@@ -867,7 +947,7 @@ let writing = false
 let receiving = false
 let claiming = false
 
-$('write-demo').addEventListener('click', async () => {
+on('write-demo', 'click', async () => {
   if (writing) return
   if (!S.sealed) return say(demoOut, 'bad', `
     <p>${t('t.s6.needsecret', 'Do steps 1 to 3 first — there is nothing to write yet.')}</p>`)
@@ -1002,7 +1082,7 @@ const offerChoice = () => say(walletOut, '', `
     `<button class="act" type="button" data-wallet="${i}">${esc(p.info.name)}</button>`).join(' ')}</p>
   <p class="note">${t('t.s6.choosenote', 'Listed by the wallets themselves, through the announcement they each make to the page. Nothing here knows which wallets exist in the world — only which ones spoke up in this browser.')}</p>`)
 
-$('connect').addEventListener('click', async () => {
+on('connect', 'click', async () => {
   if (!announced.length && !window.ethereum) return offerDeepLinks()
   if (announced.length > 1) return offerChoice()
   await connectWith(announced[0]?.provider ?? window.ethereum)
@@ -1033,7 +1113,7 @@ walletOut.addEventListener('click', (e) => {
  * them the identical key — which is the point. Moving to their own name later
  * changes the address, not the identity.
  */
-$('be-receivable').addEventListener('click', async () => {
+on('be-receivable', 'click', async () => {
   const out = $('id-out')
   const eth = announced[0]?.provider ?? window.ethereum
   if (!eth) return offerDeepLinks()
@@ -1067,11 +1147,12 @@ $('be-receivable').addEventListener('click', async () => {
       return say(out, 'ok', `
         <p>${t('t.id.already', 'You are already receivable — the same wallet gives the same key, so this name is still yours:')} <span class="mono">${esc(already)}</span></p>
         <dl>
+          <dt>${t('t.id.label', 'NextKey ID')}</dt><dd class="mono break nkid">${esc(nextkeyId(pk))}</dd>
           <dt>${t('t.name', 'name')}</dt><dd class="mono">${esc(already)}</dd>
           <dt>${t('t.pubkey', 'published key')}</dt><dd class="mono break">${esc(value0)}</dd>
         </dl>
         <p class="note">${t('t.id.alreadynote', 'Nothing was written and no name was spent. That is the point of deriving the key rather than generating one: there is only ever one of you, however many browsers you press this in.')}</p>`,
-        { step: 2, recipient: 'derived', name: already, publicKey: value0, wrote: false })
+        { step: 2, recipient: 'derived', name: already, nextkeyId: nextkeyId(pk), publicKey: value0, wrote: false })
     }
 
     say(out, 'busy', `<p>${t('t.chain.finding', 'Finding a name that is still free…')}</p>`)
@@ -1101,6 +1182,7 @@ $('be-receivable').addEventListener('click', async () => {
     say(out, 'ok', `
       <p>${t('t.id.done', 'You can now be sent secrets at')} <span class="mono">${esc(name)}</span>.</p>
       <dl>
+        <dt>${t('t.id.label', 'NextKey ID')}</dt><dd class="mono break nkid">${esc(nextkeyId(pk))}</dd>
         <dt>${t('t.name', 'name')}</dt><dd class="mono">${esc(name)}</dd>
         <dt>${t('t.pubkey', 'published key')}</dt><dd class="mono break">${esc(value)}</dd>
         <dt>${t('t.id.from', 'derived from')}</dt><dd class="mono break">${esc(addr)}</dd>
@@ -1109,7 +1191,7 @@ $('be-receivable').addEventListener('click', async () => {
       ${why(t('t.why', 'Why this matters'), `
         <p>${t('t.id.note1', 'Nothing was generated and nothing was stored. That key came out of your signature and comes back out of it every time, on any machine you can sign from — lose this browser, this page and this name, and the key is still yours.')}</p>
         <p>${t('t.id.note2', 'The name is lent, not owned: it is one of this project\'s names, and the record was written and paid for by this page. Publish the same key on a name you own and the address changes while the identity does not, because the key was never tied to the name.')}</p>`)}`,
-      { step: 2, recipient: 'derived', name, publicKey: value, from: addr })
+      { step: 2, recipient: 'derived', name, nextkeyId: nextkeyId(pk), publicKey: value, from: addr })
     refreshReady()
   } catch (e) {
     say(out, 'bad', `<p>${esc(plain(e))}</p>`)
@@ -1194,7 +1276,7 @@ const claimRefusal = (e) => {
  * their own keeps their identity and changes only their address. That is the
  * whole reason the key was never tied to the name.
  */
-$('claim-name').addEventListener('click', async () => {
+on('claim-name', 'click', async () => {
   const out = $('claim-out')
   if (claiming) return
 
@@ -1269,6 +1351,7 @@ $('claim-name').addEventListener('click', async () => {
     say(out, 'ok', `
       <p>${t('t.own.done', 'It is yours. Secrets can be sent to')} <span class="mono">${esc(full)}</span>.</p>
       <dl>
+        <dt>${t('t.id.label', 'NextKey ID')}</dt><dd class="mono break nkid">${esc(nextkeyId(un64(value)))}</dd>
         <dt>${t('t.name', 'name')}</dt><dd class="mono">${esc(full)}</dd>
         <dt>${t('t.own.owner', 'owner')}</dt><dd class="mono break">${esc(addr)}</dd>
         <dt>${t('t.pubkey', 'published key')}</dt><dd class="mono break">${esc(value)}</dd>
@@ -1277,7 +1360,7 @@ $('claim-name').addEventListener('click', async () => {
       ${why(t('t.why', 'Why this matters'), `
         <p>${t('t.own.note1', 'The registry names your address as the owner. Nothing on this page can move it, change it or take it back, and neither can the contract that made it — that is what "yours" has to mean before it is worth saying.')}</p>
         <p>${t('t.own.note2', 'What is still ours: this project holds the permission to write text records on this resolver, so the key on your name could be overwritten by us. Point the name at a resolver you control and even that stops being true.')}</p>`)}`,
-      { step: 2, recipient: 'owned', name: full, publicKey: value, owner: addr })
+      { step: 2, recipient: 'owned', name: full, nextkeyId: nextkeyId(un64(value)), publicKey: value, owner: addr })
     refreshReady()
   } catch (e) {
     say(out, 'bad', `<p>${esc(claimRefusal(e))}</p>`)
@@ -1298,7 +1381,8 @@ function ownedAt(full) {
   $('be-receivable').disabled = true
   $('recv-state').textContent = `${t('t.recv.at', 'receivable at')} ${full}`
   $('be-receivable-box').classList.add('done')
-  if (!$('ens-name').value.trim()) $('ens-name').value = full
+  const to = $('ens-name')
+  if (to && !to.value.trim()) to.value = full
 }
 
 /**
@@ -1314,7 +1398,9 @@ function receivableAt(name) {
   $('be-receivable').disabled = true
   $('recv-state').textContent = `${t('t.recv.at', 'receivable at')} ${name}`
   $('be-receivable-box').classList.add('done')
-  if (!$('ens-name').value.trim()) $('ens-name').value = name
+  // Only the send tabs have a recipient field to fill in.
+  const to = $('ens-name')
+  if (to && !to.value.trim()) to.value = name
 }
 
 async function connectWith(eth) {
@@ -1374,7 +1460,7 @@ async function connectWith(eth) {
   }
 }
 
-$('publish').addEventListener('click', async () => {
+on('publish', 'click', async () => {
   if (writing) return
   const name = $('own-name').value.trim().toLowerCase()
 
@@ -1543,7 +1629,7 @@ const scanName = async (name, sk, pk) => {
   return { name, eph: true, ephPk, record: found.key, grantJson }
 }
 
-$('check-inbox').addEventListener('click', async () => {
+on('check-inbox', 'click', async () => {
   const out = $('open-out')
   const names = inboxNames()
   if (!names.length) return say(out, 'bad', `
@@ -1631,7 +1717,7 @@ $('check-inbox').addEventListener('click', async () => {
 // page whose whole argument is that the chain should not show who talks to
 // whom. It is therefore a button, not a default.
 
-$('send-ack').addEventListener('click', async () => {
+on('send-ack', 'click', async () => {
   const out = $('ack-out')
   try {
     if (!S.opened) throw new Error(t('t.ack.needopen', 'Open it first — there is nothing to acknowledge.'))
@@ -1666,7 +1752,7 @@ $('send-ack').addEventListener('click', async () => {
   }
 })
 
-$('check-ack').addEventListener('click', async () => {
+on('check-ack', 'click', async () => {
   const out = $('ack-out')
   try {
     if (!onchain || !S.ackKey) throw new Error(t('t.ack.needchain', 'Nothing has been written to the chain yet.'))
@@ -1703,7 +1789,7 @@ $('check-ack').addEventListener('click', async () => {
  * arrives at a record that does not exist on chain. She never gets as far as
  * being refused a decryption.
  */
-$('open-other').addEventListener('click', async () => {
+on('open-other', 'click', async () => {
   const out = $('open-out')
   const sk = randomSecret()
   const pk = publicKeyOf(sk)
@@ -1747,7 +1833,7 @@ $('open-other').addEventListener('click', async () => {
 // 4 — a reloaded page would have to re-derive it, which is what
 // `nextkey.mjs share` does on the command line.
 
-$('grant-more').addEventListener('click', async () => {
+on('grant-more', 'click', async () => {
   const out = $('more-out')
   const name = $('more-name').value.trim().toLowerCase()
   if (writing) return
@@ -1808,7 +1894,7 @@ $('grant-more').addEventListener('click', async () => {
 
 // ═══ Step 7 · take it back, on the chain ═══════════════════════════════════
 
-$('revoke').addEventListener('click', async () => {
+on('revoke', 'click', async () => {
   const out = $('revoke-out')
   try {
     if (!onchain) throw new Error('nothing has been written yet')
@@ -1851,7 +1937,7 @@ $('revoke').addEventListener('click', async () => {
 // re-translated, by the overlay in the page itself. Text already produced
 // keeps the language it was produced in, which is honest and beats blanking
 // somebody's decrypted phrase because they wanted to read a heading in French.
-window.__nextkeyRerender = () => { setMode(S.mode) }
+window.__nextkeyRerender = () => { if (PAGE === 'send') setMode(S.mode) }
 
 // ═══ The agent-facing surface ══════════════════════════════════════════════
 //
@@ -1887,9 +1973,12 @@ window.NEXTKEY = {
 }
 
 // ─── Opening state, from the link ──────────────────────────────────────────
-{
+// The ID tab has no steps to prepare and no inbox to open into, so none of this
+// applies there. It is guarded rather than made tolerant element by element:
+// half a prepared state is worse than none, and would be much harder to notice.
+if (PAGE === 'send') {
   const q = new URLSearchParams(location.search)
-  setMode(q.get('mode') === 'message' ? 'message' : 'wallet')
+  setMode(modeFromLocation())
 
   // A claim link: the name to look at, and the key to look with. Both come out
   // of the fragment, which never left the sender's browser for a server and

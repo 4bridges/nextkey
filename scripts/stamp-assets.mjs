@@ -42,7 +42,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const WEB = join(dirname(fileURLToPath(import.meta.url)), '..', 'web')
-const PAGES = ['index.html', 'poc.html', 'demo.html', 'blog.html', 'explorer.html',
+const PAGES = ['index.html', 'poc.html', 'id.html', 'demo.html', 'blog.html', 'explorer.html',
                'donate.html', 'imprint.html', 'privacy.html']
 const check = process.argv.includes('--check')
 
@@ -56,24 +56,40 @@ for (const page of PAGES) {
   const path = join(WEB, page)
   const before = readFileSync(path, 'utf8')
 
-  // Local scripts only: `./name.js`, with or without a version already on it.
-  // A CDN URL or an absolute one is somebody else's cache to worry about.
+  // Local scripts only: `/name.js`, with or without a version already on it.
+  // Root-absolute since the pages started answering to two addresses each —
+  // /demo/passphrase and, later, /passphrase — because a relative `./demo.js`
+  // resolves to /demo/demo.js at one of those depths and 404s. Absolute is also
+  // one cache entry for both networks rather than two.
+  //
+  // A path with a slash in it is somebody else's file to worry about, so the
+  // character class deliberately excludes one.
   const after = before.replace(
-    /src="\.\/([A-Za-z0-9._-]+\.js)(\?v=[0-9a-f]+)?"/g,
+    /src="\/([A-Za-z0-9._-]+\.js)(\?v=[0-9a-f]+)?"/g,
     (whole, file, existing) => {
       let v
       try { v = hash(file) } catch {
-        console.error(`  ✗  ${page} loads ./${file}, which is not in web/`)
+        console.error(`  ✗  ${page} loads /${file}, which is not in web/`)
         process.exitCode = 1
         return whole
       }
-      const wanted = `src="./${file}?v=${v}"`
+      const wanted = `src="/${file}?v=${v}"`
       if (whole !== wanted) {
         unstamped++
         console.log(`  ${page.padEnd(12)} ${file.padEnd(12)} ${existing ? existing.slice(3) : '(none)'} → ${v}`)
       }
       return wanted
     })
+
+  // A relative script tag is now a bug rather than an older spelling: it works
+  // at /passphrase and 404s at /demo/passphrase, so it fails on exactly one of
+  // the two addresses the page answers to — which is the kind of thing nobody
+  // notices from a desk. Say so rather than skipping it silently, which is what
+  // the pattern above would otherwise do.
+  for (const [, file] of before.matchAll(/src="\.\/([A-Za-z0-9._-]+\.js)/g)) {
+    console.error(`  ✗  ${page} loads ./${file} relatively — must be /${file}`)
+    process.exitCode = 1
+  }
 
   if (after !== before) {
     changed++

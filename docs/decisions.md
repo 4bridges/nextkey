@@ -1143,3 +1143,157 @@ would mean the page had fallen through to "install a wallet" instead of judging
 what was typed. A check written against English prose passes on one machine and
 fails on another while nothing is broken; that already cost a morning in
 `feed.mjs` and will not cost a second one.
+
+---
+
+## 2026-09-10 — The network becomes a path, and the key gets a name a person can say
+
+**Everything the hackathon built now lives under `/demo/`, and the site's own
+front door is empty on purpose.**
+
+Until today each page was its own address in the document root, and every link
+between them was a file name — `./explorer.html`. That spelling ties the site to
+one deployment: there is exactly one `/explorer`, so there is exactly one chain
+it can read. A mainnet version would have meant a second copy of the site, a
+second set of translations, and two files to keep in step for every sentence
+changed.
+
+So the network is a path prefix instead:
+
+    /demo/<tab>   the hackathon deployment on Sepolia
+    /<tab>        mainnet, once it exists
+
+One set of files serves both. It costs exactly two conventions inside the pages,
+and both are enforced rather than remembered:
+
+  · assets and bundles are root-absolute — `/i18n.js`, `/brand/…` — so they are
+    the same URL at both depths and the browser caches them once. `stamp-assets`
+    now *fails* on a relative script tag rather than skipping it, because a
+    relative `./demo.js` works at `/passphrase` and 404s at `/demo/passphrase` —
+    broken on exactly one of the two addresses a page answers to, which is the
+    kind of thing nobody notices from a desk.
+  · links between tabs are relative and extension-less — `./explorer` — so from
+    `/demo/id` they resolve to `/demo/explorer` and from `/id` to `/explorer`.
+    The prefix carries itself. No page has to know, ask, or be told which network
+    it is on.
+
+Home, the imprint and the privacy notice stay absolute: they are the same page
+on every chain. Launching mainnet is deleting five lines from `.htaccess` — the
+redirect that currently sends `/explorer` to `/demo/explorer` — and nothing else.
+
+**Rejected: a second copy of the site under `/demo/`.** It is the obvious answer
+and it is how most projects do this. It doubles the translation surface — 594
+keys in nine languages — and guarantees that the two halves drift, because
+nothing would ever tell you they had.
+
+**Rejected: a `<base href="/">` tag,** which would have fixed the assets in one
+line per page. It fixes the links too, which is the problem: `./explorer` from
+`/demo/id` would then lead to mainnet. The asymmetry is the design, not an
+oversight.
+
+---
+
+**"Demo" stops being a tab. ID, Passphrase and Message take its place.**
+
+The playground had a segmented control at the top: a visitor arrived at "the
+demo" and then said what kind of demo it was. That is a choice made after
+arriving, and it could not be linked to, bookmarked, shared, or undone with the
+back button. It is two addresses now — `/demo/passphrase` and `/demo/message` —
+and the page reads which one it is off its own path. Nothing on the page can
+change the tab, because changing it means going to the other one.
+
+`?mode=message` still works where the path says nothing. Links to it are in the
+README, in this log, and in whatever has already been sent to somebody else; a
+query string that quietly stops meaning anything is a worse answer than one that
+keeps meaning what it meant.
+
+**One file still serves both tabs, and one bundle now serves three.** The five
+steps are identical from step 2 on — which was always the honest reason a
+"messenger" is not a second product here. The ID tab is a third page against the
+same bundle rather than a second implementation of the pool scan, the derived
+identity and the claim contract. This project has already paid once for having
+one rule in two places, and the failure was a grant that wrote cleanly, read
+cleanly and refused to open. What it costs is a bundle on a page that uses half
+of it, most of which is viem, which the ID tab needs anyway.
+
+The element contract that catches a page one version behind its script had to
+split with it: `NEEDED_EVERYWHERE` and `NEEDED_TO_SEND`, judged per page. A
+handler now goes through `on(id, …)`, which no-ops when the element is absent —
+tolerance in exactly one place, with the contract above deciding what counts as
+missing. Letting `$('go-store').addEventListener` throw on the ID tab would have
+been the same "Cannot set properties of null" that check exists to prevent,
+except shipped deliberately.
+
+**And `web/test/playground.mjs` now serves `/demo/<tab>` the way the host does.**
+A test server that only served files by name would exercise the page at a depth
+it never actually runs at, and would pass while both tabs were broken. The two
+lines in the test are deliberately the two lines of the rewrite.
+
+---
+
+**The NextKey ID: what a person is shown instead of their key.**
+
+`nextkey.pubkey` holds 44 characters of base64. It is the wrong thing to put in
+front of somebody, and each way it is wrong is a way to send a secret to the
+wrong person: it cannot be read aloud, it cannot be compared at a glance, a
+truncated copy looks exactly like a complete one, and its punctuation does not
+survive being pasted into a chat window that thinks a slash starts a command.
+
+    NK-9F3KD-2M0RQ-7XB4T
+
+Seventy bits of a SHA-256 over the published key, in Crockford's Base32 — no I,
+L, O or U, so a one cannot be read as an el — plus one check character. The
+grouping is fours and fives because that is how people read card and licence
+numbers, and the `NK-` prefix is there so an ID pasted into a support thread is
+recognisable as one.
+
+**It is derived, never issued, and that was the decision.** An allocated ID
+needs a registry; a registry needs an indexer, which a site served from static
+files does not have; and a collision needs somebody to resolve it. Deriving
+costs none of that: nothing is written to the chain for an ID, no record
+changes, every name that already publishes a key already has one, and the same
+key gives the same ID to anybody who computes it, offline, on any machine.
+There is nothing to lose because there is nothing to keep.
+
+**What it is not, said on the page as well as here.** It is not a secret, not a
+permission, and not a replacement for the key. The key stays in
+`nextkey.pubkey` and is what the arithmetic uses; the ID is what the interface
+says. Seventy bits is not a cryptographic commitment and is not offered as one —
+it is enough that two people in a room never see the same ID. Anyone verifying
+rather than reading compares the key, and the explorer still prints it on the
+line below.
+
+**The check character is position-weighted rather than a plain sum,** because an
+unweighted sum does not move when two neighbouring characters are swapped — and
+transposing two characters is exactly what happens when somebody reads an ID off
+one screen and types it into another.
+
+**`looksLikeNextkeyId` is named for what it can actually answer.** It says the
+characters are in the alphabet and the check symbol agrees. It never says that
+anybody holds the ID, or that a name publishes the key it came from. Answering
+"yes" to a string somebody invented would be the worst thing that function could
+do, so the name makes every caller keep meaning it.
+
+**One implementation, not two — the opposite of the wrapping rule, on purpose.**
+`scripts/nextkey-core.mjs` re-exports it from `web/src/nk-crypto.mjs` rather than
+carrying its own copy. Two implementations of the *cryptography* earn their cost
+because `interop.mjs` checks them against each other. The ID is presentation: a
+second copy could only ever be a second thing to keep in step.
+
+It is checked in interop all the same, in Node and in Chromium, and the reason is
+worth stating. A display rule that disagrees between two implementations fails in
+the way that matters most and is hardest to see: two people comparing IDs over
+the phone, one reading off the page and one off a command line, would conclude
+they were talking about different keys — and the correct response to that is to
+not send the secret. A wrong "no" costs as much as a wrong "yes" here.
+
+**Found on the way, and not fixed today.** `web/i18n.stamp.json` covers 338 of
+the site's 594 keys, so the staleness check — the one that catches an English
+sentence changing while nine translations stay in place and quietly become
+wrong — has never applied to the playground's vocabulary at all. Two of the
+sentences edited today came back "0 stale" for that reason and were retranslated
+by hand instead. Separately, `i18n-check` reads `t('key', 'English')` calls but
+not the `['key', 'English']` pairs in `MODE_TEXT`, which is why the entire
+message-mode vocabulary had been shipping English to all nine languages without
+ever being reported missing. Both are the same lesson this file has now recorded
+three times: a checker that cannot see a spelling cannot report it.

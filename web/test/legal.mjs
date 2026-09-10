@@ -76,12 +76,12 @@ check('the forum is named', /St\. Gallen, Switzerland/.test(body))
 check('and the English version is declared binding', /English version is the binding/i.test(body))
 
 check('the footer leads home first',
-  (await page.locator('footer a').first().getAttribute('href')) === './index.html')
+  (await page.locator('footer a').first().getAttribute('href')) === '/')
 check('and the house is named for anyone not looking at pixels',
   (await page.locator('footer .foothome .vh').textContent()).trim() === 'Home')
-check('it offers the privacy notice', (await page.locator('footer a[href="./privacy.html"]').count()) === 1)
+check('it offers the privacy notice', (await page.locator('footer a[href="/privacy"]').count()) === 1)
 check('and does not link to the page you are on',
-  (await page.locator('footer a[href="./imprint.html"]').count()) === 0)
+  (await page.locator('footer a[href="/imprint"]').count()) === 0)
 
 // ── The privacy notice ──────────────────────────────────────────────────────
 console.log('\n  The privacy notice\n')
@@ -105,10 +105,10 @@ check('a lent name is called what it is', /attributable to that name/i.test(body
 check('the supervisory authorities are named', /FDPIC/.test(body))
 
 check('the footer leads home first',
-  (await page.locator('footer a').first().getAttribute('href')) === './index.html')
-check('it offers the imprint', (await page.locator('footer a[href="./imprint.html"]').count()) === 1)
+  (await page.locator('footer a').first().getAttribute('href')) === '/')
+check('it offers the imprint', (await page.locator('footer a[href="/imprint"]').count()) === 1)
 check('and does not link to the page you are on',
-  (await page.locator('footer a[href="./privacy.html"]').count()) === 0)
+  (await page.locator('footer a[href="/privacy"]').count()) === 0)
 
 // ── What these two pages must not do ────────────────────────────────────────
 console.log('\n  What these pages do not do\n')

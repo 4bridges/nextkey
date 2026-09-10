@@ -23,7 +23,7 @@
 
 import { createPublicClient, http, namehash, decodeEventLog, keccak256, stringToHex, numberToHex } from 'viem'
 import { sepolia } from 'viem/chains'
-import { un64, fingerprint } from './nk-crypto.mjs'
+import { un64, fingerprint, nextkeyId } from './nk-crypto.mjs'
 import { TOPIC_RECORD, TEXT_UPDATED_TOPIC, TEXT_UPDATED, logReader } from './nk-logs.mjs'
 
 const UNIVERSAL_RESOLVER = '0xd26f2040d083af1cd2962ba303f4bea0c4faf142'
@@ -150,6 +150,21 @@ const line = (label, value, note) => `
   <dd>${value}${note ? `<br><span class="note">${note}</span>` : ''}</dd>`
 
 const yes = (s) => `<span style="color:var(--ok);font-weight:620">${esc(s)}</span>`
+
+/**
+ * A NextKey ID from whatever the record actually contains, or nothing.
+ *
+ * Anybody may write any string to their own `nextkey.pubkey`, so this is fed
+ * arbitrary text and has to say "no" rather than produce something. The check
+ * is the length: X25519 public keys are 32 bytes, and base64 that decodes to
+ * any other length is not one, whatever else it might be.
+ */
+const idOf = (value) => {
+  try {
+    const pk = un64(value)
+    return pk.length === 32 ? nextkeyId(pk) : null
+  } catch { return null }
+}
 const no = (s) => `<span class="note">${esc(s)}</span>`
 
 /**
@@ -208,6 +223,24 @@ const recordLines = (r, role) => {
   const rows = []
   const P = t('x.present', 'present')
   const A = t('x.absent', 'absent')
+
+  // The NextKey ID goes first, above the record it is computed from, because it
+  // is the line a reader is here to compare. It is not a record and is not
+  // presented as one: nothing on chain holds it, and the row says so by sitting
+  // outside the record list's naming.
+  //
+  // It is shown only when the key parses. A `nextkey.pubkey` holding something
+  // that is not a 32-byte X25519 key is a real state — anybody may write any
+  // string to their own name — and inventing an ID for it would put a
+  // confident, checkable-looking identifier under a value that identifies
+  // nobody.
+  if (r.pubkey) {
+    const id = idOf(r.pubkey)
+    if (id) {
+      rows.push(line(t('t.id.label', 'NextKey ID'), `<span class="mono nkid">${esc(id)}</span>`,
+        t('x.nkid', 'The published key, in the form a person can read out and compare. Derived from it and nothing else — no record holds this, and every name that publishes a key has one.')))
+    }
+  }
 
   if (role === 'recipient' || role === 'both' || r.pubkey) {
     rows.push(line(RECORD_PUBKEY, r.pubkey ? yes(P) : no(A),

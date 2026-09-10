@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" href="./brand/favicon.svg" type="image/svg+xml">
-<link rel="icon" href="./brand/favicon.ico" sizes="16x16 32x32 48x48">
-<link rel="apple-touch-icon" href="./brand/apple-touch-icon.png">
-<link rel="manifest" href="./brand/site.webmanifest">
+<link rel="icon" href="/brand/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/brand/favicon.ico" sizes="16x16 32x32 48x48">
+<link rel="apple-touch-icon" href="/brand/apple-touch-icon.png">
+<link rel="manifest" href="/brand/site.webmanifest">
 <meta name="theme-color" content="#9a5218">
 <title>NextKey — playground</title>
 <meta name="description" content="An AI-agent makes a wallet, seals the passphrase to a person, and gets it back on release. The whole loop in your browser, no wallet required.">
@@ -191,14 +191,6 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     }
   }
 
-  /* ── The wallet / message switch ── */
-  .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;
-    background:var(--surface);margin:.4rem 0 .2rem}
-  .segbtn{font:inherit;font-weight:620;font-size:.95rem;
-    font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    background:transparent;color:var(--muted);border:0;padding:.55rem 1.1rem;cursor:pointer}
-  .segbtn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
-  .segbtn:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 
   /* ── A passphrase is not something to leave lying on a screen ── */
   .covered{letter-spacing:.12em;color:var(--muted)}
@@ -322,20 +314,28 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
       justify-content:flex-start}
   }
 
+
+  /* ── The NextKey ID ──
+     Shown where the published key used to be shown alone. It is set larger and
+     spaced out because it is meant to be read off the screen and typed, or read
+     aloud — which is the entire reason it exists rather than the 44 characters
+     of base64 on the line below it. */
+  .nkid{font-size:1.06rem;font-weight:660;letter-spacing:.07em;color:var(--accent)}
 </style>
 </head>
 <body>
 
 <header class="bar">
   <div class="wrap barin">
-    <a class="brand" href="./index.html" aria-label="NextKey"><svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M32 4.5 54.8 17.75v26.5L32 57.5 9.2 44.25v-26.5z" stroke="currentColor" stroke-width="5.5" stroke-linejoin="round"/><circle cx="32" cy="27" r="7" stroke="currentColor" stroke-width="5"/><path d="M32 34v13" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg><b>NextKey</b></a>
+    <a class="brand" href="/" aria-label="NextKey"><svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M32 4.5 54.8 17.75v26.5L32 57.5 9.2 44.25v-26.5z" stroke="currentColor" stroke-width="5.5" stroke-linejoin="round"/><circle cx="32" cy="27" r="7" stroke="currentColor" stroke-width="5"/><path d="M32 34v13" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg><b>NextKey</b></a>
     <nav class="barnav" aria-label="Sections">
-      <a class="navhome" href="./index.html" data-i18n-title="nav.home" title="Home"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.75 20v-5.5h4.5V20"/></svg><span class="vh" data-i18n="nav.home">Home</span></a>
-      <a href="./demo.html" data-i18n="nav.demo" aria-current="page">Demo</a>
-      <a href="./poc.html" data-i18n="nav.poc">PoC</a>
-      <a href="./explorer.html" data-i18n="nav.explorer">Explorer</a>
-      <a href="./blog.html" data-i18n="nav.blog">Blog</a>
-      <a href="./donate.html" data-i18n="nav.donate">Donate</a>
+      <a class="navhome" href="/" data-i18n-title="nav.home" title="Home"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.75 20v-5.5h4.5V20"/></svg><span class="vh" data-i18n="nav.home">Home</span></a>
+      <a href="./id" data-i18n="nav.id">ID</a>
+      <a href="./passphrase" data-i18n="nav.passphrase">Passphrase</a>
+      <a href="./message" data-i18n="nav.message">Message</a>
+      <a href="./explorer" data-i18n="nav.explorer">Explorer</a>
+      <a href="./blog" data-i18n="nav.blog">Blog</a>
+      <a href="./donate" data-i18n="nav.donate">Donate</a>
     </nav>
     <div class="barctl">
       <button class="iconbtn" id="themebtn" type="button"
@@ -373,20 +373,17 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 </header>
 
 <div class="wrap" style="padding-top:2.6rem">
-  <p class="eyebrow" data-i18n="t.eyebrow">Demo</p>
-  <h1 data-i18n="t.h1">Wallet recovery with a human-in-the-loop</h1>
-  <p class="lead" data-i18n="t.lead">
+  <!-- The heading, the eyebrow and the lead are written by the script, because
+       this one file answers to two tabs — /passphrase and /message — and which
+       one it is is a property of the address rather than of a button on the
+       page. The English below is what a reader without JavaScript gets, and it
+       is the passphrase side, which is where the tab bar opens. -->
+  <p class="eyebrow" id="t-eyebrow" data-i18n="nav.passphrase">Passphrase</p>
+  <h1 id="t-h1" data-i18n="t.h1">Wallet recovery with a human-in-the-loop</h1>
+  <p class="lead" id="t-lead" data-i18n="t.lead">
     Create a wallet here with social recovery to a human-in-the-loop. Only that human can
-    recover the wallet. You can share a secret message the same way — just switch the
-    button below.
+    recover the wallet.
   </p>
-
-  <div class="seg" role="group" aria-label="What to share">
-    <button class="segbtn" id="mode-wallet" type="button" aria-pressed="true"
-            data-i18n="t.mode.wallet">Create wallet</button>
-    <button class="segbtn" id="mode-message" type="button" aria-pressed="false"
-            data-i18n="t.mode.message">Create message</button>
-  </div>
 
   <p class="provenance" data-i18n="hero.prov">Prototype · ENSv2 on Sepolia testnet · Built at ETHGlobal ETHOnline 2026</p>
 
@@ -394,7 +391,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     <div class="fallback">
       <p data-i18n-html="t.nojs"><strong>This page does its work in JavaScript, which is switched off.</strong>
         Nothing here is sent anywhere, so there is no server-rendered version to fall back to.
-        <a href="./poc.html">The live view</a> and
+        <a href="./poc">The live view</a> and
         <a href="https://github.com/4bridges/nextkey#readme" target="_blank" rel="noopener noreferrer">the README</a> explain the same
         loop without running anything.</p>
     </div>
@@ -627,8 +624,8 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 nextkey.mjs share &lt;label&gt; &lt;identity&gt; &lt;recipient&gt;
 nextkey.mjs open  &lt;name&gt;  &lt;identity&gt;
 nextkey.mjs revoke &lt;label&gt; &lt;recipient&gt;</pre>
-    <p data-i18n="t.agent.url">This page takes three parameters, so a prepared state is one link:
-      <span class="mono">?mode=message</span> starts on the message side,
+    <p data-i18n="t.agent.url">A prepared state is one link. The address chooses what is being sent —
+      <span class="mono">/demo/passphrase</span> or <span class="mono">/demo/message</span> — and two parameters do the rest:
       <span class="mono">?to=anna.nextkey.eth</span> fills in the recipient and reads their key,
       <span class="mono">?lang=de</span> sets the language. A secret is never accepted in a URL —
       a URL is written down in more places than anybody expects.</p>
@@ -652,15 +649,16 @@ nextkey.mjs revoke &lt;label&gt; &lt;recipient&gt;</pre>
   <p data-i18n="t.foot">Prototype · ENSv2 beta on Sepolia testnet · not audited · nothing on this page is
     sent to a server. Do not put a phrase here that guards real funds.</p>
   <p>
-    <a class="foothome" href="./index.html" data-i18n-title="nav.home" title="Home"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.75 20v-5.5h4.5V20"/></svg><span class="vh" data-i18n="nav.home">Home</span></a>
-    <a href="./explorer.html" data-i18n="nav.explorer">Explorer</a>
-    <a href="./blog.html" data-i18n="nav.blog">Blog</a>
-    <a href="./imprint.html" data-i18n="foot.imprint">Imprint</a>
-    <a href="./privacy.html" data-i18n="foot.privacy">Privacy</a>
+    <a class="foothome" href="/" data-i18n-title="nav.home" title="Home"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.75 20v-5.5h4.5V20"/></svg><span class="vh" data-i18n="nav.home">Home</span></a>
+    <a href="./explorer" data-i18n="nav.explorer">Explorer</a>
+    <a href="./blog" data-i18n="nav.blog">Blog</a>
+    <a href="./poc" data-i18n="nav.poc">PoC</a>
+    <a href="/imprint" data-i18n="foot.imprint">Imprint</a>
+    <a href="/privacy" data-i18n="foot.privacy">Privacy</a>
   </p>
 </footer>
 
-<script src="./i18n.js?v=832bc51e"></script>
+<script src="/i18n.js?v=f0456608"></script>
 <script>
 /**
  * The same overlay as the other two pages, same storage keys, so a language or
@@ -816,6 +814,6 @@ nextkey.mjs revoke &lt;label&gt; &lt;recipient&gt;</pre>
   label()
 })()
 </script>
-<script type="module" src="./demo.js?v=44757d78"></script>
+<script type="module" src="/demo.js?v=cbfa0407"></script>
 </body>
 </html>

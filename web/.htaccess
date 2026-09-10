@@ -27,25 +27,70 @@
 
 </IfModule>
 
-# ── Addresses without the extension ────────────────────────────────────────
-# /explorer rather than /explorer.html. The pages sit in the document root, so
-# every relative link inside them (./demo.js, ./i18n.js, ./brand/…) still
-# resolves against the root and keeps working — which is why this can be a
-# rewrite and does not need any change to the markup.
+# ── The network is a path prefix, not a copy of the site ───────────────────
 #
-# The rule only fires when the requested path is not a real file or directory,
-# so an existing asset is never rewritten, and .html is still served directly
-# for anyone who types it or follows an older link.
+#   /demo/<tab>   the hackathon deployment on Sepolia
+#   /<tab>        mainnet, once it exists
+#
+# One set of files serves both. That is the whole point: the tabs are the same
+# tabs, the markup is the same markup, and the only thing that differs is which
+# chain the page reads — which it takes from its own address rather than from a
+# build flag, a copy of the directory, or a second domain.
+#
+# It costs two conventions inside the pages, and they are worth naming here
+# because a change to either breaks this file silently:
+#
+#   · assets and bundles are root-absolute — /i18n.js, /brand/… — so they are
+#     the same URL at both depths and the browser caches them once;
+#   · links between tabs are relative and extension-less — ./explorer — so from
+#     /demo/id they resolve to /demo/explorer and from /id to /explorer. The
+#     prefix carries itself. No page has to know which network it is on.
+#
+# Home, the imprint and the privacy notice are absolute, because they are the
+# same page on every chain.
+#
+# The extension-less addresses are older than the prefix and the reasoning
+# still holds: /explorer.html and /explorer are two spellings of one page, and
+# search engines should be offered one.
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
 
-  # /explorer.html → /explorer, once, so one address is canonical and search
-  # engines are not offered two spellings of the same page.
+  # /explorer.html → /explorer, once. THE_REQUEST is the original request line,
+  # so the internal rewrites below cannot re-enter this and loop.
   RewriteCond %{THE_REQUEST} "\s/+([^\s?]+)\.html[\s?]" [NC]
   RewriteRule ^ /%1 [R=301,L]
 
-  # /explorer → explorer.html, internally.
+  # /index and /index.html are the front door; it is spelled /.
+  RewriteRule ^index/?$ / [R=301,L]
+
+  # The testnet's own front door.
+  RewriteRule ^demo/?$ /demo/id [R=302,L]
+
+  # Two tabs, one file. /passphrase and /message are the same five steps with
+  # different contents — the page reads which one it is off its own path — so
+  # there is one implementation and two addresses rather than two copies of
+  # forty kilobytes of markup and its translations.
+  #
+  # It has to be spelled out here because the rule below maps a tab to the file
+  # of the same name, and there is no message.html to map to. Getting this wrong
+  # is a 404 on a tab in the navigation, which is what it was before this line
+  # existed.
+  RewriteRule ^demo/(passphrase|message)/?$ /demo.html [L]
+
+  # Every other /demo/<tab> → <tab>.html, internally. The condition is what
+  # keeps this honest: an address that names no page falls through to a 404
+  # instead of being answered by whatever file the pattern happened to spell.
+  RewriteCond %{DOCUMENT_ROOT}/$1.html -f
+  RewriteRule ^demo/([A-Za-z0-9_-]+)/?$ /$1.html [L]
+
+  # Mainnet is not live yet. Until it is, a bare tab address leads to the
+  # testnet — by redirect and not by rewrite, so the address bar always says
+  # which chain the visitor is looking at. Deleting these five lines is what
+  # launching mainnet will mean.
+  RewriteRule ^(id|passphrase|message|explorer|blog|donate|poc)/?$ /demo/$1 [R=302,L]
+
+  # Everything else without an extension: /imprint → imprint.html.
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteCond %{DOCUMENT_ROOT}/$1.html -f

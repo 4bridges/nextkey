@@ -526,3 +526,15 @@ export const openOwnGrantV2 = async (name, identity) => {
 
   return { contentKey: un64(await unseal(wrapKeyV2(shared, ephPk, identity.pk), JSON.parse(grantJson))), key }
 }
+
+// ─── The NextKey ID ────────────────────────────────────────────────────────
+//
+// Re-exported rather than reimplemented, which is the opposite of what this
+// file does with the wrapping rule — and deliberately so. Two implementations
+// of the *cryptography* are worth their cost because `web/test/interop.mjs`
+// checks them against each other, and a disagreement there is the thing that
+// test exists to catch. The ID is not cryptography: it is one presentation
+// rule, and a second copy of it could only ever be a second thing to keep in
+// step. `web/src/nk-crypto.mjs` needs no adaptation to run in Node — interop
+// already imports it here — so there is nothing to gain by writing it twice.
+export { nextkeyId, looksLikeNextkeyId } from '../web/src/nk-crypto.mjs'

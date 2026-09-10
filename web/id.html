@@ -8,8 +8,8 @@
 <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png">
 <link rel="manifest" href="/brand/site.webmanifest">
 <meta name="theme-color" content="#9a5218">
-<title>NextKey — donate</title>
-<meta name="description" content="Support NextKey after the hackathon. The ENS name, the address, a QR code, and a live view of the donations that arrived.">
+<title>NextKey — your NextKey ID</title>
+<meta name="description" content="A NextKey ID is what a name publishes so anyone can send it a secret. Derived from your wallet in one signature — nothing generated, nothing stored, no gas.">
 <meta name="robots" content="noindex">
 <script>
 (function(){try{var t=localStorage.getItem('nextkey.theme')
@@ -191,14 +191,6 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     }
   }
 
-  /* ── The wallet / message switch ── */
-  .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;
-    background:var(--surface);margin:.4rem 0 .2rem}
-  .segbtn{font:inherit;font-weight:620;font-size:.95rem;
-    font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    background:transparent;color:var(--muted);border:0;padding:.55rem 1.1rem;cursor:pointer}
-  .segbtn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
-  .segbtn:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 
   /* ── A passphrase is not something to leave lying on a screen ── */
   .covered{letter-spacing:.12em;color:var(--muted)}
@@ -227,59 +219,6 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   .reclabel{overflow-wrap:anywhere}
   .reclabel .mono{overflow-wrap:anywhere}
   .out dd,.out dt{overflow-wrap:anywhere}
-
-  /* ── The address, and its code ── */
-  /* The QR keeps a white quiet zone of its own in both themes: a dark-mode page
-     that inverts it produces a code half the scanners in the world will refuse. */
-  .qrwrap{display:flex;flex-wrap:wrap;gap:1.4rem;align-items:flex-start;margin:1.2rem 0}
-  .qrcol{display:flex;flex-direction:column;align-items:center;gap:.5rem;flex:none}
-  .qrname{margin:0;font-size:1rem;color:var(--ink);font-weight:600}
-  .ens{margin:0 0 .55rem;font-size:1.14rem;font-weight:640;letter-spacing:-.01em}
-  .qr{width:min(11rem,45vw);height:auto;flex:none;border-radius:10px;
-    background:#fff;padding:.5rem;box-shadow:0 1px 0 var(--line)}
-  .qrside{flex:1 1 18rem;min-width:0}
-  .addr{margin:0 0 .8rem;font-size:1.02rem;line-height:1.5;overflow-wrap:anywhere;
-    background:var(--code);border:1px solid var(--line);border-radius:9px;padding:.7rem .85rem}
-  #amounts button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
-  .bals{display:flex;flex-wrap:wrap;gap:1.6rem;margin:.2rem 0 .8rem}
-  .bal{display:flex;align-items:baseline;gap:.4rem}
-  .balv{font-size:1.5rem;font-weight:640;letter-spacing:-.01em;
-    font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
-  .count{margin:.1rem 0 .8rem}
-  .count strong{font-size:1.5rem;font-weight:640}
-  .ev{border-top:1px solid var(--line);padding:.7rem 0}
-  .dot{display:inline-block;width:.5rem;height:.5rem;border-radius:50%;
-    background:var(--ok);margin-right:.35rem;vertical-align:baseline}
-
-  /* ── The live window ── */
-  /* The chips scroll sideways on a phone rather than stacking into a wall of
-     buttons: a filter row that is four rows tall is a menu with extra steps. */
-  .chips{display:flex;gap:.45rem;margin:.9rem 0 .2rem;overflow-x:auto;
-    padding-bottom:.35rem;scrollbar-width:thin}
-  .chips button{
-    font:inherit;font-size:.92rem;font-weight:600;white-space:nowrap;
-    color:var(--ink);background:var(--surface);
-    border:1px solid var(--line);border-radius:999px;
-    padding:.35rem .85rem;cursor:pointer
-  }
-  .chips button:hover{border-color:var(--muted)}
-  .chips button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-  .chips button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);
-    border-color:var(--accent)}
-  .ev{border-top:1px solid var(--line);padding:.7rem 0}
-  .ev pre{margin-top:.4rem}
-  /* An arrival is marked for a moment and then stops shouting: a page that
-     keeps twenty things highlighted has highlighted nothing. */
-  .ev.fresh{animation:arrive 6s ease-out 1 forwards}
-  @keyframes arrive{
-    0%{background:var(--warnbg);box-shadow:inset 3px 0 0 var(--accent)}
-    70%{background:var(--warnbg);box-shadow:inset 3px 0 0 var(--accent)}
-    100%{background:transparent;box-shadow:inset 3px 0 0 transparent}
-  }
-  @media (prefers-reduced-motion:reduce){.ev.fresh{animation:none;box-shadow:inset 3px 0 0 var(--accent)}}
-  .dot{display:inline-block;width:.5rem;height:.5rem;border-radius:50%;
-    background:var(--ok);margin-right:.35rem;vertical-align:baseline}
-  .dot.off{background:var(--muted)}
 
   /* What is finished stops inviting a second press. */
   .step.done > p,.step.done .row,.step.done textarea,.step.done input{opacity:.55}
@@ -375,6 +314,13 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
       justify-content:flex-start}
   }
 
+
+  /* ── The NextKey ID ──
+     Shown where the published key used to be shown alone. It is set larger and
+     spaced out because it is meant to be read off the screen and typed, or read
+     aloud — which is the entire reason it exists rather than the 44 characters
+     of base64 on the line below it. */
+  .nkid{font-size:1.06rem;font-weight:660;letter-spacing:.07em;color:var(--accent)}
 </style>
 </head>
 <body>
@@ -384,12 +330,12 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     <a class="brand" href="/" aria-label="NextKey"><svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M32 4.5 54.8 17.75v26.5L32 57.5 9.2 44.25v-26.5z" stroke="currentColor" stroke-width="5.5" stroke-linejoin="round"/><circle cx="32" cy="27" r="7" stroke="currentColor" stroke-width="5"/><path d="M32 34v13" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg><b>NextKey</b></a>
     <nav class="barnav" aria-label="Sections">
       <a class="navhome" href="/" data-i18n-title="nav.home" title="Home"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.75 20v-5.5h4.5V20"/></svg><span class="vh" data-i18n="nav.home">Home</span></a>
-      <a href="./id" data-i18n="nav.id">ID</a>
+      <a href="./id" data-i18n="nav.id" aria-current="page">ID</a>
       <a href="./passphrase" data-i18n="nav.passphrase">Passphrase</a>
       <a href="./message" data-i18n="nav.message">Message</a>
       <a href="./explorer" data-i18n="nav.explorer">Explorer</a>
       <a href="./blog" data-i18n="nav.blog">Blog</a>
-      <a href="./donate" data-i18n="nav.donate" aria-current="page">Donate</a>
+      <a href="./donate" data-i18n="nav.donate">Donate</a>
     </nav>
     <div class="barctl">
       <button class="iconbtn" id="themebtn" type="button"
@@ -427,78 +373,116 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 </header>
 
 <div class="wrap" style="padding-top:2.6rem">
-  <p class="eyebrow" data-i18n="v.eyebrow">Donate</p>
-  <h1 data-i18n="v.h1">Web3 Support</h1>
-  <p class="lead" data-i18n="v.lead">
-    NextKey was built at ETHGlobal ETHOnline 2026 and is pushing Web3 forward. Small amounts in
-    ETH or stablecoins take the demo towards product-market fit — and keep NextKey alive once the
-    hackathon is over. It goes to development, community building and swag, and supports Web3, open
-    source and dApps anybody can read and trust.
+  <p class="eyebrow" data-i18n="nav.id">ID</p>
+  <h1 data-i18n="t.id.h1">Your NextKey ID</h1>
+  <p class="lead" data-i18n="t.id.lead">
+    Anyone can send you a secret once your name publishes a key. Your NextKey ID is that key,
+    in a form you can read out over the phone — derived from the wallet you already have, in one
+    signature, with nothing generated, nothing stored and no gas to pay.
   </p>
+
+  <p class="provenance" data-i18n="hero.prov">Prototype · ENSv2 on Sepolia testnet · Built at ETHGlobal ETHOnline 2026</p>
+
+  <noscript>
+    <div class="fallback">
+      <p data-i18n-html="t.id.nojs"><strong>This page does its work in JavaScript, which is switched off.</strong>
+        An ID is computed from a key in your browser and nowhere else, so there is no server-rendered
+        version to fall back to.
+        <a href="./explorer">The explorer</a> shows the same records without running anything here.</p>
+    </div>
+  </noscript>
 </div>
 
 <main class="wrap">
 
-  <section class="step" style="padding-left:0;padding-top:2rem">
-    <h2 data-i18n="v.addr.h">ENS Name</h2>
-    <p data-i18n="v.addr.p">Ethereum mainnet. ETH or any ERC-20 — USDC, USDT, DAI, whatever you hold.
-      The code carries a payment link, so a wallet that scans it opens with the recipient already
-      filled in.</p>
-
-    <div class="qrwrap">
-      <div class="qrcol">
-      <svg class="qr" viewBox="0 0 37 37" role="img" aria-labelledby="qr-t">
-        <title id="qr-t" data-i18n="v.qr.alt">A QR code for the donation address</title>
-        <rect width="37" height="37" fill="#fff"/>
-        <path d="M2 2h7v1h-7zM10 2h2v1h-2zM13 2h4v1h-4zM18 2h1v1h-1zM20 2h2v1h-2zM28 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM11 3h1v1h-1zM13 3h4v1h-4zM20 3h2v1h-2zM24 3h1v1h-1zM26 3h1v1h-1zM28 3h1v1h-1zM34 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM13 4h1v1h-1zM16 4h5v1h-5zM23 4h1v1h-1zM25 4h2v1h-2zM28 4h1v1h-1zM30 4h3v1h-3zM34 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h3v1h-3zM14 5h1v1h-1zM18 5h2v1h-2zM22 5h2v1h-2zM25 5h1v1h-1zM28 5h1v1h-1zM30 5h3v1h-3zM34 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h3v1h-3zM15 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h1v1h-1zM25 6h1v1h-1zM28 6h1v1h-1zM30 6h3v1h-3zM34 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h1v1h-1zM13 7h2v1h-2zM16 7h2v1h-2zM21 7h2v1h-2zM24 7h1v1h-1zM26 7h1v1h-1zM28 7h1v1h-1zM34 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h7v1h-7zM10 9h1v1h-1zM12 9h1v1h-1zM16 9h1v1h-1zM19 9h2v1h-2zM23 9h3v1h-3zM2 10h1v1h-1zM6 10h1v1h-1zM8 10h3v1h-3zM12 10h2v1h-2zM16 10h4v1h-4zM21 10h1v1h-1zM23 10h3v1h-3zM27 10h5v1h-5zM34 10h1v1h-1zM4 11h1v1h-1zM6 11h1v1h-1zM10 11h1v1h-1zM12 11h2v1h-2zM17 11h1v1h-1zM19 11h2v1h-2zM22 11h1v1h-1zM25 11h3v1h-3zM29 11h1v1h-1zM31 11h4v1h-4zM3 12h3v1h-3zM8 12h2v1h-2zM12 12h1v1h-1zM15 12h3v1h-3zM20 12h1v1h-1zM23 12h4v1h-4zM30 12h2v1h-2zM33 12h1v1h-1zM2 13h1v1h-1zM5 13h1v1h-1zM9 13h2v1h-2zM13 13h1v1h-1zM15 13h1v1h-1zM21 13h3v1h-3zM25 13h2v1h-2zM28 13h1v1h-1zM30 13h1v1h-1zM33 13h1v1h-1zM3 14h2v1h-2zM7 14h3v1h-3zM11 14h1v1h-1zM15 14h1v1h-1zM18 14h1v1h-1zM21 14h3v1h-3zM27 14h2v1h-2zM30 14h1v1h-1zM33 14h2v1h-2zM2 15h2v1h-2zM9 15h1v1h-1zM11 15h1v1h-1zM13 15h2v1h-2zM16 15h1v1h-1zM20 15h2v1h-2zM24 15h3v1h-3zM29 15h1v1h-1zM31 15h2v1h-2zM2 16h2v1h-2zM6 16h3v1h-3zM10 16h2v1h-2zM13 16h1v1h-1zM15 16h3v1h-3zM23 16h1v1h-1zM25 16h1v1h-1zM27 16h5v1h-5zM33 16h1v1h-1zM4 17h1v1h-1zM6 17h2v1h-2zM10 17h10v1h-10zM22 17h3v1h-3zM26 17h2v1h-2zM29 17h1v1h-1zM33 17h1v1h-1zM2 18h2v1h-2zM5 18h2v1h-2zM8 18h2v1h-2zM13 18h1v1h-1zM15 18h1v1h-1zM18 18h6v1h-6zM27 18h4v1h-4zM34 18h1v1h-1zM4 19h1v1h-1zM9 19h1v1h-1zM13 19h3v1h-3zM17 19h1v1h-1zM24 19h3v1h-3zM29 19h1v1h-1zM33 19h2v1h-2zM2 20h3v1h-3zM8 20h3v1h-3zM12 20h2v1h-2zM15 20h1v1h-1zM17 20h3v1h-3zM24 20h2v1h-2zM28 20h1v1h-1zM30 20h2v1h-2zM33 20h1v1h-1zM2 21h1v1h-1zM4 21h2v1h-2zM9 21h1v1h-1zM13 21h9v1h-9zM23 21h3v1h-3zM27 21h1v1h-1zM30 21h1v1h-1zM33 21h1v1h-1zM8 22h1v1h-1zM11 22h1v1h-1zM13 22h2v1h-2zM16 22h2v1h-2zM20 22h2v1h-2zM24 22h2v1h-2zM27 22h4v1h-4zM34 22h1v1h-1zM2 23h1v1h-1zM5 23h1v1h-1zM7 23h1v1h-1zM9 23h2v1h-2zM15 23h1v1h-1zM18 23h1v1h-1zM22 23h1v1h-1zM25 23h2v1h-2zM31 23h3v1h-3zM4 24h6v1h-6zM12 24h1v1h-1zM14 24h2v1h-2zM18 24h2v1h-2zM22 24h1v1h-1zM24 24h2v1h-2zM28 24h1v1h-1zM30 24h4v1h-4zM5 25h3v1h-3zM10 25h2v1h-2zM13 25h1v1h-1zM15 25h2v1h-2zM19 25h2v1h-2zM23 25h4v1h-4zM28 25h1v1h-1zM30 25h1v1h-1zM33 25h1v1h-1zM2 26h2v1h-2zM7 26h4v1h-4zM12 26h2v1h-2zM16 26h6v1h-6zM24 26h1v1h-1zM26 26h5v1h-5zM32 26h1v1h-1zM34 26h1v1h-1zM10 27h1v1h-1zM13 27h3v1h-3zM17 27h1v1h-1zM19 27h1v1h-1zM22 27h1v1h-1zM25 27h2v1h-2zM30 27h3v1h-3zM2 28h7v1h-7zM10 28h2v1h-2zM13 28h1v1h-1zM15 28h1v1h-1zM17 28h1v1h-1zM20 28h1v1h-1zM22 28h2v1h-2zM26 28h1v1h-1zM28 28h1v1h-1zM30 28h1v1h-1zM2 29h1v1h-1zM8 29h1v1h-1zM12 29h3v1h-3zM16 29h3v1h-3zM21 29h1v1h-1zM23 29h1v1h-1zM26 29h1v1h-1zM30 29h1v1h-1zM2 30h1v1h-1zM4 30h3v1h-3zM8 30h1v1h-1zM10 30h2v1h-2zM18 30h1v1h-1zM21 30h1v1h-1zM24 30h1v1h-1zM26 30h6v1h-6zM33 30h2v1h-2zM2 31h1v1h-1zM4 31h3v1h-3zM8 31h1v1h-1zM13 31h1v1h-1zM16 31h1v1h-1zM20 31h1v1h-1zM22 31h1v1h-1zM26 31h3v1h-3zM30 31h1v1h-1zM32 31h1v1h-1zM2 32h1v1h-1zM4 32h3v1h-3zM8 32h1v1h-1zM13 32h2v1h-2zM16 32h2v1h-2zM19 32h2v1h-2zM24 32h2v1h-2zM27 32h2v1h-2zM30 32h3v1h-3zM2 33h1v1h-1zM8 33h1v1h-1zM11 33h2v1h-2zM15 33h1v1h-1zM17 33h10v1h-10zM29 33h1v1h-1zM31 33h1v1h-1zM2 34h7v1h-7zM10 34h5v1h-5zM21 34h8v1h-8zM31 34h1v1h-1zM34 34h1v1h-1z" fill="#000"/>
-      </svg>
-        <p class="qrname mono" id="qrname">nextkey.eth</p>
-      </div>
-      <div class="qrside">
-        <p class="ens mono" id="ensname">nextkey.eth</p>
-        <p class="addr mono" id="addr">0x54Dd2Bc2f1Eb15A878C05ADfB58b90d68eA2EF14</p>
-        <div class="row">
-          <button class="act" id="copy" type="button" data-i18n="v.copy">Copy</button>
-        </div>
-        <p class="note" id="copied" hidden data-i18n="v.copied">Copied.</p>
-      </div>
-    </div>
-  </section>
-
+  <!-- The wallet ────────────────────────────────────────────────────────────
+       Both things this page can do need a signature, and neither needs gas for
+       the first one. Connecting is therefore its own step rather than a
+       surprise inside a button labelled something else. -->
   <section class="step" style="padding-left:0">
-    <h2 data-i18n="v.send.h">Or connect your wallet</h2>
-    <p data-i18n="v.send.p">The same address, one step shorter: connect a wallet, pick an amount, and
-      your wallet asks you to confirm. Nothing is signed until you say so, and the transaction goes
-      straight to the address above — this page has no key and no way to move anything.</p>
+    <h2 data-i18n="t.id.wallet.h">Start with the wallet you already have</h2>
+    <p data-i18n="t.id.wallet.p">Nothing is created here. Your NextKey ID is derived from a signature, so the
+      same wallet gives you the same ID on any machine, for ever — and losing this browser, this page and
+      this name costs you nothing.</p>
     <div class="row">
-      <button class="act ghost" id="connect" type="button" data-i18n="b.connect">Connect a wallet</button>
-      <button class="act ghost" id="disconnect" type="button" hidden data-i18n="v.disconnect">Disconnect</button>
-      <span class="note" id="who"></span>
+      <button class="act ghost" id="connect" type="button"
+              data-i18n="t.s6.connect.btn">Connect a wallet</button>
     </div>
-    <div class="row" id="amounts">
-      <button class="act ghost" type="button" data-eth="0.005">0.005 ETH</button>
-      <button class="act ghost" type="button" data-eth="0.01">0.01 ETH</button>
-      <button class="act ghost" type="button" data-eth="0.05">0.05 ETH</button>
-    </div>
-    <div class="row">
-      <input type="text" id="amount" inputmode="decimal" spellcheck="false" autocomplete="off"
-             aria-label="Amount in ETH" placeholder="0.01" style="flex:0 1 10rem;min-width:0">
-      <button class="act" id="send" type="button" disabled data-i18n="v.send.btn">Donate</button>
-    </div>
-    <div class="out" id="send-out" hidden></div>
+    <div class="out" id="wallet-out" hidden></div>
   </section>
 
-  <section class="step" style="padding-left:0">
-    <h2 data-i18n="v.live.h">Donations</h2>
-    <p data-i18n="v.live.p">Read from Ethereum straight away, and again every twenty seconds. The
-      balances are exact. The list underneath is every stablecoin donation this page could find.</p>
+  <!-- Being receivable ──────────────────────────────────────────────────────
+       This is the question this whole tab exists for: not "who am I sending to"
+       but "how does anybody send anything to me". It used to sit above step 1
+       of the playground, where it was answering a question nobody on that page
+       was asking yet. -->
+  <section class="step" id="be-receivable-box" style="padding-left:0">
+    <h2 data-i18n="t.recv.h">Can anyone send you a secret?</h2>
+    <p data-i18n="t.recv.p">Only if your ENS name publishes a key — that record is the whole of the opt-in, and
+      there is no registration with NextKey. If you have no key yet, one signature is enough: nothing is
+      generated and nothing is stored, the key comes out of your wallet and comes back out of it on any
+      machine. We lend you a name and pay for the record.</p>
     <div class="row">
-      <span class="note" id="live" style="align-self:center"></span>
-      <button class="act ghost" id="refresh" type="button" data-i18n="x.feed.btn">Refresh</button>
+      <button class="act" id="be-receivable" type="button" data-i18n="t.s2.recv.btn">Make me receivable</button>
+      <span class="note" id="recv-state"></span>
     </div>
-    <div class="out" id="balances" hidden></div>
-    <div class="out" id="gifts" hidden></div>
+    <div class="out" id="id-out" hidden></div>
   </section>
+
+  <!-- A name of your own ────────────────────────────────────────────────────
+       Below the lent name, not instead of it. The lent name costs one signature
+       and no gas and is the right first step for somebody trying this out; this
+       one costs a transaction the visitor pays and gives them something that is
+       theirs afterwards. Offering only the second would turn away everybody
+       without testnet ether, and offering only the first would mean nobody ever
+       owns anything. -->
+  <section class="step" id="own-name-box" style="padding-left:0">
+    <h2 data-i18n="t.own.h">Or take a name that is yours</h2>
+    <p data-i18n="t.own.p">The same key, on a name nobody can take back. A contract hands out one
+      name per address under <span class="mono">nextkey.eth</span> and publishes your key on it in the same
+      transaction — you pay for that transaction, and afterwards the name belongs to your address, not to us.
+      You can point it at another resolver whenever you like.</p>
+    <div class="row">
+      <input type="text" id="own-label" spellcheck="false" autocomplete="off"
+             aria-label="The name you would like, without the ending"
+             style="flex:1 1 12rem;min-width:0">
+      <span class="mono note" id="own-suffix">.nextkey.eth</span>
+      <button class="act ghost" id="claim-name" type="button" data-i18n="t.own.btn">Claim this name</button>
+      <span class="note" id="own-state"></span>
+    </div>
+    <p class="note" data-i18n="t.own.cost">This one needs Sepolia ether in your wallet, because you are the one
+      signing it. If you have none, the lent name above asks for nothing.</p>
+    <div class="out" id="claim-out" hidden></div>
+  </section>
+
+  <!-- What the ID is, for whoever wants to check rather than trust ────────── -->
+  <details class="more">
+    <summary data-i18n="t.id.what.h">What a NextKey ID actually is</summary>
+    <p data-i18n="t.id.what.p1">It is your published key, written so a person can handle it. The key itself is
+      44 characters of base64: it cannot be read aloud, a truncated copy of it looks exactly like a complete
+      one, and its punctuation does not survive being pasted into a chat window. Every one of those is a way
+      to send a secret to the wrong person.</p>
+    <p data-i18n="t.id.what.p2">So the ID is derived from the key rather than issued alongside it. There is no
+      registry, nothing is allocated, nothing is written to the chain for it, and there is nothing to lose —
+      the same key gives the same ID to anybody who computes it, offline, on any machine. Every name that
+      already publishes a key already has one.</p>
+    <p data-i18n-html="t.id.what.p3">It is not a secret and it is not a permission. The key stays in
+      <span class="mono">nextkey.pubkey</span> and is what the arithmetic uses; the ID is what the interface
+      says. Seventy bits of a SHA-256 over the key, in Crockford's alphabet — no I, L, O or U — plus one
+      check character, which catches a mistyped and a swapped character. Anyone verifying rather than
+      reading compares the key.</p>
+  </details>
+
+  <details class="more">
+    <summary data-i18n="t.id.limits.h">What this does not give you</summary>
+    <p data-i18n="t.id.limits.p1">A lent name is borrowed, not owned. It is one of this project's names and
+      the record on it was written and paid for by this page, which is what makes the first step free — and
+      it means we could take it back. The name below is the answer to that, and the ID does not change when
+      you move: it belongs to the wallet, not to the name.</p>
+    <p data-i18n-html="t.id.limits.p2">Being receivable also means being visible. Publishing a key says publicly
+      that this name can receive secrets, and every read of it leaves your browser for a public node. That is
+      stated in the <a href="/privacy">privacy notice</a> rather than left to be discovered.</p>
+  </details>
 
 </main>
 
@@ -507,8 +491,8 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     sent to a server. Do not put a phrase here that guards real funds.</p>
   <p>
     <a class="foothome" href="/" data-i18n-title="nav.home" title="Home"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.75 20v-5.5h4.5V20"/></svg><span class="vh" data-i18n="nav.home">Home</span></a>
-    <a href="./passphrase" data-i18n="foot.try">Start demo</a>
-    <a href="https://hackathon-deployment-portal-app.ens-cf.workers.dev/" target="_blank" rel="noopener noreferrer" data-i18n="foot.ens">ENS explorer</a>
+    <a href="./explorer" data-i18n="nav.explorer">Explorer</a>
+    <a href="./blog" data-i18n="nav.blog">Blog</a>
     <a href="./poc" data-i18n="nav.poc">PoC</a>
     <a href="/imprint" data-i18n="foot.imprint">Imprint</a>
     <a href="/privacy" data-i18n="foot.privacy">Privacy</a>
@@ -671,6 +655,6 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   label()
 })()
 </script>
-<script type="module" src="/donate.js?v=ba8a7841"></script>
+<script type="module" src="/demo.js?v=cbfa0407"></script>
 </body>
 </html>

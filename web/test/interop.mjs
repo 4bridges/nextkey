@@ -242,6 +242,33 @@ async function checks(where, nk) {
       (await nk.deriveId(sig)) !== (await nk.deriveEph(sig, name)))
   }
 
+  // 4b · The NextKey ID.
+  //
+  // It is presentation rather than cryptography, which is exactly why it is
+  // checked here: a display rule that disagrees between two implementations
+  // fails in the one way that matters most and is hardest to see. Two people
+  // comparing IDs over the phone — one reading it off this page, one off a
+  // command line — would conclude they were talking about different keys, and
+  // the correct response to that is to not send the secret. A wrong "no" costs
+  // as much as a wrong "yes" here.
+  {
+    const pk = x25519.getPublicKey(randomSecret())
+    const id = await nk.id(b64(pk))
+    check(where, 'the NextKey ID has the shape the interface promises',
+      /^NK-[0-9A-HJKMNP-TV-Z]{5}-[0-9A-HJKMNP-TV-Z]{5}-[0-9A-HJKMNP-TV-Z]{5}$/.test(id))
+    check(where, 'and is the same ID on both sides for the same key',
+      id === (await nk.id(b64(pk))))
+    check(where, 'a different key gives a different ID',
+      id !== (await nk.id(b64(x25519.getPublicKey(randomSecret())))))
+    check(where, 'its own check character accepts it',
+      (await nk.looksLikeId(id)) === true)
+    // The check character earns its place only if something fails it. A single
+    // wrong character is the mistake somebody copying by hand actually makes.
+    const wrong = id.slice(0, -1) + (id.slice(-1) === '0' ? '1' : '0')
+    check(where, 'and rejects it with one character changed',
+      (await nk.looksLikeId(wrong)) === false)
+  }
+
   // 5 · v2 · grants in both directions, address included.
   // In v1 only the value had to agree. In v2 the *record name* is derived too,
   // so a disagreement there is a grant written to a record the other side never
@@ -322,6 +349,8 @@ await checks('web/src/nk-crypto.mjs, in Node', {
   deriveEph: async (sig, name) => NK.b64(NK.ephSecretFromSignature(sig, name)),
   idMessage: async () => NK.identityMessage(),
   deriveId: async (sig) => NK.b64(NK.identitySecretFromSignature(sig)),
+  id: async (pkB64) => NK.nextkeyId(NK.un64(pkB64)),
+  looksLikeId: async (s) => NK.looksLikeNextkeyId(s),
   locateV2: async (ephB64, skB64) => {
     const sk = NK.un64(skB64)
     return NK.locateGrantV2(NK.un64(ephB64), sk, NK.publicKeyOf(sk)).key
@@ -404,6 +433,8 @@ if (!chromium) {
         NK.b64(NK.ephSecretFromSignature(s, n)), [sig, name]),
       idMessage: () => page.evaluate(() => NK.identityMessage()),
       deriveId: (sig) => page.evaluate((s) => NK.b64(NK.identitySecretFromSignature(s)), sig),
+      id: (pkB64) => page.evaluate((b) => NK.nextkeyId(NK.un64(b)), pkB64),
+      looksLikeId: (s) => page.evaluate((x) => NK.looksLikeNextkeyId(x), s),
       locateV2: (ephB64, skB64) => page.evaluate(([e, k]) => {
         const sk = NK.un64(k)
         return NK.locateGrantV2(NK.un64(e), sk, NK.publicKeyOf(sk)).key

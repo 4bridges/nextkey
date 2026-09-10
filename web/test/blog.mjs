@@ -217,7 +217,7 @@ check('and asks for a wallet before it writes anything', await (async () => {
 })())
 check('and the navigation calls it the blog', /Blog/.test(await page.textContent('nav')))
 check('a house leads home, before the rest',
-  (await page.locator('.barnav > a').first().getAttribute('href')) === './index.html'
+  (await page.locator('.barnav > a').first().getAttribute('href')) === '/'
   && (await page.locator('.barnav .navhome svg').count()) === 1)
 check('and it is named for anyone not looking at pixels',
   /Home/.test(await page.locator('.barnav .navhome').getAttribute('title'))
@@ -249,7 +249,7 @@ for (const p of ['index.html', 'poc.html', 'demo.html', 'blog.html', 'explorer.h
     }
   })
   check(`the house survives the overlay on ${p}`,
-    !!seen && seen.icon > 8 && seen.label <= 2 && seen.href === './index.html')
+    !!seen && seen.icon > 8 && seen.label <= 2 && seen.href === '/')
 }
 
 check('and the page raised no errors at all', errors.length === 0)

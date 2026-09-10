@@ -302,3 +302,83 @@ export const ackKeyForSender = (ephSk, recipientPub) => {
   const ephPk = x25519.getPublicKey(ephSk)
   return ackKeyV2(x25519.getSharedSecret(ephSk, recipientPub), ephPk, recipientPub)
 }
+
+// ═══ The NextKey ID ════════════════════════════════════════════════════════
+//
+// What a person is shown instead of their key.
+//
+// The published key is 44 characters of base64 — `k9Xm2/pQ...==` — and it is
+// the wrong thing to put in front of somebody. It cannot be read aloud, it
+// cannot be compared at a glance, a truncated copy of it looks exactly like a
+// complete one, and its punctuation does not survive being pasted into a chat
+// window that thinks a slash starts a command. Every one of those is a way to
+// send a secret to the wrong person.
+//
+// So the ID is a *presentation* of the key, not a second identifier:
+//
+//   NK-9F3KD-2M0RQ-7XB4T
+//
+// It is derived, never issued. There is no registry, no allocation, nothing to
+// look up and nothing to lose — the same key gives the same ID on any machine,
+// computed offline by anyone holding the public value. Nothing is written to
+// the chain for it, no record changes, and every name that already publishes a
+// key already has one. That was the whole reason to derive rather than assign:
+// an issued ID would need a registry, a registry needs an indexer, and a
+// collision would need somebody to resolve it.
+//
+// What it is not: a secret, a permission, or a replacement for the key. The
+// key stays in `nextkey.pubkey` and is what the arithmetic uses. The ID is what
+// the interface says.
+//
+// The alphabet is Crockford's Base32 — no I, L, O or U — so a one cannot be
+// read as an el and there is no word the last letter could complete. The
+// grouping is fours and fives because that is how people read card and licence
+// numbers, and the `NK-` prefix is there so an ID pasted into a support thread
+// is recognisable as one.
+//
+// 70 bits of a SHA-256 over the key, plus one check symbol. 70 bits is not a
+// cryptographic commitment and is not offered as one: it is enough that two
+// people in a room will never see the same ID, and the check symbol catches the
+// single mistyped and the single transposed character, which are the mistakes
+// somebody copying by hand actually makes. Anyone verifying rather than reading
+// compares the key.
+
+const B32 = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'
+
+/**
+ * The check symbol: a position-weighted sum, so a swap of two neighbours moves
+ * it. An unweighted sum would not — and transposing two characters is exactly
+ * what happens when somebody reads an ID off one screen and types it into
+ * another.
+ */
+const checkSymbol = (symbols) =>
+  B32[symbols.reduce((acc, v, i) => acc + v * (i + 1), 0) % 32]
+
+/** `NK-9F3KD-2M0RQ-7XB4T` from an X25519 public key. */
+export const nextkeyId = (pub) => {
+  const h = sha256(pub)
+  // 70 bits, taken as fourteen 5-bit symbols out of the first nine bytes.
+  let bits = 0n
+  for (let i = 0; i < 9; i++) bits = (bits << 8n) | BigInt(h[i])
+  bits >>= 2n                                   // 72 bits read, 70 used
+  const symbols = []
+  for (let i = 13; i >= 0; i--) symbols[i] = Number((bits >> BigInt(5 * (13 - i))) & 31n)
+  const s = symbols.map((v) => B32[v]).join('') + checkSymbol(symbols)
+  return `NK-${s.slice(0, 5)}-${s.slice(5, 10)}-${s.slice(10, 15)}`
+}
+
+/**
+ * Is this a well-formed NextKey ID?
+ *
+ * Only that. It says the characters are in the alphabet and the check symbol
+ * agrees — never that anybody holds it, and never that a name publishes the key
+ * it came from. Answering "yes" to a string somebody invented would be the
+ * worst thing this function could do, so the name says `looksLike` and not
+ * `isValid`, and every caller has to keep meaning it.
+ */
+export const looksLikeNextkeyId = (s) => {
+  const raw = String(s).trim().toUpperCase().replace(/^NK-/, '').replace(/-/g, '')
+  if (!/^[0-9A-HJKMNP-TV-Z]{15}$/.test(raw)) return false
+  const symbols = [...raw.slice(0, 14)].map((c) => B32.indexOf(c))
+  return checkSymbol(symbols) === raw[14]
+}

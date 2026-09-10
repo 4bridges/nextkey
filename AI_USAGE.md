@@ -19,9 +19,14 @@ ETHGlobal permits AI tools to assist development but not to create the entire pr
 | Claude Code (Anthropic) | Code assistance in the repository: drafting scripts and page code, writing tests, drafting the site copy and its nine translations, editing files under review |
 
 No editor-integrated completion was used — there is no Copilot, Cursor or
-Codeium in this project. Commits carrying substantial assistance keep a
-`Co-Authored-By` line, so which parts of the history had help is a question
-`git log` answers rather than this table.
+Codeium in this project.
+
+Commit messages carry no assistant markers. An earlier version of this file said
+they carried a `Co-Authored-By` trailer; that was true for a handful of commits,
+the practice was stopped, and the trailers were removed. Saying so is cheaper
+than leaving a sentence here that `git log` contradicts. The disclosure lives in
+this file and in `ai/PROMPT_LOG.md` — one place that is maintained, rather than a
+convention applied unevenly across a history and then abandoned halfway.
 
 ## How it was used
 
@@ -30,6 +35,8 @@ Codeium in this project. Commits carrying substantial assistance keep a
 **During the build.** Claude is used as a coding assistant: drafting boilerplate, explaining unfamiliar SDK surfaces (ENSv2 Enhanced Access Control, Chainlink CRE, the Ledger device stack), reviewing code and drafting documentation. Architecture decisions, integration design and debugging are the author's.
 
 **Where the assistant was wrong.** Worth stating plainly, because it is the honest measure of how the tool was used. Its first prize recommendation (Privy, 1inch Aqua) was wrong and was discarded — both tracks require value transfer, which a credential vault does not do. It also misread the Chainlink documentation and concluded that CLI simulation needed no beta access, then reversed that, and then reversed again once Chainlink Labs answered directly in Discord. Each correction is recorded in `ai/PROMPT_LOG.md` and `docs/planning/00-track-and-sponsor-decisions.md` rather than quietly edited away.
+
+The same pattern held to the last day, and the useful part is what caught it. Building the name registrar, the assistant wrote the role grant against `grantRoles(ROOT_RESOURCE, …)` — from the documentation, not from the contract, which refuses that call with `EACRootResourceNotAllowed()`. It then wrote a check that read a text record straight off the resolver, which has no such function and reverts empty, and reported a working contract as broken. Neither was found by reasoning; both were found by putting the question to the deployed contract with a script that distinguishes *refused* from *there is no such function* — a distinction that has now cost this project time three separate times, and is written into `docs/decisions.md` each time. The assistant is fastest at exactly the thing it should be trusted least on: producing a confident interface from documentation.
 
 **Verification.** Every factual claim in the submission — contract addresses, SDK behaviour, sponsor qualification requirements — was checked against primary sources: the sponsor documentation, the prize pages, and answers given by sponsor teams in the event Discord.
 
@@ -83,9 +90,11 @@ sentence is about.
 What did have substantial assistance: prose and documentation throughout, the
 nine translations, much of the test scaffolding, and boilerplate in the scripts
 and page code. In the final days that extended to the explorer, the community
-page and the donation page — drafted in a working session with the assistant,
-reviewed screen by screen by the author, and committed by him. Those commits say
-so in their trailers.
+page, the donation page, the imprint and privacy notice, and the registrar
+contract — drafted in working sessions with the assistant, reviewed screen by
+screen by the author, run against the chain by him, and committed by him. Every
+commit in this repository was made by the author; the assistant has never had
+credentials to push.
 
 ## Statement
 

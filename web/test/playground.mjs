@@ -49,8 +49,31 @@ if (!chromium) {
 }
 
 const types = { '.js': 'text/javascript', '.html': 'text/html', '.svg': 'image/svg+xml' }
+
+/**
+ * The one server rule this page cannot be tested without.
+ *
+ * A tab is an address now — /demo/passphrase and /demo/message are the same
+ * file, and the file reads which one it is off its own path. That mapping lives
+ * in `.htaccess` on the real host, so a test server that only serves files by
+ * name would exercise a page at a depth it never actually runs at, and would
+ * pass while both tabs were broken.
+ *
+ * It is deliberately the same two rules as the rewrite, in the same order:
+ * /passphrase and /message are both demo.html — one implementation, two
+ * addresses — and every other /demo/<tab> is <tab>.html. Nothing else about the
+ * path is invented.
+ *
+ * The first rule is the one that was missing when this file was written, and
+ * the run said so: /demo/message resolved to a message.html that does not exist
+ * and the page came back a 404 with no bundle on it.
+ */
+const rewrite = (url) => url
+  .replace(/^\/demo\/(passphrase|message)\/?$/, '/demo.html')
+  .replace(/^\/demo\/([A-Za-z0-9_-]+)\/?$/, '/$1.html')
+
 const server = createServer((req, res) => {
-  const path = normalize(join(WEB, decodeURIComponent(req.url.split('?')[0])))
+  const path = normalize(join(WEB, rewrite(decodeURIComponent(req.url.split('?')[0]))))
   if (!path.startsWith(WEB)) { res.statusCode = 403; return res.end('') }
   try {
     const body = readFileSync(path)
@@ -179,8 +202,7 @@ try {
     check('sealing switches off the choices it was made from',
       await page.locator('#gen').isDisabled() &&
       await page.locator('#gen-recipient').isDisabled() &&
-      await page.locator('#lookup').isDisabled() &&
-      await page.locator('#mode-message').isDisabled())
+      await page.locator('#lookup').isDisabled())
 
     // Step 4 appears, and offers both ways in. Opening and revoking are no
     // longer reachable here: they read the records back off the chain, so they
@@ -300,19 +322,23 @@ try {
       w.includes('demo.html'))
   }
 
-  // ── The other half of the switch ────────────────────────────────────────
-  // The same five steps with different contents, which is the reason it is a
-  // switch and not a second page.
+  // ── The other half of the loop ──────────────────────────────────────────
+  // The same five steps with different contents, which is the reason one file
+  // answers to both tabs rather than being copied into two.
+  //
+  // It is reached the way a visitor reaches it: by going to /demo/message. That
+  // is the check — the tab is a property of the address, so a page served at
+  // that path must come up on the message side with nothing pressed.
   console.log(`\n  The message side\n`)
   {
-    await page.goto(`http://127.0.0.1:${PORT}/demo.html?lang=en`)
-    await page.click('#gen')
-    await page.click('#mode-message')
+    await page.goto(`http://127.0.0.1:${PORT}/demo/message?lang=en`)
+    check('the address alone decides which tab this is',
+      (await page.evaluate(() => window.NEXTKEY.state().mode)) === 'message')
     check('the message side offers a box and no generator',
       !(await page.locator('#pane-message').isHidden()) &&
       await page.locator('#pane-wallet').isHidden())
-    check('and switching clears what the other side held',
-      (await page.inputValue('#phrase')) === '')
+    check('and the heading says so without a button being pressed',
+      (await page.textContent('#t-eyebrow')).trim() === 'Message')
 
     // A message is covered for the same reason a passphrase is: whoever walks
     // past, the projector, and every screenshot taken afterwards.
@@ -336,8 +362,18 @@ try {
   // not have been given a prepared state.
   console.log(`\n  A link that opens on the message side\n`)
   {
+    await page.goto(`http://127.0.0.1:${PORT}/demo/passphrase?lang=en`)
+    check('/demo/passphrase is the other tab, from the path alone',
+      !(await page.locator('#pane-wallet').isHidden()) &&
+      (await page.evaluate(() => window.NEXTKEY.state().mode)) === 'wallet')
+
+    // The query string is older than the path and links to it are in the
+    // README, in the decision log and in whatever somebody has already sent to
+    // somebody else. A parameter that quietly stops meaning anything is worse
+    // than one that keeps meaning what it meant, so it still works where the
+    // path says nothing.
     await page.goto(`http://127.0.0.1:${PORT}/demo.html?lang=en&mode=message`)
-    check('?mode=message starts where it says it will',
+    check('?mode=message still starts where it says it will',
       !(await page.locator('#pane-message').isHidden()) &&
       (await page.evaluate(() => window.NEXTKEY.state().mode)) === 'message')
   }
