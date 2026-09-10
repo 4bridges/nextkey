@@ -281,7 +281,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
      not about navigation. */
   .bar .wrap{max-width:62rem}
   .barnav{display:flex;align-items:center;gap:1.1rem;margin-inline-start:1.4rem;
-    margin-inline-end:auto;font-size:.95rem;
+    flex-grow:1;justify-content:space-between;font-size:.95rem;
     font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
   .barnav a{color:var(--muted);text-decoration:none;font-weight:600;white-space:nowrap}
   /* The bar is symbols, not words. Eight words needed 462px and the bar is a
@@ -295,6 +295,11 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   .barnav a svg{width:1.2rem;height:1.2rem;display:block}
   /* And it wraps now. The clipping above was not a width that was chosen badly;
      it was a row with nowhere to go. A second line is always available. */
+  /* Spread, not stacked at one end. The bar's right edge is set by the language
+     button on the row above, so the symbols run the whole width up to it and
+     the eye gets the same margin on both sides. `space-between` does that with
+     the gap as a floor rather than a fixed step, so the spacing follows the
+     window instead of the count. */
   .barnav{flex-wrap:wrap;row-gap:.35rem}
   .foothome{display:inline-flex;align-items:center;vertical-align:middle}
   .foothome svg{width:1.05rem;height:1.05rem}
@@ -318,7 +323,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     .brand b{display:none}
     .barin{flex-wrap:wrap}
     .barnav{order:3;flex-basis:100%;margin:.45rem 0 0;gap:1rem;font-size:.9rem;
-      justify-content:flex-start}
+      justify-content:space-between}
   }
 
 
@@ -665,7 +670,7 @@ nextkey.mjs revoke &lt;label&gt; &lt;recipient&gt;</pre>
   </p>
 </footer>
 
-<script src="/i18n.js?v=01e2d7e4"></script>
+<script src="/i18n.js?v=99f19ead"></script>
 <script>
 /**
  * The same overlay as the other two pages, same storage keys, so a language or

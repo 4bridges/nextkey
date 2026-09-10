@@ -122,6 +122,24 @@ for (const page of PAGES) {
   for (const m of html.matchAll(/data-i18n(?:-html|-ph|-title)?="([^"]+)"/g)) {
     if (!used.has(m[1])) used.set(m[1], null)
   }
+
+  // A fifth spelling, and the first one whose absence was about to cost
+  // something. The page title and the meta description are not elements the
+  // overlay can address by attribute — they are set by the small inline script
+  // at the foot of every page, as `base['meta.title']` and `pick('meta.title')`.
+  // Four keys live only there: meta.title and meta.desc on the landing page,
+  // d.meta.title and d.meta.desc on the live view and the two legal pages.
+  //
+  // This pass exists because they were reported as unused and very nearly
+  // deleted. Deleting them would not have broken a test or thrown an error: it
+  // would have left every page's title and description in English in nine
+  // languages, which nobody reading English could ever notice. The same lesson
+  // as the four spellings above and the two missing pages above that, arriving
+  // for the fourth time — and the first time where the checker's mistake was
+  // an instruction to remove something that works.
+  for (const m of html.matchAll(/\b(?:base|pick)\(?\[?\s*'([a-z][a-z0-9]*(?:\.[a-z0-9]+)+)'/g)) {
+    if (!used.has(m[1])) used.set(m[1], null)
+  }
 }
 
 for (const file of SOURCES) {
