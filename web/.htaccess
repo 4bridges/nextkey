@@ -56,6 +56,32 @@
   RewriteEngine On
   RewriteBase /
 
+  # ── Addresses that predate the prefix ─────────────────────────────────────
+  #
+  # `demo.html` was the playground. `demo` is now the network. A link written
+  # before this morning — in the README, in docs/decisions.md, in whatever has
+  # already been sent to somebody — means the playground, so it is answered
+  # with the tab it meant rather than with the prefix's front door. Without
+  # these, /demo.html landed on the ID tab and ?mode=message survived the trip
+  # to a page where it means nothing, which is the outcome this project
+  # explicitly refused when the tabs were split.
+  #
+  # The query string is carried through untouched, so ?lang=fa on an old link
+  # still arrives in Persian.
+  #
+  # All three are guarded by THE_REQUEST for the same reason the stripper below
+  # is: /demo/passphrase is rewritten to /send.html internally, and an
+  # unguarded ^send\.html$ would catch that rewrite and redirect the page it
+  # had just decided to serve.
+  RewriteCond %{THE_REQUEST} "\s/+demo\.html\?[^\s]*mode=message" [NC]
+  RewriteRule ^demo\.html$ /demo/message [R=301,L]
+
+  RewriteCond %{THE_REQUEST} "\s/+demo\.html[\s?]" [NC]
+  RewriteRule ^demo\.html$ /demo/passphrase [R=301,L]
+
+  RewriteCond %{THE_REQUEST} "\s/+send\.html[\s?]" [NC]
+  RewriteRule ^send\.html$ /demo/passphrase [R=301,L]
+
   # /explorer.html → /explorer, once. THE_REQUEST is the original request line,
   # so the internal rewrites below cannot re-enter this and loop.
   RewriteCond %{THE_REQUEST} "\s/+([^\s?]+)\.html[\s?]" [NC]
@@ -77,6 +103,20 @@
   # is a 404 on a tab in the navigation, which is what it was before this line
   # existed.
   RewriteRule ^demo/(passphrase|message)/?$ /send.html [L]
+
+  # `send` is a file name, not a tab, and it has no address of its own — the
+  # two addresses this one file answers to are the two above.
+  #
+  # It needs saying in rules because nothing else says it. The stripper above
+  # turns /send.html into /send; `send` is absent from the mainnet list below,
+  # because that list is tabs; and the catch-all at the end then finds
+  # send.html on disk and serves it with a 200. The result was the playground
+  # answering at /send — a Sepolia page sitting in the namespace reserved for
+  # mainnet, whose own relative tab links resolve from there into that
+  # namespace. /demo/send reached it the same way, through the generic rule
+  # below, giving one page four addresses.
+  RewriteRule ^demo/send/?$ /demo/passphrase [R=301,L]
+  RewriteRule ^send/?$ /demo/passphrase [R=301,L]
 
   # Every other /demo/<tab> → <tab>.html, internally. The condition is what
   # keeps this honest: an address that names no page falls through to a 404

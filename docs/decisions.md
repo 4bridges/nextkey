@@ -1506,3 +1506,137 @@ written, and the local runtime refuses a date it does not know — the date sele
 *behaviour*, it is not a version stamp. And the route was written
 `api.nextkey.li/*`; a custom domain hands the worker the whole hostname, so
 there is nothing to filter and a path is rejected.
+
+---
+
+## 2026-09-10 (night) — Three tabs nobody could reach, and the browser that found them
+
+**The header bar is symbols now, and the reason is not that it looks tidier.**
+
+`nav.barnav` is a flex row with `white-space: nowrap` on its links and no
+`flex-wrap`. Eight words need 462px. At 375px the last three — *explorer*,
+*blog*, *donate* — ran off the right edge, and the page does not scroll
+sideways, so there was no gesture that reached them. Not cramped: **absent**. At
+414px two were still gone. Every phone in portrait was missing three of the
+site's eight destinations, including the donation page the site asks people to
+visit.
+
+Eight icons need 327px. Measured rather than estimated, by building the new bar
+into the live page at 375px before a single file was edited: nothing clipped,
+one line, no horizontal overflow.
+
+**The label did not go away, it moved.** Each link keeps its word in a visually
+hidden span and in `title`, exactly as the house already did. Three things fall
+out of that and each was a reason on its own: a screen reader still reads
+*Explorer* rather than *link*, a hover still names an icon somebody cannot
+place, and the nine translations of `nav.*` stay in use instead of becoming dead
+weight the checker would eventually report as unused.
+
+**Rejected: a hamburger.** It hides eight destinations behind an interaction, and
+the interaction needs a state, an aria-expanded, a close-on-outside-click and a
+translation of the word *Menu*. That is more moving parts than the bar has, to
+solve a problem that eight glyphs solve by fitting.
+
+**Rejected: an overflow scroller.** `overflow-x: auto` on the bar would have made
+the three reachable and left them invisible — a tab you do not know exists is
+not much better than one you cannot reach, and a scroller with no affordance is
+how you get both.
+
+**Rejected: shorter words.** *Passphrase* is *Passphrase* in German too, and the
+forty pixels it might have saved would have been spent again in the next
+language. The bar was not too wide by a little.
+
+**The fix underneath is one property.** `flex-wrap: wrap`. The clipping was never
+a width chosen badly — it was a row with nowhere to go, and a second line is now
+always available. Symbols make it fit; wrapping makes it impossible for the same
+class of bug to return when a ninth destination is added.
+
+---
+
+**What actually found it: a browser with no wallet, which is the visitor's
+state, not a degraded one.**
+
+The manual test plan exists because the suites cannot press a button in
+MetaMask. That framing had quietly turned its wallet-free half into the cheap
+part — and four of the five findings this evening came from exactly there, on a
+browser where `window.ethereum` is `undefined`:
+
+- the three unreachable tabs;
+- **`/send` serves Sepolia from the mainnet namespace.** Every other legacy
+  address redirects into the prefix — `/explorer.html` → `/demo/explorer`, `/id`
+  → `/demo/id` — but `/send.html` redirects to `/send`, which answers 200 with
+  the playground and no redirect. Its relative tab links then resolve into the
+  mainnet space. A leftover from the `demo.html` → `send.html` rename;
+- **`demo.html` lands on the wrong tab.** It was the playground; it redirects to
+  `/demo/id`. And `demo.html?mode=message` becomes `/demo/id?mode=message`,
+  where `mode=message` means nothing — the query string quietly stopped meaning
+  what it meant, which is the outcome this log explicitly refused when the tabs
+  were split;
+- **three sentences in the no-wallet panel describe a different page.** Identical
+  in English and German, so not a translation artefact. *"This browser carries no
+  wallet — mobile browsers cannot"* is asserted unconditionally and is false on
+  the desktop browser where the panel appeared. *"The page starts again from step
+  1 there, because steps 1 to 5 happen entirely inside a tab"* describes the
+  playground; the ID tab has no steps. *"Or use the lane above, which needs no
+  wallet at all"* points at the button that produced the panel. The German copy
+  also switches to *Sie* in this one panel while the whole page says *du*.
+
+And one found while editing the markup: `poc.html` marks **Sandbox** as the
+current tab, and `send.html` marks none, so `/demo/passphrase` and
+`/demo/message` highlight nothing — one file serving two tabs cannot say in
+markup which one it is, and nothing sets it at runtime.
+
+**None of the 317 checks could have caught the first one**, and the reason is
+worth more than the bug. They assert that elements exist, that text is present,
+that a panel enters its `bad` state. Not one of them asks whether a link is
+*inside the viewport at a width somebody actually holds*. Existence and
+reachability are different questions, and this file has now recorded three times
+that a checker cannot report what it does not ask.
+
+The four remaining findings are open, in `docs/TESTPLAN-own-name.md` under
+*Open findings*, with what was observed rather than what was suspected. The
+plan itself was rewritten at the same time: it still pointed at `demo.html` and
+`explorer.html`, and it still put both receive lanes on the playground, where
+they have not been since the tabs were split this morning. A test plan that
+describes last week's site fails in the worst available way — it passes.
+
+---
+
+**Two of the four were `.htaccess`, and both were fixed the same evening.**
+
+`/send` and `demo.html` turned out to be one shape of mistake: a rename that
+moved a file into a namespace that already meant something else. `send.html`
+became a file with no address of its own the moment `passphrase` and `message`
+became the two addresses it answers to — but the generic rules did not know
+that, so the stripper made `/send` out of it and the catch-all found the file on
+disk and served it 200. `demo.html` collided with the `demo` prefix in the other
+direction and was swallowed by the network's front door, taking `?mode=message`
+to a page where it means nothing.
+
+Five explicit 301s now answer the old spellings with the tab they meant, query
+string intact so an old `?lang=fa` link still arrives in Persian.
+
+**The interesting part is the guard.** `/demo/passphrase` is rewritten to
+`/send.html` *internally*, and mod_rewrite re-runs the whole ruleset after an
+internal rewrite. An unguarded `^send\.html$` redirect would therefore have
+matched that rewrite on the second pass and bounced the page it had just decided
+to serve — the fix producing a loop the bug never had. The existing stripper
+already carried the answer in a comment written for the same reason, so the new
+rules match on `%{THE_REQUEST}` too.
+
+**Not executed here, and said rather than glossed.** There is no Apache in this
+environment, so the rules were desk-checked pass by pass and not run. The
+verification is six `curl -sI` lines in the test plan, together with the four
+addresses that must *not* have moved — `/demo/passphrase`, `/demo/message`,
+`/demo`, `/explorer.html` — because that guard is exactly where a wrong answer
+would show. They are 301s, so they are checked with curl and not in a browser
+that will cache a wrong one.
+
+**A contradiction found on the way and deliberately not fixed.**
+`web/README.md` warns that the existence test must be
+`RewriteCond %{REQUEST_FILENAME}.html -f` and **not** `%{DOCUMENT_ROOT}`,
+because on shared hosting the site often sits in a subdirectory of the account.
+The file uses `%{DOCUMENT_ROOT}/$1.html -f` in both places — and the tabs
+resolve on Cyon, so the site is not in a subdirectory there. Changing a working
+condition two days before a deadline to satisfy a warning about a host we do not
+have would be the wrong trade. The README now says both things instead of one.

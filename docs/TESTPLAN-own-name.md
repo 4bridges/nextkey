@@ -187,30 +187,45 @@ in English in all nine languages for a day before anyone noticed.
 
 ---
 
-## Open findings
+## Fixed on 10 September — verify after the next deploy
 
-Found on 10 September in a browser carrying no wallet. Each one is here rather
-than in a checkbox above because it is known to fail today.
+Three of the five findings have a fix in the repository and none of them has
+been seen working on the live host. Run these first; a fix nobody has watched
+take effect is a claim, not a fix.
 
-**1 · Three tabs are unreachable on a phone.** `nav.barnav` was a flex row that
+**1 · Three tabs were unreachable on a phone.** `nav.barnav` was a flex row that
 never wrapped, and eight words needed 462px. At 375px *explorer*, *blog* and
 *donate* were cut off the right edge, and the page does not scroll sideways, so
-there was no way to reach them; at 414px two were still gone. Addressed by
-making the bar symbols and letting it wrap — re-check it here rather than
-assuming, at 320px as well as 375px.
+there was no way to reach them; at 414px two were still gone. The bar is symbols
+now and wraps. Measured at 327px in an injected copy — not yet on the host.
 
-**2 · `/send` serves Sepolia from the mainnet namespace.** Every other legacy
-address redirects into the prefix — `/explorer.html` → `/demo/explorer`, `/id` →
-`/demo/id` — but `/send.html` redirects to `/send`, which answers 200 with the
-playground and no redirect. A testnet page sitting at a mainnet address, whose
-relative tab links then resolve into the mainnet space. Likely a leftover from
-the `demo.html` → `send.html` rename.
+- [ ] At 375px and again at **320px**: all eight reachable, one line or two, and `document.scrollWidth === document.clientWidth`.
+- [ ] Hover names each icon, in `de` and in `fa` as well as English — `data-i18n-title` is one of the spellings `i18n-check` only learned to read yesterday.
 
-**3 · `demo.html` lands on the wrong tab.** It was the playground; it now
-redirects to `/demo/id`. And `demo.html?mode=message` becomes
-`/demo/id?mode=message`, where `mode=message` means nothing — the query string
-quietly stopped meaning what it meant, which is the answer this project
-explicitly rejected when the tabs were split.
+**2 · `/send` served Sepolia from the mainnet namespace**, and **3 ·
+`demo.html` landed on the wrong tab.** Both were `.htaccess`: the stripper turns
+`/send.html` into `/send`, `send` is absent from the mainnet list because that
+list is tabs, and the catch-all then found `send.html` on disk and served it
+200. `demo.html` fell into the `demo` prefix's front door and took
+`?mode=message` to a page where it means nothing. Five explicit 301s now answer
+the old spellings with the tab they meant.
+
+Check with `curl -sI`, **not** in a browser — these are 301s and a browser will
+cache a wrong answer for a long time.
+
+- [ ] `curl -sI https://nextkey.li/send.html` → 301 to `/demo/passphrase`
+- [ ] `curl -sI https://nextkey.li/send` → 301 to `/demo/passphrase`
+- [ ] `curl -sI https://nextkey.li/demo/send` → 301 to `/demo/passphrase`
+- [ ] `curl -sI 'https://nextkey.li/demo.html'` → 301 to `/demo/passphrase`
+- [ ] `curl -sI 'https://nextkey.li/demo.html?mode=message'` → 301 to `/demo/message`
+- [ ] `curl -sI 'https://nextkey.li/demo.html?lang=fa'` → 301 that still carries `lang=fa`
+- [ ] **And the ones that must not have moved:** `/demo/passphrase` and `/demo/message` answer 200 with the playground; `/demo` still 302s to `/demo/id`; `/explorer.html` still 301s to `/demo/explorer`. The new rules sit above the stripper and are guarded by `THE_REQUEST`, because `/demo/passphrase` is rewritten to `/send.html` internally and an unguarded rule would bounce the page it had just decided to serve. If that guard is wrong, these four are where it shows.
+
+---
+
+## Open findings
+
+Found on 10 September in a browser carrying no wallet, and unfixed today.
 
 **4 · Three sentences in the no-wallet panel do not describe the ID tab.**
 Identical in English and German, so not a translation artefact. *"This browser

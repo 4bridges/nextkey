@@ -85,6 +85,23 @@ from the `.html` form so one spelling stays canonical.
 > `DOCUMENT_ROOT` points at the account rather than at the site — so the condition asks
 > whether a file exists somewhere it never was, fails quietly, and leaves a 404 that looks
 > like a missing page.
+>
+> The file currently uses `%{DOCUMENT_ROOT}/$1.html -f` in both places and the tabs do
+> resolve on Cyon, so the site is not sitting in a subdirectory there. The warning above
+> is still the one to keep: it is about the day that changes.
+
+**Addresses that predate the prefix.** `demo.html` was the playground before `demo` became
+the network, and `send.html` is a file rather than a tab — the two addresses that one file
+answers to are `/demo/passphrase` and `/demo/message`. Five explicit 301s send the old
+spellings to the tab they meant, `demo.html?mode=message` included, and `/send` and
+`/demo/send` with them. Without those, the generic rules answered `/send` with a 200: a
+Sepolia page in the namespace reserved for mainnet, whose relative tab links then resolve
+from there into that namespace.
+
+> They are guarded by `%{THE_REQUEST}` like the stripper, and for a sharper reason.
+> `/demo/passphrase` is rewritten to `/send.html` *internally*, so an unguarded
+> `^send\.html$` would match that rewrite on the ruleset's second pass and redirect the
+> page it had just decided to serve — a loop produced by the fix rather than by the bug.
 
 ## Building the bundles
 
