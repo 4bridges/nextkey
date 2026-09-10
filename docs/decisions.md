@@ -1032,3 +1032,66 @@ nothing would look wrong until somebody complained.
 
 The name that run created belongs to a key that no longer exists. That is not a
 loose end, it is the demonstration: the contract cannot take it back either.
+
+## 2026-09-10 — owning a name is not the same as being able to use it
+
+The registrar worked and the feature still did not exist. Before writing a line
+of browser code, one question that had never been asked: **may the owner of a
+claimed name write its records?**
+
+No. Measured, not assumed — `scripts/probe-own-write.mjs` puts the same
+`setText` to the resolver as three different callers and reports each answer:
+
+```
+owner        setText(bytes)   refused  EACUnauthorizedAccountRoles(resource, 0x10, owner)
+page key     setText(bytes)   ACCEPTED
+stranger     setText(bytes)   refused
+```
+
+`0x10` is bit 4, `ROLE_SET_TEXT`, and this resolver grants it **at the root** —
+there is no per-name version it will accept. Writing a record is a permission of
+the *resolver*; the registry's `SET_RESOLVER` and `SET_SUBREGISTRY` say nothing
+about it. So a name handed out by the first contract existed, belonged to its
+new owner, and was useless to them: they could not publish the key that makes a
+name receivable. A failure that looks like success, discovered by asking rather
+than by a visitor.
+
+**Version two writes the record itself.** `claim(label, to, pubkey)` registers
+the name and publishes `nextkey.pubkey` on it in one transaction, paid by the
+person receiving the name. For that the contract holds `ROLE_SET_TEXT` as well —
+the same role the demo page's key already has. The difference is the argument
+for the whole design: a key is bounded by whoever is holding it; a contract is
+bounded by its own code, and this one writes exactly one record, under exactly
+one key name, on a name it created seconds earlier in the same call. Both roles
+are granted without their admin bit and revoked in one transaction each.
+
+`dnsEncode` is `public pure` so anybody can check which bytes go to the
+resolver instead of trusting that they are right, and the parent is a constant:
+this contract hands out names under one parent only, and computing that from
+something changeable would invite the two to disagree.
+
+**`check` now reports both halves.** A grantee with one and not the other is
+precisely the state that shipped for twenty minutes, so the script says so
+itself when they disagree: *"Only half of what a registrar needs. A name it
+creates will exist and carry no key, which fails later and somewhere else."*
+
+**And the test read the record the wrong way.** The first run of the six checks
+failed on the new one, and the contract was innocent: `prove-names.mjs` asked
+the resolver directly. That resolver has neither `text(bytes,string)` nor
+`text(bytes32,string)`, and a missing function reverts with empty data — exactly
+like a refusal, exactly the trap written down twice already in this file. Wrong
+twice over, because even a working direct read would prove the wrong thing: what
+must be true is that a *visitor's browser* can find the key, and a browser goes
+through the Universal Resolver. It now reads with `getEnsText` against the
+hackathon Universal Resolver, with the override the page uses — forget that
+override and the lookup silently resolves against production ENS and answers
+"no record".
+
+Same lesson, third time in this file: every failure that looked like a flake was
+a real defect wearing a bad error message — and this time the defect was in the
+test, which is the only reason the contract survived the accusation.
+
+**Where it stands.** `0xc3b7…1863` on Sepolia holds both roles, cap 500. Six
+assertions hold against the chain. The first contract, `0x7716…ca98`, has been
+revoked: one door, not two. The names either of them handed out are untouched by
+any of that, which is the property the whole arrangement exists to have.
