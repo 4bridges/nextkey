@@ -5,12 +5,20 @@ How NextKey is put together, and — more usefully — where its boundaries are.
 The one sentence the rest of this document elaborates:
 
 > **Confidentiality comes from cryptography. Control comes from protocol roles.
-> Nothing comes from a server of ours, because there isn't one.**
+> Nothing you rely on comes from a server of ours.**
 
-Conflating those two is how a design ends up claiming that a public chain keeps
-secrets. It does not, and no chain could: everything written to ENS is readable
-by everyone, forever. What ENS enforces is *who may write* — and that turns out
-to be enough for the half of the problem it is asked to solve.
+Conflating the first two is how a design ends up claiming that a public chain
+keeps secrets. It does not, and no chain could: everything written to ENS is
+readable by everyone, forever. What ENS enforces is *who may write* — and that
+turns out to be enough for the half of the problem it is asked to solve.
+
+The third sentence used to read *"because there isn't one"*, and until
+10 September that was literally true. There is one now — `api.nextkey.li`, a
+read-only window onto the chain for callers with no node of their own — so the
+sentence was rewritten rather than left standing next to a running endpoint. It
+holds no key, signs nothing, writes nothing and is never shown a plaintext;
+take it away and nothing stops working. See *The one server* below, which
+states what it costs as well as what it is.
 
 ---
 
@@ -45,8 +53,10 @@ Three properties fall out of this picture and are worth stating before the
 diagrams that follow.
 
 **We hold nothing.** There is no database, no key escrow, no account. Take
-`nextkey.li` offline and every secret in the system remains readable by exactly
-the people who could read it before, using the command-line tool against ENS.
+`nextkey.li` and `api.nextkey.li` offline and every secret in the system remains
+readable by exactly the people who could read it before, using the command-line
+tool against ENS. The API is a convenience for callers who cannot reach a node,
+not a component anything depends on.
 
 **The recipient never registers.** Her public key is a text record on her own
 name. Encrypting to her requires her name and nothing else — no invitation, no
@@ -244,14 +254,17 @@ this fallback rests on, measured rather than cited.
 flowchart TB
   eth["nextkey.eth"] --> reg["UserRegistry<br/>0x6120…7908"]
   reg --> subs["visa · vault · anna · bob · AI-agent"]
-  reg --> pool["hero01 … hero20"]
+  reg --> pool["hero01 … hero200"]
+  reg --> claimed["names a visitor claimed<br/>owner = their address"]
 
   subs --> r1["Permissioned Resolver<br/>0x52A0…4101"]
   pool --> r2["Permissioned Resolver<br/>0x04B2…cA65"]
+  claimed --> r2
 
   owner["Registrar 0x9780…dd0B"] -->|"root roles"| r1
   owner -->|"root roles"| r2
   demo["Key published in the page<br/>0x45f0…C62b"] -->|"root roles"| r2
+  names["NextKeyNames 0xc3b7…1863<br/>REGISTRAR + SET_TEXT, cap 500"] -->|"one name per address,<br/>one record per name"| r2
   AI-agent["Release AI-agent 0xABCf…b59c"] -->|"one setter, one key, one name"| r1
 ```
 
@@ -268,6 +281,86 @@ name. Root roles on a resolver of their own were the way through. The blast
 radius then follows from which resolver a name uses rather than from an
 enumeration of grants — coarser than we wanted, and bounded by construction.
 Written up as finding 11 in [`FEEDBACK-ENS.md`](../FEEDBACK-ENS.md).
+
+---
+
+## The shape of the site: the network is a path
+
+One set of files serves every chain this will ever run on.
+
+    /demo/<tab>   the hackathon deployment on Sepolia
+    /<tab>        mainnet, once it exists
+
+A page reads which network it is on off its own path, and never has to be told.
+Two conventions make that work, and both are enforced rather than remembered:
+assets and bundles are root-absolute (`/i18n.js`) so they are the same URL at
+both depths and the browser caches them once — `stamp-assets` *fails* on a
+relative script tag, because a relative `./send.js` works at `/passphrase` and
+404s at `/demo/passphrase`, broken on exactly one of the two addresses a page
+answers to. Links between tabs are relative and extension-less (`./explorer`),
+so the prefix carries itself.
+
+Rejected: a second copy of the site under `/demo/`, which doubles a translation
+surface of 653 keys in ten languages and guarantees the two halves drift.
+Rejected too: `<base href="/">`, which would fix the assets and break the links
+— `./explorer` from `/demo/id` would then lead to mainnet. The asymmetry is the
+design.
+
+The tabs are **ID**, **Passphrase**, **Message**, **Sandbox**, plus the
+explorer, the blog, the donation page and the live view. `passphrase` and
+`message` are two addresses rather than a control on one page, because a choice
+made after arriving cannot be linked to, bookmarked or undone with the back
+button. One file serves both and one bundle serves three; the five steps are
+identical from step 2 on, which is the honest reason a "messenger" is not a
+second product here. The file is `web/send.html` — it was `demo.html` until
+`demo` became the network prefix, and a file called `demo.html` served at
+`/demo/passphrase` misleads the next person reading the repository.
+
+Launching mainnet is deleting five lines from `web/.htaccess`.
+
+---
+
+## The NextKey ID
+
+`nextkey.pubkey` holds 44 characters of base64. Every way that is wrong to put
+in front of a person is a way to send a secret to the wrong one: it cannot be
+read aloud, it cannot be compared at a glance, a truncated copy looks exactly
+like a complete one, and its punctuation does not survive a chat window that
+thinks a slash starts a command.
+
+    NK-9F3KD-2M0RQ-7XB4T
+
+Seventy bits of SHA-256 over the published key, in Crockford's Base32 — no I, L,
+O or U, so a one cannot be read as an el — plus one check character, weighted by
+position rather than summed, because an unweighted sum does not move when two
+neighbouring characters are transposed, and transposition is exactly what
+happens when somebody reads an ID off one screen and types it into another.
+
+**Derived, never issued.** An allocated ID needs a registry, a registry needs an
+indexer that a static site does not have, and a collision needs somebody to
+resolve it. Deriving costs none of that: nothing is written to the chain for an
+ID, every name that already publishes a key already has one, and the same key
+gives the same ID to anybody who computes it, offline.
+
+**What it is not,** said on the page as well as here: not a secret, not a
+permission, not a replacement for the key. The key stays in `nextkey.pubkey` and
+is what the arithmetic uses; the ID is what the interface says. Seventy bits is
+not offered as a cryptographic commitment — it is enough that two people in a
+room never see the same ID. Anyone verifying rather than reading compares the
+key, and the explorer prints it on the line below.
+
+`looksLikeNextkeyId` is named for what it can answer: the characters are in the
+alphabet and the check symbol agrees. It never says anybody holds the ID, or
+that a name publishes the key it came from.
+
+**One implementation, deliberately — the opposite of the wrapping rule.**
+`scripts/nextkey-core.mjs` re-exports it from `web/src/nk-crypto.mjs`. Two
+implementations of the *cryptography* earn their cost because `interop.mjs`
+checks them against each other; the ID is presentation, and a second copy could
+only be a second thing to keep in step. It is checked in interop all the same,
+in Node and in Chromium, because a display rule that disagreed between them
+would have two people comparing IDs over the phone conclude they were talking
+about different keys — and a wrong "no" costs as much as a wrong "yes" here.
 
 ---
 
@@ -307,6 +400,66 @@ anything.
 
 ---
 
+## The one server
+
+`api.nextkey.li` is a read-only window onto the chain, for people and agents
+with no RPC endpoint of their own. Source in [`api/`](../api).
+
+```
+GET  /demo/v1/health
+GET  /demo/v1/name/anna.nextkey.eth
+GET  /demo/v1/id/anna.nextkey.eth
+GET  /demo/v1/openapi.json
+```
+
+The network is a path prefix here for the same reason it is one on the site.
+`/v1/…` is reserved for mainnet and answers **501, not 404** — a 404 would read
+as "no such route" and send an agent hunting a spelling mistake it will never
+find; the reply names the address that works.
+
+**What it is not.** It holds no key, signs nothing, writes nothing and is never
+shown a plaintext. Everything it returns is already public on chain and readable
+without it: the pages read the chain from the visitor's browser and
+`scripts/nextkey.mjs` reads it directly. Take it away and nothing stops working.
+That is the design rather than a happy accident — a system whose confidentiality
+rested on a server we run would be a different product, and a worse one to
+defend.
+
+**What it costs.** Using it means telling *us* which name you are looking up, on
+top of telling a node. So there is nowhere for that to be written down: no
+request log, no analytics, no KV, no D1, no R2. The absence in
+`api/wrangler.toml` is the configuration rather than a policy promising
+restraint, and there are no API keys, so there is nothing to correlate lookups
+with even in principle. The residue we do not control is Cloudflare's edge
+logging, and it is named in the privacy notice rather than left out of it.
+
+**Two kinds of "no" never share a status code.** `404 no_published_key` is a
+fact about the chain. `502 upstream_unavailable` is a fact about our luck, says
+so in its own message, and is never cached. A third exists because the chain
+permits it: `422 key_not_x25519`, for a name whose `nextkey.pubkey` holds
+something that is not a 32-byte key — inventing a NextKey ID for that would put
+a confident, checkable-looking identifier under a value that identifies nobody.
+This is the scanner lesson of 2026-09-05 wearing an HTTP status: a component
+that cannot distinguish absence from failure is worse than none.
+
+**The Sandbox page asks rather than asserts.** A documentation page makes a
+claim about something outside itself and goes on making it after that thing
+stops answering. So the page probes `/health` from the reader's own browser,
+shows what came back verbatim including a failure, and never prints "live" on
+its own authority. `web/test/sandbox.mjs` points it at a port nothing is
+listening on and asserts that it *says so*.
+
+**DNS.** `nextkey.li` runs on Cloudflare's nameservers since 10 September,
+because a Workers custom domain needs the zone in the same account; the
+registrar stays Cyon. Everything pointing at Cyon is DNS-only on purpose — the
+site lives on its own cache headers and `.htaccess` rewrites, and a second
+caching layer with its own rules is how the page-and-bundle mismatch those
+headers exist for gets reintroduced. `mail` in particular: the MX points at
+`mail.nextkey.li`, and a proxied record there would answer with Cloudflare
+addresses, which speak no SMTP.
+
+---
+
 ## What an observer can and cannot determine
 
 Assume the strongest realistic adversary: they have read every public value in
@@ -342,9 +495,21 @@ a key or a typed message contains.
 The last two rows are what version 2 bought. The first two are the honest cost
 of putting anything on a public chain, and no amount of design removes them.
 
+**A different observer, worth separating out.** Everything above is about
+somebody reading the chain. Whoever *serves* the reads sees something the chain
+does not publish: which names a particular browser looked up, and from which IP
+address. That has always been true of the public RPC node the pages use, and it
+is stated in the privacy notice for that reason. Since `api.nextkey.li` exists,
+a caller who uses it tells us the same thing — which is why nothing about a
+lookup is written down anywhere in it, and why every page still reads the chain
+directly rather than through it.
+
 **What we could do, if we wanted to.** We own the lent names, so we can write to
 them; a visitor using that lane is trusting us with a demonstration, not with a
-secret, and the page says so. We can also stop paying for `nextkey.li`, which
+secret, and the page says so. This project also holds `ROLE_SET_TEXT` at the
+root of the second resolver, so the key on a name it handed out could be
+overwritten by us — said in the result panel beside "it is yours", with the way
+out named. And we can stop paying for `nextkey.li` and `api.nextkey.li`, which
 would change nothing about any record already written.
 
 **What we could not do even if compelled.** Decrypt anything. There is no key to
@@ -383,6 +548,12 @@ donations: each needs an index over events, which a page served from static file
 does not have. Every one of those places says so rather than showing a number
 that would be quietly incomplete.
 
+**And the API did not become that indexer.** It would have been the obvious
+place to put one — a server exists now, and a KV namespace is one line of
+configuration. It answers one name at a time, reading through to the chain like
+everybody else, precisely so that the sentence above stays true and the absence
+in `api/wrangler.toml` keeps meaning what it says.
+
 **A limit of the public endpoint, not of the design.** Public RPCs refuse wide
 log ranges. Each walk probes for the widest window the node will serve, reports
 how far back it actually looked, and prints a refusal as a refusal — because "the
@@ -407,7 +578,13 @@ and the boundary it cannot cross are real and on chain; the process that drives
 them is a script on a laptop.
 
 **No indexer.** Grant counts, a global list of posts and incoming ETH donations
-all need one. Each place that would want it says what it cannot show instead.
+all need one. Each place that would want it says what it cannot show instead —
+including the API, which could have become one and did not.
+
+**The API writes nothing.** There is no endpoint that seals, shares, revokes or
+publishes, and there will not be one while the worker holds no key. Anything
+that changes the chain is signed by the person it belongs to, in their browser
+or on their machine.
 
 **Storage is a text record.** Small secrets — a passphrase, a seed phrase — fit.
 Files do not, and would need IPFS or similar. That is a stretch goal and was
