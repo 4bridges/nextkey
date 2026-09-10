@@ -20,6 +20,24 @@ pragma solidity ^0.8.20;
  *   · a deny list the operator can add to
  *   · a pause that stops everything without touching a single existing name
  *
+ * WHY IT WRITES THE RECORD TOO
+ *
+ * Owning a name is not the same as being able to use it. On this deployment's
+ * resolver, writing a text record needs ROLE_SET_TEXT, which is granted at the
+ * root and not per name — so the person who has just been given a name may not
+ * publish anything on it. Measured, not assumed: setText from the owner of a
+ * freshly claimed name reverts EACUnauthorizedAccountRoles(resource, 0x10, …).
+ *
+ * So this contract holds that role as well and publishes the key in the same
+ * transaction that creates the name. One transaction, paid by the person
+ * receiving the name, and this project's key never touches it.
+ *
+ * That role is the same one the demo page's key already holds. The difference
+ * is that a key is limited by whoever is holding it, and this is limited by the
+ * lines below: it writes exactly one record, under exactly one key name, on a
+ * name it created seconds earlier in the same call. It cannot be talked into
+ * touching anything else, and the role can be revoked in one transaction.
+ *
  * WHAT IT DELIBERATELY CANNOT DO
  *
  * It holds no funds and has no payable function. It cannot transfer a name,
@@ -61,6 +79,17 @@ interface IUserRegistry {
     function findOwner(string calldata label) external view returns (address);
 }
 
+interface IResolver {
+    /**
+     * The deployment's Permissioned Resolver takes the DNS-encoded name, not a
+     * namehash. Both shapes exist in the wild and the wrong one reverts with
+     * *empty* data — indistinguishable from "you are not allowed to do that".
+     * Probed against the deployed resolver before this line was written:
+     * setText(bytes,…) is accepted, setText(bytes32,…) reverts for everybody.
+     */
+    function setText(bytes calldata name, string calldata key, string calldata value) external;
+}
+
 contract NextKeyNames {
     // ─── What a claimant receives on their own name ────────────────────────
     // The same bitmap a stored secret gets: they may point the name at another
@@ -72,6 +101,10 @@ contract NextKeyNames {
     uint256 private constant OWNER_ROLES =
         ROLE_SET_SUBREGISTRY | (ROLE_SET_SUBREGISTRY << 128) |
         ROLE_SET_RESOLVER | (ROLE_SET_RESOLVER << 128);
+
+    /** "nextkey" "eth" and the terminating zero, DNS-encoded. */
+    bytes private constant PARENT = hex"076e6578746b65790365746800";
+    string private constant RECORD_PUBKEY = "nextkey.pubkey";
 
     IUserRegistry public immutable registry;
     address public immutable resolver;
@@ -87,6 +120,7 @@ contract NextKeyNames {
     mapping(address => bool) public denied;
 
     event Claimed(address indexed owner, string label, address indexed by);
+    event Published(address indexed owner, string label);
     event OperatorChanged(address indexed from, address indexed to);
     event RelayerChanged(address indexed relayer);
     event CapChanged(uint256 cap);
@@ -103,6 +137,7 @@ contract NextKeyNames {
     error EmptyLabel();
     error LabelTaken();
     error ZeroAddress();
+    error LabelTooLong(uint256 length);
 
     modifier onlyOperator() {
         if (msg.sender != operator) revert NotOperator();
@@ -127,19 +162,44 @@ contract NextKeyNames {
     }
 
     /**
-     * Hand out one name.
+     * Hand out one name, and publish a key on it.
      *
      * Every rule is checked before the registry is touched, and the record of
      * the claim is written before the external call — so a registry that
      * re-entered would find this address already spent rather than a second
      * allowance.
+     *
+     * `pubkey` may be empty, and then no record is written: a name is worth
+     * having on its own, and refusing to create one because the caller had
+     * nothing to publish would be a rule with no reason behind it.
      */
+    function claim(string calldata label, address to, string calldata pubkey) external {
+        _claim(label, to, pubkey);
+    }
+
+    /** The two-argument form, for a name without a key on it. */
     function claim(string calldata label, address to) external {
+        _claim(label, to, "");
+    }
+
+    /**
+     * `pubkey` is memory rather than calldata for one reason: the two entry
+     * points above, one of which has no pubkey to pass on. A calldata parameter
+     * cannot be given an empty literal, and inventing a sentinel value to work
+     * around that would put a special case in the caller's head instead of here.
+     */
+    function _claim(string calldata label, address to, string memory pubkey) internal {
         if (paused) revert Paused();
         if (to == address(0)) revert ZeroAddress();
         if (msg.sender != to && msg.sender != relayer) revert NotYoursToClaim();
         if (denied[to]) revert Denied();
-        if (bytes(label).length == 0) revert EmptyLabel();
+
+        uint256 len = bytes(label).length;
+        if (len == 0) revert EmptyLabel();
+        // A DNS label carries its length in one byte. Longer than 255 cannot be
+        // encoded at all, and finding that out inside the resolver would cost a
+        // failed transaction rather than a named error.
+        if (len > 255) revert LabelTooLong(len);
 
         string memory had = nameOf[to];
         if (bytes(had).length != 0) revert AlreadyClaimed(had);
@@ -162,7 +222,27 @@ contract NextKeyNames {
             uint64(block.timestamp) + duration
         );
 
+        // Written *after* the name exists and only for the name just created.
+        // This is the whole of what ROLE_SET_TEXT is used for here.
+        if (bytes(pubkey).length != 0) {
+            IResolver(resolver).setText(dnsEncode(label), RECORD_PUBKEY, pubkey);
+            emit Published(to, label);
+        }
+
         emit Claimed(to, label, msg.sender);
+    }
+
+    /**
+     * `label` + ".nextkey.eth", in the wire format the resolver expects:
+     * each label preceded by its length, terminated by a zero byte.
+     *
+     * The parent is a constant rather than a stored string because this
+     * contract only ever hands out names under one parent — the same one its
+     * registry belongs to — and computing it from something changeable would
+     * invite the two to disagree.
+     */
+    function dnsEncode(string calldata label) public pure returns (bytes memory) {
+        return abi.encodePacked(uint8(bytes(label).length), label, PARENT);
     }
 
     /** Has this address already been given a name here? */
