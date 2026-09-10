@@ -36,7 +36,7 @@ import { sepolia } from 'viem/chains'
 import { generateMnemonic, english, mnemonicToAccount } from 'viem/accounts'
 // The key this page lends to visitors, and the names it may write to. Its own
 // file, with the reasoning for publishing a private key at all.
-import { DEMO_KEY, POOL, POOL_RESOLVER } from './demo-wallet.js'
+import { DEMO_KEY, POOL, POOL_RESOLVER, NAMES_CONTRACT, NAMES_PARENT } from './demo-wallet.js'
 // The wrapping rule lives in its own module so that test/interop.mjs can load
 // it on its own and check a grant made by the Node construction opens with this
 // one. The .mjs extension is for Node's benefit: it imports this exact file, and
@@ -180,6 +180,7 @@ const REQUIRED_ELEMENTS = [
   'msg-edit', 'msg-edit-row', 'step1-state',
   's1-h', 's1-p', 's2-h', 's2-p',
   'gen-recipient', 'be-receivable', 'recv-state', 'id-out', 'r-out', 'ens-name', 'lookup',
+  'own-name-box', 'own-label', 'claim-name', 'own-state', 'claim-out',
   'go-store', 'store-out',
   'step-chain', 'write-demo', 'demo-out', 'demo-state',
   'connect', 'wallet-out', 'own-name', 'publish', 'publish-out',
@@ -864,6 +865,7 @@ const demoOut = $('demo-out')
  */
 let writing = false
 let receiving = false
+let claiming = false
 
 $('write-demo').addEventListener('click', async () => {
   if (writing) return
@@ -1119,6 +1121,185 @@ $('be-receivable').addEventListener('click', async () => {
     receiving = false
   }
 })
+
+
+// ─── A name of your own ────────────────────────────────────────────────────
+/**
+ * The registrar's rules, as the page needs to speak about them.
+ *
+ * Every error here is one the contract can return, and each is turned into a
+ * sentence rather than a selector, because a person typing a name into a box
+ * has no way to look one up. The two-argument `claim` is deliberately absent:
+ * this page always has a key to publish, and an ABI offering both invites
+ * picking the one that leaves the name unusable.
+ */
+const namesAbi = [
+  { name: 'claim', type: 'function', stateMutability: 'nonpayable',
+    inputs: [{ name: 'label', type: 'string' }, { name: 'to', type: 'address' },
+             { name: 'pubkey', type: 'string' }], outputs: [] },
+  { name: 'nameOf', type: 'function', stateMutability: 'view',
+    inputs: [{ name: '', type: 'address' }], outputs: [{ type: 'string' }] },
+  { name: 'remaining', type: 'function', stateMutability: 'view',
+    inputs: [], outputs: [{ type: 'uint256' }] },
+  { name: 'paused', type: 'function', stateMutability: 'view',
+    inputs: [], outputs: [{ type: 'bool' }] },
+  { type: 'error', name: 'AlreadyClaimed', inputs: [{ name: 'label', type: 'string' }] },
+  { type: 'error', name: 'CapReached', inputs: [{ name: 'cap', type: 'uint256' }] },
+  { type: 'error', name: 'LabelTooLong', inputs: [{ name: 'length', type: 'uint256' }] },
+  { type: 'error', name: 'Denied', inputs: [] },
+  { type: 'error', name: 'Paused', inputs: [] },
+  { type: 'error', name: 'EmptyLabel', inputs: [] },
+  { type: 'error', name: 'LabelTaken', inputs: [] },
+  { type: 'error', name: 'NotYoursToClaim', inputs: [] },
+  { type: 'error', name: 'ZeroAddress', inputs: [] },
+]
+
+/**
+ * What the contract refused, said in words.
+ *
+ * Falls through to the raw message rather than inventing one: a sentence that
+ * confidently explains the wrong thing is worse than an ugly one that is true.
+ */
+const claimRefusal = (e) => {
+  const named = e?.walk?.((x) => x?.data?.errorName)?.data ?? e?.cause?.data
+  switch (named?.errorName) {
+    case 'AlreadyClaimed': return t('t.own.e.already',
+      'This wallet already has a name here:') + ` ${named.args?.[0] ?? ''}.${NAMES_PARENT}`
+    case 'LabelTaken': return t('t.own.e.taken',
+      'That name is taken. Nothing can take a name away from whoever holds it — including us, which is the property that makes this safe to offer.')
+    case 'CapReached': return t('t.own.e.cap',
+      'Every name this contract will ever hand out has been handed out. The limit is written into it and cannot be talked around.')
+    case 'LabelTooLong': return t('t.own.e.long',
+      'That name is too long. A name carries its length in a single byte, so 255 characters is the ceiling everywhere, not only here.')
+    case 'Denied': return t('t.own.e.denied', 'This address is on the deny list.')
+    case 'Paused': return t('t.own.e.paused',
+      'Handing out names is paused. Names already given out are unaffected — pausing cannot reach into one.')
+    case 'EmptyLabel': return t('t.own.e.empty', 'Type the name you would like first.')
+    case 'NotYoursToClaim': return t('t.own.e.notyours',
+      'A name can only be claimed by the address that will own it. That is what stops a passer-by spending your one allowance on a name you never wanted.')
+    default: return plain(e)
+  }
+}
+
+/**
+ * One transaction: the name and the key on it.
+ *
+ * The lent name above costs a signature and no gas because our key writes the
+ * record. This costs a transaction the visitor signs and pays for, and what
+ * they get back is different in kind — the registry names *their* address as
+ * the owner, and nothing here can take it back or move it.
+ *
+ * The key is the same key. It comes out of the same signature over the same
+ * message, so somebody who was receivable at a lent name and then claims one of
+ * their own keeps their identity and changes only their address. That is the
+ * whole reason the key was never tied to the name.
+ */
+$('claim-name').addEventListener('click', async () => {
+  const out = $('claim-out')
+  if (claiming) return
+
+  /**
+   * The typed name is judged before any wallet is asked for.
+   *
+   * Checking it here as well as on chain is not duplication: the contract's
+   * rules are the ones that bind, but somebody who typed a space deserves to
+   * hear about it without a wallet opening first — and a visitor with no wallet
+   * at all should still be told their name would not have worked.
+   */
+  const label = $('own-label').value.trim().toLowerCase()
+  if (!label) return say(out, 'bad', `<p>${t('t.own.e.empty', 'Type the name you would like first.')}</p>`)
+  if (!/^[a-z0-9-]+$/.test(label)) return say(out, 'bad', `
+    <p>${t('t.own.e.chars', 'Letters a to z, digits and hyphens. Nothing else — a name with anything else in it cannot be typed reliably by the person you give it to.')}</p>`)
+
+  const eth = announced[0]?.provider ?? window.ethereum
+  if (!eth) return offerDeepLinks()
+
+  claiming = true
+  $('claim-name').disabled = true
+  try {
+    const [addr] = await eth.request({ method: 'eth_requestAccounts' })
+    try {
+      await eth.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0xaa36a7' }] })
+    } catch { /* checked next */ }
+    const chainId = await eth.request({ method: 'eth_chainId' })
+    if (parseInt(chainId, 16) !== 11155111) return say(out, 'bad', `
+      <p>${t('t.s6.wrongchain', 'That wallet is not on Sepolia.')}</p>
+      <p class="note">${t('t.s6.wrongchainnote', 'The hackathon ENS deployment lives on Sepolia. Switch the network and connect again.')}</p>`)
+
+    // Asked before a signature is requested. Being told "you already have one"
+    // after signing is a worse experience than being told before, and the
+    // answer costs one call.
+    const had = await reader.readContract({
+      address: NAMES_CONTRACT, abi: namesAbi, functionName: 'nameOf', args: [addr] })
+    if (had) {
+      const full = `${had}.${NAMES_PARENT}`
+      ownedAt(full)
+      return say(out, 'ok', `
+        <p>${t('t.own.e.already', 'This wallet already has a name here:')} <span class="mono">${esc(full)}</span></p>
+        <p class="note">${t('t.own.alreadynote', 'One name per address, for ever. Nothing was signed and nothing was spent.')}</p>`,
+        { step: 2, recipient: 'owned', name: full, wrote: false })
+    }
+
+    say(out, 'busy', `<p>${t('t.id.signing', 'Asking your wallet for one signature — it moves nothing and costs nothing…')}</p>`)
+    const signer = createWalletClient({ account: addr, chain: sepolia, transport: custom(eth) })
+    const sig = await signer.signMessage({ message: identityMessage() })
+    const value = b64(publicKeyOf(identitySecretFromSignature(sig)))
+
+    /**
+     * Simulated before the wallet is asked for anything expensive.
+     *
+     * This is where a taken name, a cap that has been reached or a paused
+     * contract shows up — as a named error that can be turned into a sentence,
+     * instead of as a failed transaction the visitor has already paid for.
+     */
+    say(out, 'busy', `<p>${t('t.s6.simulating', 'Checking the write would succeed, before asking you to sign…')}</p>`)
+    await reader.simulateContract({
+      address: NAMES_CONTRACT, abi: namesAbi, functionName: 'claim',
+      args: [label, addr, value], account: addr })
+
+    say(out, 'busy', `<p>${t('t.own.sending', 'One transaction: the name and your key on it. Your wallet will ask you to pay for it…')}</p>`)
+    const hash = await signer.writeContract({
+      address: NAMES_CONTRACT, abi: namesAbi, functionName: 'claim',
+      args: [label, addr, value], chain: sepolia })
+    await reader.waitForTransactionReceipt({ hash })
+
+    const full = `${label}.${NAMES_PARENT}`
+    try { localStorage.setItem(REMEMBERED, JSON.stringify({ name: full, value })) } catch { /* fine */ }
+    ownedAt(full)
+    say(out, 'ok', `
+      <p>${t('t.own.done', 'It is yours. Secrets can be sent to')} <span class="mono">${esc(full)}</span>.</p>
+      <dl>
+        <dt>${t('t.name', 'name')}</dt><dd class="mono">${esc(full)}</dd>
+        <dt>${t('t.own.owner', 'owner')}</dt><dd class="mono break">${esc(addr)}</dd>
+        <dt>${t('t.pubkey', 'published key')}</dt><dd class="mono break">${esc(value)}</dd>
+      </dl>
+      <p class="note"><a href="https://sepolia.etherscan.io/tx/${esc(hash)}" target="_blank" rel="noopener noreferrer">${t('t.tx', 'transaction')}</a></p>
+      ${why(t('t.why', 'Why this matters'), `
+        <p>${t('t.own.note1', 'The registry names your address as the owner. Nothing on this page can move it, change it or take it back, and neither can the contract that made it — that is what "yours" has to mean before it is worth saying.')}</p>
+        <p>${t('t.own.note2', 'What is still ours: this project holds the permission to write text records on this resolver, so the key on your name could be overwritten by us. Point the name at a resolver you control and even that stops being true.')}</p>`)}`,
+      { step: 2, recipient: 'owned', name: full, publicKey: value, owner: addr })
+    refreshReady()
+  } catch (e) {
+    say(out, 'bad', `<p>${esc(claimRefusal(e))}</p>`)
+    $('claim-name').disabled = false
+  } finally {
+    claiming = false
+  }
+})
+
+/** The same "once, and visibly once" as the lent name, for the owned one. */
+function ownedAt(full) {
+  $('claim-name').disabled = true
+  $('own-label').disabled = true
+  $('own-state').textContent = `${t('t.own.at', 'yours:')} ${full}`
+  $('own-name-box').classList.add('done')
+  // Being receivable is now true by a different route, so the section above
+  // should not still be inviting a press that would spend a lent name.
+  $('be-receivable').disabled = true
+  $('recv-state').textContent = `${t('t.recv.at', 'receivable at')} ${full}`
+  $('be-receivable-box').classList.add('done')
+  if (!$('ens-name').value.trim()) $('ens-name').value = full
+}
 
 /**
  * Once, and visibly once.

@@ -421,6 +421,32 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     <div class="out" id="id-out" hidden></div>
   </section>
 
+  <!-- A name of your own ────────────────────────────────────────────────────
+       Below the lent name, not instead of it. The lent name costs one signature
+       and no gas and is the right first step for somebody trying this out; this
+       one costs a transaction the visitor pays and gives them something that is
+       theirs afterwards. Offering only the second would turn away everybody
+       without testnet ether, and offering only the first would mean nobody ever
+       owns anything. -->
+  <section class="step" id="own-name-box" style="padding-left:0">
+    <h2 data-i18n="t.own.h">Or take a name that is yours</h2>
+    <p data-i18n="t.own.p">The same key, on a name nobody can take back. A contract hands out one
+      name per address under <span class="mono">nextkey.eth</span> and publishes your key on it in the same
+      transaction — you pay for that transaction, and afterwards the name belongs to your address, not to us.
+      You can point it at another resolver whenever you like.</p>
+    <div class="row">
+      <input type="text" id="own-label" spellcheck="false" autocomplete="off"
+             aria-label="The name you would like, without the ending"
+             style="flex:1 1 12rem;min-width:0">
+      <span class="mono note" id="own-suffix">.nextkey.eth</span>
+      <button class="act ghost" id="claim-name" type="button" data-i18n="t.own.btn">Claim this name</button>
+      <span class="note" id="own-state"></span>
+    </div>
+    <p class="note" data-i18n="t.own.cost">This one needs Sepolia ether in your wallet, because you are the one
+      signing it. If you have none, the lent name above asks for nothing.</p>
+    <div class="out" id="claim-out" hidden></div>
+  </section>
+
   <!-- 1 ─────────────────────────────────────────────────────────────────── -->
   <section class="step">
     <div class="n">1</div>
@@ -634,7 +660,7 @@ nextkey.mjs revoke &lt;label&gt; &lt;recipient&gt;</pre>
   </p>
 </footer>
 
-<script src="./i18n.js?v=c268bed8"></script>
+<script src="./i18n.js?v=832bc51e"></script>
 <script>
 /**
  * The same overlay as the other two pages, same storage keys, so a language or
@@ -790,6 +816,6 @@ nextkey.mjs revoke &lt;label&gt; &lt;recipient&gt;</pre>
   label()
 })()
 </script>
-<script type="module" src="./demo.js?v=3045918b"></script>
+<script type="module" src="./demo.js?v=44757d78"></script>
 </body>
 </html>

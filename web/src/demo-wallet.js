@@ -61,3 +61,21 @@ export const POOL_RESOLVER = '0x04B2DB6567Cc68d059c061215Adf9a99adD1cA65'
  */
 export const POOL = Array.from({ length: 200 },
   (_, i) => `hero${String(i + 1).padStart(2, '0')}`)
+
+/**
+ * The registrar that hands out names somebody actually owns.
+ *
+ * No key here, and that is the point: this address holds ROLE_REGISTRAR on the
+ * registry and ROLE_SET_TEXT on the resolver above, neither with its admin bit,
+ * and its rules are in contracts/NextKeyNames.sol where anyone can read them —
+ * one name per address, a hard cap, a deny list, a pause. The transaction is
+ * signed by the visitor's own wallet, so nothing of ours is spent and nothing
+ * of ours is risked.
+ *
+ * Deployed with scripts/deploy-names.mjs; proved from outside with
+ * scripts/prove-names.mjs before this line existed.
+ */
+export const NAMES_CONTRACT = '0xc3b7a8b73ed7022a594f236e60d33f5cc61b1863'
+
+/** The parent every name it hands out sits under. */
+export const NAMES_PARENT = 'nextkey.eth'
