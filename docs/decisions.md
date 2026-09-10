@@ -1297,3 +1297,87 @@ not the `['key', 'English']` pairs in `MODE_TEXT`, which is why the entire
 message-mode vocabulary had been shipping English to all nine languages without
 ever being reported missing. Both are the same lesson this file has now recorded
 three times: a checker that cannot see a spelling cannot report it.
+
+---
+
+## 2026-09-10 (later) — A server, named rather than glossed over
+
+**NextKey now runs one server, and the two legal pages say so before anybody
+finds out.**
+
+Until today the imprint's sentence was *"there is no server of ours between you
+and the chain"*, and it was true. The Sandbox tab needed an open API for callers
+with no Ethereum node, and the moment that exists the sentence stops being true
+— so it was rewritten rather than left standing next to a running endpoint.
+This project has been punished twice for a claim written down and not
+re-checked; a claim that was true when written and quietly stopped being true is
+the same fault with a longer fuse.
+
+What the API is: read-only, holds no key, signs nothing, writes nothing, is
+never shown a plaintext. Everything it returns is already public on chain and
+readable without it. **Take it away and nothing stops working** — the pages read
+the chain from the visitor's browser and `scripts/nextkey.mjs` reads it directly
+— and that is the design rather than a happy accident. A system whose
+confidentiality rested on a server we run would be a different product, and a
+worse one to have to defend.
+
+What it costs, and where that is written: using it means telling *us* which name
+you are looking up, on top of telling a node. The privacy notice already carried
+the harder version of that sentence about public nodes, so this one goes beside
+it. There is nowhere for a name to be written down — no request log, no
+analytics, no KV, no D1, no R2 — and the absence in `api/wrangler.toml` is the
+configuration rather than a policy promising restraint. No API keys either, so
+there is nothing to correlate lookups with even in principle. The residue we do
+not control is Cloudflare's edge logging, and it is named.
+
+**Two kinds of "no" never share a status code.** `404 no_published_key` is a
+fact about the chain; `502 upstream_unavailable` is a fact about our luck, says
+so in its own message, and is never cached. A third exists because the chain
+permits it: `422 key_not_x25519`, for a name whose `nextkey.pubkey` holds
+something that is not a 32-byte key. Inventing a NextKey ID for that would put a
+confident, checkable-looking identifier under a value that identifies nobody.
+The first two are the scanner lesson from 2026-09-05 wearing an HTTP status.
+
+**Mainnet answers 501, not 404.** `/v1/…` is reserved, and a 404 there would
+read as "no such route" and send an agent hunting a spelling mistake it will
+never find. The reply names the address that works. The network is a path prefix
+on the API for the same reason it is one on the site.
+
+**The Sandbox page asks rather than asserts.** A documentation page makes a
+claim about something outside itself and goes on making it after that thing
+stops answering — which is how a project ships a page confidently describing a
+502. So the page probes `/health` from the reader's own browser, shows what came
+back verbatim including a failure, and never prints "live" on its own authority.
+`web/test/sandbox.mjs` points it at a port nothing is listening on and asserts
+that it *says so*: a page printing "live" against nothing would pass every other
+check in that file. That is the strongest check in the suite, and it is the
+failing one.
+
+---
+
+**`demo.html` becomes `send.html`, and `demo.js` becomes `send.js`.**
+
+`demo` is the network prefix now. A file called `demo.html` served at
+`/demo/passphrase` is invisible to a visitor and misleading to the next person
+reading the repository — and the next person reading the repository is the one
+this project keeps optimising for. Mechanical: nineteen files, no behaviour
+change. `demo-wallet.js` deliberately keeps its name; the key it publishes is
+still the demo network's key, and renaming it would be a claim about a different
+thing.
+
+---
+
+**The landing page stops describing a site that no longer exists.** Its single
+button said *Start demo*, which named the kind of thing rather than what anyone
+could do with it, and the four tabs appeared nowhere. There is now a list of the
+four with a sentence each, and — the part a reader actually needs — one
+paragraph saying that everything here is Sepolia, that this is why the addresses
+begin `/demo/`, and that the same tabs will answer without that prefix on
+mainnet.
+
+**Two numbers in the README were wrong and are now right: 221 checks became 317,
+and eight pages became ten.** 221 had been wrong since the interop suite started
+running its thirteen checks twice. This is the third time a count in that file
+has been corrected, and the pattern is always the same — a number written once
+and never recomputed. It is now printed per suite, so the next drift is visible
+in a diff rather than only in a test run nobody reads to the end.

@@ -194,6 +194,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
       <a href="./id" data-i18n="nav.id">ID</a>
       <a href="./passphrase" data-i18n="nav.passphrase">Passphrase</a>
       <a href="./message" data-i18n="nav.message">Message</a>
+      <a href="./sandbox" data-i18n="nav.sandbox">Sandbox</a>
       <a href="./explorer" data-i18n="nav.explorer">Explorer</a>
       <a href="./blog" data-i18n="nav.blog">Blog</a>
       <a href="./donate" data-i18n="nav.donate">Donate</a>
@@ -256,9 +257,15 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
        <strong>ENSv2 beta deployment on the Sepolia test network</strong>. Test networks carry no
        monetary value.</p>
     <p>NextKey is not a bank, not a custodian and not a financial service. It holds no keys, no
-       funds and no accounts, and it cannot move anything on your behalf. There is no server of
-       ours between you and the chain: the pages are static files, and the cryptography runs in
-       your browser.</p></div>
+       funds and no accounts, and it cannot move anything on your behalf. The pages are static
+       files and the cryptography runs in your browser — no server of ours ever sees a secret, a
+       private key or a plaintext.</p>
+    <p>We do run one server, and it is named rather than glossed over: a <strong>read-only
+       API</strong> at <span class="mono">api.nextkey.li</span>, for callers with no Ethereum node
+       of their own. It reads public records and returns them. It holds no key, signs nothing,
+       writes nothing and is never shown a plaintext, and nothing on this site depends on it — the
+       pages and the command line read the chain directly. What using it reveals is in the
+       <a href="/privacy">privacy notice</a>.</p></div>
   </section>
 
   <section class="step" style="padding-left:0">
@@ -308,12 +315,11 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 <footer class="wrap">
   <p>
     <a class="foothome" href="/" data-i18n-title="nav.home" title="Home"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.75 20v-5.5h4.5V20"/></svg><span class="vh" data-i18n="nav.home">Home</span></a>
-    <a href="./poc" data-i18n="nav.poc">PoC</a>
     <a href="/privacy" data-i18n="foot.privacy">Privacy</a>
   </p>
 </footer>
 
-<script src="/i18n.js?v=f0456608"></script>
+<script src="/i18n.js?v=fed6a38c"></script>
 <script>
 /**
  * Same overlay as the landing page, same storage keys, so a language or theme

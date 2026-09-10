@@ -1,0 +1,26 @@
+# The NextKey API.
+#
+# Note what is *not* here, because it is the point rather than an omission:
+# no [[kv_namespaces]], no [[d1_databases]], no [[r2_buckets]], no queues, no
+# Durable Objects. There is nowhere for this worker to write anything down,
+# which is a stronger statement than a policy saying we choose not to.
+#
+#   npm run build:api      bundle src/worker.js → worker.js
+#   npx wrangler dev       run it locally, against the real Sepolia
+#   npx wrangler deploy    publish it
+
+name = "nextkey-api"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+
+# The bundle is produced by esbuild with the same pinned version the site's
+# bundles use, so wrangler is given a finished file rather than asked to build
+# one. Two bundlers producing the deployed bytes is one bundler too many.
+no_bundle = true
+
+# Uncomment once the DNS record exists. Until then `wrangler deploy` publishes
+# to <name>.<subdomain>.workers.dev, which is a perfectly good address to
+# develop against — and the Sandbox page reads whichever one it is pointed at.
+# [[routes]]
+# pattern = "api.nextkey.li/*"
+# custom_domain = true

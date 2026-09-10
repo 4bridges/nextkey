@@ -8,7 +8,7 @@ human in the loop is a device: the recipient's key lives on a Ledger, the device
 agreement itself or refuses without a button press, so nothing an AI-agent proposes can complete while
 nobody is watching.
 
-**Try it without installing anything: [nextkey.li/demo.html](https://nextkey.li/demo.html).** Encrypt a
+**Try it without installing anything: [nextkey.li/demo/passphrase](https://nextkey.li/demo/passphrase).** Encrypt a
 passphrase, grant it to an ENS name, put it on Sepolia, open it back off the chain, watch a stranger
 fail, revoke it. The whole loop, including the on-chain half — no wallet, no extension, no testnet
 ether, on a phone if you like: we lend you a name and pay the gas. If you hold a name on the hackathon
@@ -428,13 +428,13 @@ The same state in a browser, which is what the demo link opens:
 ```bash
 npm run build             # the five bundles under web/ — build output, not in git
 npx serve web -l 8080     # then http://localhost:8080/poc.html
-                          #  and http://localhost:8080/demo.html
+                          #  and http://localhost:8080/send.html
 ```
 
-`web/app.js`, `demo.js`, `explorer.js`, `blog.js` and `donate.js` are esbuild output and are
+`web/app.js`, `send.js`, `explorer.js`, `blog.js` and `donate.js` are esbuild output and are
 not committed; a fresh clone has to build them once. The esbuild version is pinned exactly,
 so the build is reproducible: the content hash each page carries in its `<script src>` —
-`demo.js?v=09417c32`, written by `scripts/stamp-assets.mjs` — matches the bundle a clone
+`send.js?v=09417c32`, written by `scripts/stamp-assets.mjs` — matches the bundle a clone
 produces today. `npm run verify:stamps` says so without building anything. `web/i18n.js` is
 committed even though a tool writes it, because `i18n-merge.mjs` reads it as the base it
 merges into and it cannot be rebuilt from `i18n.patch.json` alone.
@@ -442,18 +442,20 @@ merges into and it cannot be rebuilt from `i18n.patch.json` alone.
 And the tests, which need no chain at all:
 
 ```bash
-npm test                       # all seven suites, 259 checks
-npm run test:crypto            # 44 — no bundle needed, and only interop wants a browser
-npm run test:pages             # 215 — builds first, then drives the pages in Chromium
+npm test                       # all eight suites, 317 checks
+npm run test:crypto            # 60 — no bundle needed, and only interop wants a browser
+npm run test:pages             # 257 — builds first, then drives the pages in Chromium
 
 node web/test/v2.mjs           # 18 — the v2 construction, padding, backwards compatibility
-node web/test/interop.mjs      # 26 — browser and command line derive the same keys:
-                               #      the same 13 checks in Node and again inside Chromium
-node web/test/playground.mjs   # 71 — demo.html driven in a real browser, in two languages
+node web/test/interop.mjs      # 42 — browser and command line derive the same keys and the same
+                               #      NextKey ID: the same 21 checks in Node and again inside Chromium
+node web/test/playground.mjs   # 89 — send.html driven in a real browser, in two languages, at both
+                               #      of the addresses it answers to
 node web/test/feed.mjs         # 43 — the explorer's live window and its filters
 node web/test/blog.mjs         # 42 — the community page, its names and its editing step
 node web/test/donate.mjs       # 23 — the donation page: the ENS name, the address, the QR code, balances
 node web/test/legal.mjs        # 36 — the imprint and the privacy notice: what they must say, and what they must not load
+node web/test/sandbox.mjs      # 24 — the API page, and that it never claims an endpoint is live
 ```
 
 The last four answer a mocked node, which is what lets them assert what a reader ends up looking at:
@@ -525,16 +527,42 @@ resets periodically; if a name has vanished, re-register it.
 
 ## The site
 
-Six static pages, no framework, no server of ours. Every one of them reads the chain directly.
+Ten static pages, no framework. Every one of them reads the chain directly from the visitor's browser.
+
+**The network is a path prefix, not a copy of the site.** `/demo/<tab>` is the hackathon deployment on
+Sepolia; `/<tab>` is reserved for mainnet, and the same files serve both — same tabs, same markup, a
+different chain. Launching mainnet is deleting five lines from `web/.htaccess`. The two conventions
+that make it work are in `web/README.md`, and one of them is enforced by the build.
 
 | Page | What it is |
 |---|---|
-| [nextkey.li](https://nextkey.li) | What the project is, how it works, and the questions people actually ask |
-| [/demo](https://nextkey.li/demo) | **The playground** — the whole loop in the browser, no wallet needed |
-| [/explorer](https://nextkey.li/explorer) | What a name carries, in plain words — plus every NextKey record on the deployment, live |
-| [/blog](https://nextkey.li/blog) | Community posts: an ENS text record, written in the open, by people and AI-agents alike |
-| [/donate](https://nextkey.li/donate) | Keeping it running after the hackathon — address, QR code, and what has arrived |
-| [/poc](https://nextkey.li/poc) | The live view: this deployment's real records, read from Sepolia |
+| [nextkey.li](https://nextkey.li) | What the project is, the four tabs, how it works, and the questions people actually ask |
+| [/demo/id](https://nextkey.li/demo/id) | Become receivable in one signature — and get a **NextKey ID**, your published key in a form a person can read out |
+| [/demo/passphrase](https://nextkey.li/demo/passphrase) | **The playground** — the whole loop in the browser, no wallet needed |
+| [/demo/message](https://nextkey.li/demo/message) | The same loop with a message instead of a recovery phrase |
+| [/demo/sandbox](https://nextkey.li/demo/sandbox) | For people and agents building on this: the open API, the record format, the CLI, the docs |
+| [/demo/explorer](https://nextkey.li/demo/explorer) | What a name carries, in plain words — plus every NextKey record on the deployment, live |
+| [/demo/blog](https://nextkey.li/demo/blog) | Community posts: an ENS text record, written in the open, by people and AI-agents alike |
+| [/demo/donate](https://nextkey.li/demo/donate) | Keeping it running after the hackathon — address, QR code, and what has arrived |
+| [/demo/poc](https://nextkey.li/demo/poc) | The live view: this deployment's real records, read from Sepolia |
+
+### The one server we run, and what it costs
+
+`api.nextkey.li` is a read-only window onto the chain, for callers with no node of their own —
+`/demo/v1/name/<name>`, `/demo/v1/id/<name>`, `/demo/v1/health`, `/demo/v1/openapi.json`. Source in
+[`api/`](./api).
+
+It holds no key, signs nothing, writes nothing and is never shown a plaintext. Everything it returns is
+already public on chain and readable without it: the pages read the chain from the browser, and
+`scripts/nextkey.mjs` reads it directly. **Take it away and nothing stops working** — which is
+deliberate, because a system whose confidentiality rested on a server we run would be a different
+product.
+
+What it costs is stated rather than glossed: using it means telling *us* which name you are looking up,
+on top of telling a node. So there is nowhere for that to be written down — no request log, no
+analytics, no KV, no D1, no R2; the absence in `api/wrangler.toml` is the configuration. No API keys
+either, so there is nothing to correlate lookups with even in principle. The residue we do not control
+is Cloudflare's edge logging, and that is in the privacy notice rather than left out of it.
 
 Demo video: <!-- TODO -->
 

@@ -313,6 +313,20 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
       justify-content:flex-start}
   }
 
+
+  /* ── What is here ──
+     A definition list rather than four cards, because the terms are the
+     navigation and a reader should be able to see the whole map at once. It
+     stacks below 34rem: "Passphrase" in Russian is not a short word. */
+  dl.tabs{display:grid;grid-template-columns:auto 1fr;gap:.8rem 1.4rem;margin:1.6rem 0 1.4rem}
+  dl.tabs dt{white-space:nowrap;font-weight:640;font-size:1.05rem}
+  dl.tabs dt a{text-decoration:none}
+  dl.tabs dt a:hover{text-decoration:underline}
+  dl.tabs dd{margin:0;min-width:0;color:var(--muted)}
+  @media (max-width:34rem){
+    dl.tabs{grid-template-columns:1fr;gap:.2rem}
+    dl.tabs dt{white-space:normal;margin-top:.9rem}
+  }
 </style>
 </head>
 <body>
@@ -325,6 +339,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
       <a href="./id" data-i18n="nav.id">ID</a>
       <a href="./passphrase" data-i18n="nav.passphrase">Passphrase</a>
       <a href="./message" data-i18n="nav.message">Message</a>
+      <a href="./sandbox" data-i18n="nav.sandbox">Sandbox</a>
       <a href="./explorer" data-i18n="nav.explorer">Explorer</a>
       <a href="./blog" data-i18n="nav.blog">Blog</a>
       <a href="./donate" data-i18n="nav.donate">Donate</a>
@@ -374,7 +389,8 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
       human-in-the-loop. NextKey also provides you secure messaging.
     </p>
     <div class="actions">
-      <a class="btn btn-primary" href="./passphrase" data-i18n="hero.cta2">Start demo</a>
+      <a class="btn btn-primary" href="./id" data-i18n="hero.cta2">Get your NextKey ID</a>
+      <a class="btn btn-quiet" href="./sandbox" data-i18n="hero.cta3">Build against it</a>
       <a class="btn btn-quiet" href="https://github.com/4bridges/nextkey" data-i18n="hero.gh" target="_blank" rel="noopener noreferrer">View on GitHub</a>
     </div>
     <figure class="handover">
@@ -440,6 +456,39 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
         The condition between them is protocol state.
       </figcaption>
     </figure>
+  </section>
+
+  <!-- 1b — What is here -->
+  <section class="prose">
+    <h2 data-i18n="tabs.h">What is here</h2>
+    <p data-i18n="tabs.p">Four things you can do, each at its own address. None of them asks you to register
+      with us, and the first three need no ether.</p>
+
+    <dl class="tabs">
+      <dt><a href="./id" data-i18n="nav.id">ID</a></dt>
+      <dd data-i18n="tabs.id">Become reachable. One signature derives your key from the wallet you already
+        have, and your NextKey ID is that key in a form you can read out over the phone. Nothing is
+        generated, nothing is stored, and we pay for the record.</dd>
+
+      <dt><a href="./passphrase" data-i18n="nav.passphrase">Passphrase</a></dt>
+      <dd data-i18n="tabs.pass">Put a wallet's recovery phrase somewhere only a person you name can reach
+        it — and get it back through a rule an enclave evaluates rather than a support ticket.</dd>
+
+      <dt><a href="./message" data-i18n="nav.message">Message</a></dt>
+      <dd data-i18n="tabs.msg">The same loop with a message instead of a phrase. Sealed to one recipient,
+        readable from any machine they can sign from, and by nobody else — not a server, not us, not the
+        chain it is stored on.</dd>
+
+      <dt><a href="./sandbox" data-i18n="nav.sandbox">Sandbox</a></dt>
+      <dd data-i18n="tabs.sb">For people and agents building on this: an open read-only HTTP API, the record
+        format on chain, the command line, and the surface the pages expose. Plus the live view, which reads
+        five names off the chain every time it loads.</dd>
+    </dl>
+
+    <p class="note" data-i18n-html="tabs.net">Everything here runs on the <strong>Sepolia testnet</strong>,
+      which is why its addresses begin <span class="mono">/demo/</span>. The same tabs will answer without
+      that prefix on mainnet — same pages, same records, a different chain. Nothing you do here costs real
+      money, and nothing you put here is protecting any.</p>
   </section>
 
   <!-- 2 — Look one up -->
@@ -732,7 +781,7 @@ document.addEventListener('submit', function (e) {
   location.href = './explorer' + (v ? '?name=' + encodeURIComponent(v) : '')
 })
 </script>
-<script src="/i18n.js?v=f0456608"></script>
+<script src="/i18n.js?v=fed6a38c"></script>
 <script>
 /**
  * Translation is applied over the page, not baked into it.

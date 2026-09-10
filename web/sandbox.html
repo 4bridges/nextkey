@@ -8,8 +8,8 @@
 <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png">
 <link rel="manifest" href="/brand/site.webmanifest">
 <meta name="theme-color" content="#9a5218">
-<title>NextKey — donate</title>
-<meta name="description" content="Support NextKey after the hackathon. The ENS name, the address, a QR code, and a live view of the donations that arrived.">
+<title>NextKey — Sandbox</title>
+<meta name="description" content="Build against NextKey: an open read-only HTTP API, the record format on chain, the command line, and the browser surface. For people and for agents.">
 <meta name="robots" content="noindex">
 <script>
 (function(){try{var t=localStorage.getItem('nextkey.theme')
@@ -191,14 +191,6 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     }
   }
 
-  /* ── The wallet / message switch ── */
-  .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;
-    background:var(--surface);margin:.4rem 0 .2rem}
-  .segbtn{font:inherit;font-weight:620;font-size:.95rem;
-    font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    background:transparent;color:var(--muted);border:0;padding:.55rem 1.1rem;cursor:pointer}
-  .segbtn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
-  .segbtn:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 
   /* ── A passphrase is not something to leave lying on a screen ── */
   .covered{letter-spacing:.12em;color:var(--muted)}
@@ -227,59 +219,6 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   .reclabel{overflow-wrap:anywhere}
   .reclabel .mono{overflow-wrap:anywhere}
   .out dd,.out dt{overflow-wrap:anywhere}
-
-  /* ── The address, and its code ── */
-  /* The QR keeps a white quiet zone of its own in both themes: a dark-mode page
-     that inverts it produces a code half the scanners in the world will refuse. */
-  .qrwrap{display:flex;flex-wrap:wrap;gap:1.4rem;align-items:flex-start;margin:1.2rem 0}
-  .qrcol{display:flex;flex-direction:column;align-items:center;gap:.5rem;flex:none}
-  .qrname{margin:0;font-size:1rem;color:var(--ink);font-weight:600}
-  .ens{margin:0 0 .55rem;font-size:1.14rem;font-weight:640;letter-spacing:-.01em}
-  .qr{width:min(11rem,45vw);height:auto;flex:none;border-radius:10px;
-    background:#fff;padding:.5rem;box-shadow:0 1px 0 var(--line)}
-  .qrside{flex:1 1 18rem;min-width:0}
-  .addr{margin:0 0 .8rem;font-size:1.02rem;line-height:1.5;overflow-wrap:anywhere;
-    background:var(--code);border:1px solid var(--line);border-radius:9px;padding:.7rem .85rem}
-  #amounts button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
-  .bals{display:flex;flex-wrap:wrap;gap:1.6rem;margin:.2rem 0 .8rem}
-  .bal{display:flex;align-items:baseline;gap:.4rem}
-  .balv{font-size:1.5rem;font-weight:640;letter-spacing:-.01em;
-    font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
-  .count{margin:.1rem 0 .8rem}
-  .count strong{font-size:1.5rem;font-weight:640}
-  .ev{border-top:1px solid var(--line);padding:.7rem 0}
-  .dot{display:inline-block;width:.5rem;height:.5rem;border-radius:50%;
-    background:var(--ok);margin-right:.35rem;vertical-align:baseline}
-
-  /* ── The live window ── */
-  /* The chips scroll sideways on a phone rather than stacking into a wall of
-     buttons: a filter row that is four rows tall is a menu with extra steps. */
-  .chips{display:flex;gap:.45rem;margin:.9rem 0 .2rem;overflow-x:auto;
-    padding-bottom:.35rem;scrollbar-width:thin}
-  .chips button{
-    font:inherit;font-size:.92rem;font-weight:600;white-space:nowrap;
-    color:var(--ink);background:var(--surface);
-    border:1px solid var(--line);border-radius:999px;
-    padding:.35rem .85rem;cursor:pointer
-  }
-  .chips button:hover{border-color:var(--muted)}
-  .chips button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-  .chips button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);
-    border-color:var(--accent)}
-  .ev{border-top:1px solid var(--line);padding:.7rem 0}
-  .ev pre{margin-top:.4rem}
-  /* An arrival is marked for a moment and then stops shouting: a page that
-     keeps twenty things highlighted has highlighted nothing. */
-  .ev.fresh{animation:arrive 6s ease-out 1 forwards}
-  @keyframes arrive{
-    0%{background:var(--warnbg);box-shadow:inset 3px 0 0 var(--accent)}
-    70%{background:var(--warnbg);box-shadow:inset 3px 0 0 var(--accent)}
-    100%{background:transparent;box-shadow:inset 3px 0 0 transparent}
-  }
-  @media (prefers-reduced-motion:reduce){.ev.fresh{animation:none;box-shadow:inset 3px 0 0 var(--accent)}}
-  .dot{display:inline-block;width:.5rem;height:.5rem;border-radius:50%;
-    background:var(--ok);margin-right:.35rem;vertical-align:baseline}
-  .dot.off{background:var(--muted)}
 
   /* What is finished stops inviting a second press. */
   .step.done > p,.step.done .row,.step.done textarea,.step.done input{opacity:.55}
@@ -375,6 +314,43 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
       justify-content:flex-start}
   }
 
+
+  /* ── The NextKey ID ──
+     Shown where the published key used to be shown alone. It is set larger and
+     spaced out because it is meant to be read off the screen and typed, or read
+     aloud — which is the entire reason it exists rather than the 44 characters
+     of base64 on the line below it. */
+  .nkid{font-size:1.06rem;font-weight:660;letter-spacing:.07em;color:var(--accent)}
+
+  /* ── Links that read as buttons ──
+     Lifted from the landing page rather than reinvented, so the two pages that
+     offer a row of destinations offer them in the same shape. */
+  .btn{
+    display:inline-block;padding:.72rem 1.35rem;border-radius:7px;margin:0 .5rem .55rem 0;
+    text-decoration:none;font-weight:600;font-size:1.02rem;border:1px solid transparent
+  }
+  .btn-primary{background:var(--accent);color:var(--accent-ink)}
+  .btn-primary:hover{filter:brightness(1.08)}
+  .btn-quiet{border-color:var(--line);color:var(--muted)}
+  .btn-quiet:hover{color:var(--ink);border-color:var(--muted)}
+
+  /* ── The record table ──
+     The keys are protocol and never translated, so they may keep nowrap; the
+     descriptions beside them are prose in ten languages and must not. Below
+     30rem the list stacks, which is the same fix a Russian term forced on the
+     other two pages. */
+  dl.kv{grid-template-columns:auto 1fr;gap:.55rem 1.1rem;margin:.4rem 0 0}
+  dl.kv dt{white-space:nowrap;color:var(--ink);font-weight:620}
+  dl.kv dd{color:var(--muted)}
+  @media (max-width:34rem){
+    dl.kv{grid-template-columns:1fr}
+    dl.kv dt{white-space:normal;margin-top:.5rem}
+  }
+
+  /* A response is shown verbatim, including a long one, and a JSON body is the
+     one thing on this site allowed its own horizontal scrollbar. */
+  .out pre{overflow-x:auto;margin:.5rem 0 0;font-size:.86rem;line-height:1.5}
+  pre.mono{overflow-x:auto}
 </style>
 </head>
 <body>
@@ -387,10 +363,10 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
       <a href="./id" data-i18n="nav.id">ID</a>
       <a href="./passphrase" data-i18n="nav.passphrase">Passphrase</a>
       <a href="./message" data-i18n="nav.message">Message</a>
-      <a href="./sandbox" data-i18n="nav.sandbox">Sandbox</a>
+      <a href="./sandbox" data-i18n="nav.sandbox" aria-current="page">Sandbox</a>
       <a href="./explorer" data-i18n="nav.explorer">Explorer</a>
       <a href="./blog" data-i18n="nav.blog">Blog</a>
-      <a href="./donate" data-i18n="nav.donate" aria-current="page">Donate</a>
+      <a href="./donate" data-i18n="nav.donate">Donate</a>
     </nav>
     <div class="barctl">
       <button class="iconbtn" id="themebtn" type="button"
@@ -428,78 +404,161 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 </header>
 
 <div class="wrap" style="padding-top:2.6rem">
-  <p class="eyebrow" data-i18n="v.eyebrow">Donate</p>
-  <h1 data-i18n="v.h1">Web3 Support</h1>
-  <p class="lead" data-i18n="v.lead">
-    NextKey was built at ETHGlobal ETHOnline 2026 and is pushing Web3 forward. Small amounts in
-    ETH or stablecoins take the demo towards product-market fit — and keep NextKey alive once the
-    hackathon is over. It goes to development, community building and swag, and supports Web3, open
-    source and dApps anybody can read and trust.
+  <p class="eyebrow" data-i18n="nav.sandbox">Sandbox</p>
+  <h1 data-i18n="sb.h1">Build against this</h1>
+  <p class="lead" data-i18n="sb.lead">
+    Four surfaces, and none of them needs our permission: the records on chain, an open HTTP API
+    for callers with no node of their own, the command line, and the page itself. Everything here
+    is readable, checkable, and works the same whether a person or an agent is asking.
   </p>
+
+  <p class="provenance" data-i18n="hero.prov">Prototype · ENSv2 on Sepolia testnet · Built at ETHGlobal ETHOnline 2026</p>
 </div>
 
 <main class="wrap">
 
-  <section class="step" style="padding-left:0;padding-top:2rem">
-    <h2 data-i18n="v.addr.h">ENS Name</h2>
-    <p data-i18n="v.addr.p">Ethereum mainnet. ETH or any ERC-20 — USDC, USDT, DAI, whatever you hold.
-      The code carries a payment link, so a wallet that scans it opens with the recipient already
-      filled in.</p>
-
-    <div class="qrwrap">
-      <div class="qrcol">
-      <svg class="qr" viewBox="0 0 37 37" role="img" aria-labelledby="qr-t">
-        <title id="qr-t" data-i18n="v.qr.alt">A QR code for the donation address</title>
-        <rect width="37" height="37" fill="#fff"/>
-        <path d="M2 2h7v1h-7zM10 2h2v1h-2zM13 2h4v1h-4zM18 2h1v1h-1zM20 2h2v1h-2zM28 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM11 3h1v1h-1zM13 3h4v1h-4zM20 3h2v1h-2zM24 3h1v1h-1zM26 3h1v1h-1zM28 3h1v1h-1zM34 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM13 4h1v1h-1zM16 4h5v1h-5zM23 4h1v1h-1zM25 4h2v1h-2zM28 4h1v1h-1zM30 4h3v1h-3zM34 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h3v1h-3zM14 5h1v1h-1zM18 5h2v1h-2zM22 5h2v1h-2zM25 5h1v1h-1zM28 5h1v1h-1zM30 5h3v1h-3zM34 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h3v1h-3zM15 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h1v1h-1zM25 6h1v1h-1zM28 6h1v1h-1zM30 6h3v1h-3zM34 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h1v1h-1zM13 7h2v1h-2zM16 7h2v1h-2zM21 7h2v1h-2zM24 7h1v1h-1zM26 7h1v1h-1zM28 7h1v1h-1zM34 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h7v1h-7zM10 9h1v1h-1zM12 9h1v1h-1zM16 9h1v1h-1zM19 9h2v1h-2zM23 9h3v1h-3zM2 10h1v1h-1zM6 10h1v1h-1zM8 10h3v1h-3zM12 10h2v1h-2zM16 10h4v1h-4zM21 10h1v1h-1zM23 10h3v1h-3zM27 10h5v1h-5zM34 10h1v1h-1zM4 11h1v1h-1zM6 11h1v1h-1zM10 11h1v1h-1zM12 11h2v1h-2zM17 11h1v1h-1zM19 11h2v1h-2zM22 11h1v1h-1zM25 11h3v1h-3zM29 11h1v1h-1zM31 11h4v1h-4zM3 12h3v1h-3zM8 12h2v1h-2zM12 12h1v1h-1zM15 12h3v1h-3zM20 12h1v1h-1zM23 12h4v1h-4zM30 12h2v1h-2zM33 12h1v1h-1zM2 13h1v1h-1zM5 13h1v1h-1zM9 13h2v1h-2zM13 13h1v1h-1zM15 13h1v1h-1zM21 13h3v1h-3zM25 13h2v1h-2zM28 13h1v1h-1zM30 13h1v1h-1zM33 13h1v1h-1zM3 14h2v1h-2zM7 14h3v1h-3zM11 14h1v1h-1zM15 14h1v1h-1zM18 14h1v1h-1zM21 14h3v1h-3zM27 14h2v1h-2zM30 14h1v1h-1zM33 14h2v1h-2zM2 15h2v1h-2zM9 15h1v1h-1zM11 15h1v1h-1zM13 15h2v1h-2zM16 15h1v1h-1zM20 15h2v1h-2zM24 15h3v1h-3zM29 15h1v1h-1zM31 15h2v1h-2zM2 16h2v1h-2zM6 16h3v1h-3zM10 16h2v1h-2zM13 16h1v1h-1zM15 16h3v1h-3zM23 16h1v1h-1zM25 16h1v1h-1zM27 16h5v1h-5zM33 16h1v1h-1zM4 17h1v1h-1zM6 17h2v1h-2zM10 17h10v1h-10zM22 17h3v1h-3zM26 17h2v1h-2zM29 17h1v1h-1zM33 17h1v1h-1zM2 18h2v1h-2zM5 18h2v1h-2zM8 18h2v1h-2zM13 18h1v1h-1zM15 18h1v1h-1zM18 18h6v1h-6zM27 18h4v1h-4zM34 18h1v1h-1zM4 19h1v1h-1zM9 19h1v1h-1zM13 19h3v1h-3zM17 19h1v1h-1zM24 19h3v1h-3zM29 19h1v1h-1zM33 19h2v1h-2zM2 20h3v1h-3zM8 20h3v1h-3zM12 20h2v1h-2zM15 20h1v1h-1zM17 20h3v1h-3zM24 20h2v1h-2zM28 20h1v1h-1zM30 20h2v1h-2zM33 20h1v1h-1zM2 21h1v1h-1zM4 21h2v1h-2zM9 21h1v1h-1zM13 21h9v1h-9zM23 21h3v1h-3zM27 21h1v1h-1zM30 21h1v1h-1zM33 21h1v1h-1zM8 22h1v1h-1zM11 22h1v1h-1zM13 22h2v1h-2zM16 22h2v1h-2zM20 22h2v1h-2zM24 22h2v1h-2zM27 22h4v1h-4zM34 22h1v1h-1zM2 23h1v1h-1zM5 23h1v1h-1zM7 23h1v1h-1zM9 23h2v1h-2zM15 23h1v1h-1zM18 23h1v1h-1zM22 23h1v1h-1zM25 23h2v1h-2zM31 23h3v1h-3zM4 24h6v1h-6zM12 24h1v1h-1zM14 24h2v1h-2zM18 24h2v1h-2zM22 24h1v1h-1zM24 24h2v1h-2zM28 24h1v1h-1zM30 24h4v1h-4zM5 25h3v1h-3zM10 25h2v1h-2zM13 25h1v1h-1zM15 25h2v1h-2zM19 25h2v1h-2zM23 25h4v1h-4zM28 25h1v1h-1zM30 25h1v1h-1zM33 25h1v1h-1zM2 26h2v1h-2zM7 26h4v1h-4zM12 26h2v1h-2zM16 26h6v1h-6zM24 26h1v1h-1zM26 26h5v1h-5zM32 26h1v1h-1zM34 26h1v1h-1zM10 27h1v1h-1zM13 27h3v1h-3zM17 27h1v1h-1zM19 27h1v1h-1zM22 27h1v1h-1zM25 27h2v1h-2zM30 27h3v1h-3zM2 28h7v1h-7zM10 28h2v1h-2zM13 28h1v1h-1zM15 28h1v1h-1zM17 28h1v1h-1zM20 28h1v1h-1zM22 28h2v1h-2zM26 28h1v1h-1zM28 28h1v1h-1zM30 28h1v1h-1zM2 29h1v1h-1zM8 29h1v1h-1zM12 29h3v1h-3zM16 29h3v1h-3zM21 29h1v1h-1zM23 29h1v1h-1zM26 29h1v1h-1zM30 29h1v1h-1zM2 30h1v1h-1zM4 30h3v1h-3zM8 30h1v1h-1zM10 30h2v1h-2zM18 30h1v1h-1zM21 30h1v1h-1zM24 30h1v1h-1zM26 30h6v1h-6zM33 30h2v1h-2zM2 31h1v1h-1zM4 31h3v1h-3zM8 31h1v1h-1zM13 31h1v1h-1zM16 31h1v1h-1zM20 31h1v1h-1zM22 31h1v1h-1zM26 31h3v1h-3zM30 31h1v1h-1zM32 31h1v1h-1zM2 32h1v1h-1zM4 32h3v1h-3zM8 32h1v1h-1zM13 32h2v1h-2zM16 32h2v1h-2zM19 32h2v1h-2zM24 32h2v1h-2zM27 32h2v1h-2zM30 32h3v1h-3zM2 33h1v1h-1zM8 33h1v1h-1zM11 33h2v1h-2zM15 33h1v1h-1zM17 33h10v1h-10zM29 33h1v1h-1zM31 33h1v1h-1zM2 34h7v1h-7zM10 34h5v1h-5zM21 34h8v1h-8zM31 34h1v1h-1zM34 34h1v1h-1z" fill="#000"/>
-      </svg>
-        <p class="qrname mono" id="qrname">nextkey.eth</p>
-      </div>
-      <div class="qrside">
-        <p class="ens mono" id="ensname">nextkey.eth</p>
-        <p class="addr mono" id="addr">0x54Dd2Bc2f1Eb15A878C05ADfB58b90d68eA2EF14</p>
-        <div class="row">
-          <button class="act" id="copy" type="button" data-i18n="v.copy">Copy</button>
-        </div>
-        <p class="note" id="copied" hidden data-i18n="v.copied">Copied.</p>
-      </div>
-    </div>
-  </section>
-
+  <!-- The API ───────────────────────────────────────────────────────────────
+       Deliberately first, and deliberately probed rather than described. A
+       documentation page makes a claim about something outside itself and goes
+       on making it after that thing stops answering. -->
   <section class="step" style="padding-left:0">
-    <h2 data-i18n="v.send.h">Or connect your wallet</h2>
-    <p data-i18n="v.send.p">The same address, one step shorter: connect a wallet, pick an amount, and
-      your wallet asks you to confirm. Nothing is signed until you say so, and the transaction goes
-      straight to the address above — this page has no key and no way to move anything.</p>
+    <h2 data-i18n="sb.api.h">The open API</h2>
+    <p data-i18n="sb.api.p">Read-only. It holds no key, signs nothing, writes nothing and is never shown a
+      plaintext — everything it returns is already public on chain and readable without it. Take it away and
+      nothing stops working: the pages read the chain from your browser, and the command line reads it
+      directly. It exists for callers who cannot reach a node.</p>
+
     <div class="row">
-      <button class="act ghost" id="connect" type="button" data-i18n="b.connect">Connect a wallet</button>
-      <button class="act ghost" id="disconnect" type="button" hidden data-i18n="v.disconnect">Disconnect</button>
-      <span class="note" id="who"></span>
+      <span class="note" data-i18n="sb.api.at">Answering at</span>
+      <span class="mono" id="api-base">…</span>
+      <span class="note" id="api-state"></span>
     </div>
-    <div class="row" id="amounts">
-      <button class="act ghost" type="button" data-eth="0.005">0.005 ETH</button>
-      <button class="act ghost" type="button" data-eth="0.01">0.01 ETH</button>
-      <button class="act ghost" type="button" data-eth="0.05">0.05 ETH</button>
-    </div>
-    <div class="row">
-      <input type="text" id="amount" inputmode="decimal" spellcheck="false" autocomplete="off"
-             aria-label="Amount in ETH" placeholder="0.01" style="flex:0 1 10rem;min-width:0">
-      <button class="act" id="send" type="button" disabled data-i18n="v.send.btn">Donate</button>
-    </div>
-    <div class="out" id="send-out" hidden></div>
+    <div class="out" id="api-health" hidden></div>
+
+    <p class="note" data-i18n="sb.api.override">This page reads whichever address it is pointed at:
+      <span class="mono">?api=https://…</span> overrides it, so a deployment can be checked before it is
+      written into anything.</p>
   </section>
 
+  <!-- Try it ─────────────────────────────────────────────────────────────── -->
   <section class="step" style="padding-left:0">
-    <h2 data-i18n="v.live.h">Donations</h2>
-    <p data-i18n="v.live.p">Read from Ethereum straight away, and again every twenty seconds. The
-      balances are exact. The list underneath is every stablecoin donation this page could find.</p>
+    <h2 data-i18n="sb.try.h">Ask it something, from here</h2>
+    <p data-i18n="sb.try.p">The request goes from your browser, not from ours, so this is also the CORS
+      check and the DNS check. The URL is shown before it is sent.</p>
     <div class="row">
-      <span class="note" id="live" style="align-self:center"></span>
-      <button class="act ghost" id="refresh" type="button" data-i18n="x.feed.btn">Refresh</button>
+      <input type="text" id="try-name" spellcheck="false" autocomplete="off"
+             aria-label="A name on the hackathon deployment"
+             data-i18n-ph="sb.try.ph" placeholder="anna.nextkey.eth"
+             style="flex:1 1 16rem;min-width:0">
+      <button class="act" id="try-go" type="button" data-i18n="sb.try.btn">Send the request</button>
     </div>
-    <div class="out" id="balances" hidden></div>
-    <div class="out" id="gifts" hidden></div>
+    <p class="note mono" id="try-url"></p>
+    <div class="out" id="try-out" hidden></div>
   </section>
+
+  <!-- The routes ─────────────────────────────────────────────────────────── -->
+  <section class="step" style="padding-left:0">
+    <h2 data-i18n="sb.routes.h">The routes</h2>
+    <pre class="mono">GET <span data-api-base>…</span>/health
+GET <span data-api-base>…</span>/name/anna.nextkey.eth
+GET <span data-api-base>…</span>/id/anna.nextkey.eth
+GET <span data-api-base>…</span>/openapi.json</pre>
+    <p data-i18n="sb.routes.prefix">The network is a path prefix, exactly as on this site:
+      <span class="mono">/demo/v1</span> reads the hackathon deployment on Sepolia, and
+      <span class="mono">/v1</span> is reserved for mainnet. Asking <span class="mono">/v1</span> today
+      answers 501 and names the address that does work — not 404, which would read as a spelling mistake.</p>
+
+    <details class="more">
+      <summary data-i18n="sb.routes.no.h">Two kinds of "no", and why they never share a code</summary>
+      <p data-i18n="sb.routes.no.p1"><span class="mono">404 no_published_key</span> is a fact about the chain:
+        this name publishes nothing, so nothing can be sealed to it. <span class="mono">502
+        upstream_unavailable</span> is a fact about our luck: the node did not answer, the reply says in its
+        own words that it tells you nothing about the name, and it is never cached.</p>
+      <p data-i18n="sb.routes.no.p2">There is a third, because the chain permits it.
+        <span class="mono">422 key_not_x25519</span> is a name whose record holds something that is not a
+        32-byte key. Anyone may write any string to their own name, and inventing a NextKey ID for one would
+        put a confident, checkable-looking identifier under a value that identifies nobody.</p>
+    </details>
+  </section>
+
+  <!-- The record format ──────────────────────────────────────────────────── -->
+  <section class="step" style="padding-left:0">
+    <h2 data-i18n="sb.records.h">The records, which are the real interface</h2>
+    <p data-i18n="sb.records.p">The API is a convenience. This is the protocol: five text records on an ENS
+      name, and anything that can read and write ENS text records can take part without asking us. Nothing in
+      the format belongs to us.</p>
+    <dl class="kv">
+      <dt class="mono">nextkey.pubkey</dt>
+      <dd data-i18n="sb.rec.pubkey">The X25519 key everything sealed to this name is wrapped to. Publishing
+        it is the whole of the opt-in, and it is what a NextKey ID is derived from.</dd>
+      <dt class="mono">nextkey.eph</dt>
+      <dd data-i18n="sb.rec.eph">One ephemeral public key per name, written once and never replaced. Every
+        grant on the name is addressed from this key and a recipient's.</dd>
+      <dt class="mono">nextkey.eph.sealed</dt>
+      <dd data-i18n="sb.rec.sealed">That key wrapped to the owner, so a recipient can be added later without
+        a signature. Useless to anybody else.</dd>
+      <dt class="mono">nextkey.g2.&lt;32 hex&gt;</dt>
+      <dd data-i18n="sb.rec.grant">A grant. The address is derived from the ECDH result, so an observer
+        holding every public value in the system cannot compute it, cannot test a guess, and learns nothing
+        from how many of them a name carries.</dd>
+      <dt class="mono">nextkey.secret</dt>
+      <dd data-i18n="sb.rec.secret">The ciphertext, padded to 256-byte blocks so its length says nothing
+        about what it holds.</dd>
+    </dl>
+  </section>
+
+  <!-- The command line ───────────────────────────────────────────────────── -->
+  <section class="step" style="padding-left:0">
+    <h2 data-i18n="sb.cli.h">The command line</h2>
+    <p data-i18n="sb.cli.p">Every step the pages take has an equivalent here, and nothing about it needs a
+      person watching. It reads the chain directly and never touches the API.</p>
+    <pre class="mono">nextkey.mjs new    &lt;label&gt;
+nextkey.mjs share  &lt;label&gt; &lt;identity&gt; &lt;recipient&gt;
+nextkey.mjs open   &lt;name&gt;  &lt;identity&gt;
+nextkey.mjs revoke &lt;label&gt; &lt;recipient&gt;
+nextkey.mjs eph    &lt;name&gt;</pre>
+  </section>
+
+  <!-- In the page ────────────────────────────────────────────────────────── -->
+  <section class="step" style="padding-left:0">
+    <h2 data-i18n="sb.page.h">Inside the pages</h2>
+    <p data-i18n="sb.page.p">An agent driving a browser does not have to read the prose.
+      <span class="mono">window.NEXTKEY.state()</span> returns what has happened so far as JSON, every result
+      panel carries the same thing on a <span class="mono">data-nk</span> attribute, and no private key
+      appears in either. A prepared state is one link: the address chooses what is being sent —
+      <span class="mono">/demo/passphrase</span> or <span class="mono">/demo/message</span> — and
+      <span class="mono">?to=</span> fills in the recipient, <span class="mono">?lang=</span> sets the
+      language. A secret is never accepted in a URL, because a URL is written down in more places than
+      anybody expects.</p>
+  </section>
+
+  <!-- Read it yourself ───────────────────────────────────────────────────── -->
+  <section class="step" style="padding-left:0">
+    <h2 data-i18n="sb.docs.h">Read it rather than trust it</h2>
+    <p data-i18n="sb.docs.p">The live view reads five names off Sepolia on every load and shows what they
+      carry — no cache, no replay, no screenshots. The repository carries the reasoning as well as the code,
+      including the reversals, which is the part worth reading.</p>
+    <p>
+      <a class="btn btn-primary" href="./poc" data-i18n="sb.docs.poc">The live view</a>
+      <a class="btn btn-quiet" href="./explorer" data-i18n="nav.explorer">Explorer</a>
+      <a class="btn btn-quiet" href="https://github.com/4bridges/nextkey#readme" target="_blank" rel="noopener noreferrer" data-i18n="sb.docs.readme">The README</a>
+      <a class="btn btn-quiet" href="https://github.com/4bridges/nextkey/blob/main/docs/decisions.md" target="_blank" rel="noopener noreferrer" data-i18n="sb.docs.log">The decision log</a>
+      <a class="btn btn-quiet" href="https://github.com/4bridges/nextkey/blob/main/docs/architecture.md" target="_blank" rel="noopener noreferrer" data-i18n="sb.docs.arch">Architecture</a>
+    </p>
+  </section>
+
+  <details class="more">
+    <summary data-i18n="sb.cost.h">What running this API costs, said plainly</summary>
+    <p data-i18n="sb.cost.p1">NextKey ran no server at all until this existed. A caller who uses the endpoint
+      is telling us which name they are looking up, on top of telling the node. So there is nowhere for that
+      to be written down: no request log, no analytics, no key-value store, no database — the worker's
+      configuration file has none of them attached, which is a stronger statement than a policy saying we
+      choose not to. There are no API keys either, so there is nothing to correlate lookups with even in
+      principle.</p>
+    <p data-i18n="sb.cost.p2">The residue we do not control is Cloudflare's own edge logging. That is in the
+      <a href="/privacy">privacy notice</a> rather than left out of it. If none of this is acceptable to you,
+      read the chain directly — the records above are all you need, and that path never involves us at all.</p>
+  </details>
 
 </main>
 
@@ -508,8 +567,8 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     sent to a server. Do not put a phrase here that guards real funds.</p>
   <p>
     <a class="foothome" href="/" data-i18n-title="nav.home" title="Home"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.75 20v-5.5h4.5V20"/></svg><span class="vh" data-i18n="nav.home">Home</span></a>
-    <a href="./passphrase" data-i18n="foot.try">Start demo</a>
-    <a href="https://hackathon-deployment-portal-app.ens-cf.workers.dev/" target="_blank" rel="noopener noreferrer" data-i18n="foot.ens">ENS explorer</a>
+    <a href="./explorer" data-i18n="nav.explorer">Explorer</a>
+    <a href="./blog" data-i18n="nav.blog">Blog</a>
     <a href="/imprint" data-i18n="foot.imprint">Imprint</a>
     <a href="/privacy" data-i18n="foot.privacy">Privacy</a>
   </p>
@@ -671,6 +730,6 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   label()
 })()
 </script>
-<script type="module" src="/donate.js?v=ba8a7841"></script>
+<script type="module" src="/sandbox.js?v=3076f66f"></script>
 </body>
 </html>

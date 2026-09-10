@@ -1,50 +1,65 @@
-# nextkey.li — eight static pages
+# nextkey.li — ten static pages, and the network in the address
 
-No framework, no build step for the HTML, no server of ours. Run `npm run build` once for
-the five bundles, then upload the contents of this folder to the web root at Cyon and the
-site works.
+No framework, no build step for the HTML. Run `npm run build` once for the six bundles,
+then upload the contents of this folder to the web root at Cyon and the site works.
+
+**The network is a path prefix.** `/demo/<tab>` is the hackathon deployment on Sepolia;
+`/<tab>` is reserved for mainnet, and one set of files serves both. That costs two
+conventions, and both are enforced rather than remembered: assets and bundles are
+root-absolute (`/i18n.js`, `/brand/…`) so they are one cache entry at both depths, and
+links between tabs are relative and extension-less (`./explorer`) so the prefix carries
+itself. Home, the imprint and the privacy notice are absolute — same page on every chain.
+`.htaccess` has the reasoning beside the rules; `stamp-assets.mjs` fails on a relative
+script tag, because that spelling works at one of the two addresses and 404s at the other.
 
 ```
-index.html         what the project is, the FAQ, the diagrams
-poc.html           the live view — records that already exist, read from chain
-demo.html          the playground — make one yourself, no wallet required
-explorer.html      what a name carries, and every NextKey record, live
-blog.html          community posts: write one, edit one, read them all
-donate.html        the ENS name, the address, the QR code, and the donations
-imprint.html       who runs this, and what it does not promise
-privacy.html       what is collected, and what a public chain keeps for good
+index.html         what the project is, the four tabs, the FAQ, the diagrams
+id.html            /demo/id — become receivable, and your NextKey ID
+send.html          /demo/passphrase and /demo/message — one file, two tabs
+sandbox.html       /demo/sandbox — the open API, the record format, the CLI, the docs
+poc.html           /demo/poc — the live view, records that already exist, read from chain
+explorer.html      /demo/explorer — what a name carries, and every NextKey record, live
+blog.html          /demo/blog — community posts: write one, edit one, read them all
+donate.html        /demo/donate — the ENS name, the address, the QR code, the donations
+imprint.html       /imprint — who runs this, and what it does not promise
+privacy.html       /privacy — what is collected, and what a public chain keeps for good
 
-app.js             bundled reader for index.html and poc.html  — built, not in git
-demo.js            bundled logic for demo.html                 — built, not in git
-explorer.js        bundled logic for explorer.html             — built, not in git
-blog.js            bundled logic for blog.html                 — built, not in git
-donate.js          bundled logic for donate.html               — built, not in git
+app.js             bundled reader for index.html and poc.html    — built, not in git
+send.js            bundled logic for send.html and id.html       — built, not in git
+sandbox.js         bundled logic for sandbox.html                — built, not in git
+explorer.js        bundled logic for explorer.html               — built, not in git
+blog.js            bundled logic for blog.html                   — built, not in git
+donate.js          bundled logic for donate.html                 — built, not in git
 i18n.js            the nine translations — English is not in here, see below
 i18n.patch.json    the working file translations are written into
 i18n.stamp.json    the English baseline the checker compares against
 .htaccess          cache rules, and addresses without the extension
 
 src/               the sources the bundles are built from
-test/              seven suites, 259 checks
+test/              eight suites, 317 checks
 brand/             the mark, icons, social card and manifest
 ```
 
 ## Deploy
 
-Everything is a plain file with relative paths, so the site also works from a
-subdirectory. Upload the eight `.html`, the five bundles, `i18n.js`, `.htaccess` and the
-whole `brand/` folder. `src/`, `test/`, `i18n.patch.json`, `i18n.stamp.json` and this
-README are not needed on the server.
+Upload the ten `.html`, the six bundles, `i18n.js`, `.htaccess` and the whole `brand/`
+folder. `src/`, `test/`, `i18n.patch.json`, `i18n.stamp.json` and this README are not
+needed on the server.
+
+`.htaccess` is now load-bearing rather than a convenience: without its rewrites every tab
+is a 404, because the tabs are addresses (`/demo/id`) and the files are not. If Cyon ever
+serves this without `mod_rewrite`, the `.html` files still work by their own names — but
+nothing in the navigation points at them.
 
 **Upload pages and bundles together.** Each page carries a content hash of the script it
-expects (`demo.js?v=09417c32`), and each bundle checks on load that the elements it needs
+expects (`send.js?v=09417c32`), and each bundle checks on load that the elements it needs
 are there. A mismatch produces a red banner naming what is missing, with a link to a fresh
 copy — a better failure than "Cannot set properties of null", which is the one a judge on
-a phone actually hit when MetaMask's in-app browser served a cached `demo.html` beside a
-current `demo.js`. `i18n.js` is stamped the same way, so a change there means re-uploading
-all eight pages.
+a phone actually hit when MetaMask's in-app browser served a cached `send.html` beside a
+current `send.js`. `i18n.js` is stamped the same way, so a change there means re-uploading
+all ten pages.
 
-`demo.js` is about 200 KB gzipped, most of it viem and the BIP-39 word list. That is heavy
+`send.js` is about 200 KB gzipped, most of it viem and the BIP-39 word list. That is heavy
 for a static site and the trade is deliberate: bundling means the page has no CDN to be
 blocked by and no third party to trust, on a page whose whole claim is that nothing leaves
 the browser. Check that Cyon serves `.js` gzipped.
@@ -182,7 +197,7 @@ no "military grade". The testnet notice sits in the first screen rather than the
 footer, and the FAQ answers "is this ready for real funds?" with "no".
 
 
-## What demo.html does, and the one thing it refuses to do
+## What send.html does, and the one thing it refuses to do
 
 Six steps. The first five run entirely in the browser and need no wallet, no
 account and no testnet ether, so a judge with two minutes can finish the loop:
@@ -311,13 +326,19 @@ not get run.
 
 ```bash
 node web/test/v2.mjs           # 18 — the v2 construction, padding, backwards compatibility
-node web/test/interop.mjs      # 26 — the same 13 checks in Node and again in Chromium
-node web/test/playground.mjs   # 71 — demo.html in a real browser, in two languages
+node web/test/interop.mjs      # 42 — the same 21 checks in Node and again in Chromium
+node web/test/playground.mjs   # 89 — send.html in a real browser, in two languages, at both tab addresses
 node web/test/feed.mjs         # 43 — the explorer's live window and its filters
 node web/test/blog.mjs         # 42 — the community page, its names and its editing step
 node web/test/donate.mjs       # 23 — the donation page: the ENS name, the address, the QR code, balances
 node web/test/legal.mjs        # 36 — the imprint and the privacy notice
+node web/test/sandbox.mjs      # 24 — the API page, and that it never claims an endpoint is live
 ```
+
+`sandbox.mjs` is the odd one and worth a sentence. It points the page at a port nothing is
+listening on, because that is the state a reader meets before the worker is deployed, and
+asserts that the page then *says* it could not reach the API. A page printing "live"
+against nothing would pass every other check in that file.
 
 The four newer suites answer a **mocked node**: Playwright intercepts the RPC calls and
 replies with logs chosen for the case. That is not a shortcut — it is what lets them assert

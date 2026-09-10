@@ -1,15 +1,15 @@
 # NextKey — cache rules for the static host.
 #
 # Written after a judge on a phone hit "Cannot set properties of null" in the
-# MetaMask in-app browser: demo.html was cached from an earlier deploy while
-# demo.js beside it was current, and the two disagreed about which elements the
+# MetaMask in-app browser: send.html was cached from an earlier deploy while
+# send.js beside it was current, and the two disagreed about which elements the
 # page has. Clearing the cache is not a real answer — MetaMask's iOS browser has
 # a long-standing bug where it does not reliably clear, and a visitor should not
 # have to know that anyway.
 #
 # `no-cache` is not `no-store`. It permits the browser to keep the file and
 # requires it to revalidate before use, so an unchanged bundle comes back as a
-# 304 with no body. The 650 kB of demo.js is therefore downloaded once, not once
+# 304 with no body. The 650 kB of send.js is therefore downloaded once, not once
 # per visit — while a deploy still takes effect immediately.
 <IfModule mod_headers.c>
 
@@ -76,7 +76,7 @@
   # of the same name, and there is no message.html to map to. Getting this wrong
   # is a 404 on a tab in the navigation, which is what it was before this line
   # existed.
-  RewriteRule ^demo/(passphrase|message)/?$ /demo.html [L]
+  RewriteRule ^demo/(passphrase|message)/?$ /send.html [L]
 
   # Every other /demo/<tab> → <tab>.html, internally. The condition is what
   # keeps this honest: an address that names no page falls through to a 404
@@ -88,7 +88,7 @@
   # testnet — by redirect and not by rewrite, so the address bar always says
   # which chain the visitor is looking at. Deleting these five lines is what
   # launching mainnet will mean.
-  RewriteRule ^(id|passphrase|message|explorer|blog|donate|poc)/?$ /demo/$1 [R=302,L]
+  RewriteRule ^(id|passphrase|message|sandbox|explorer|blog|donate|poc)/?$ /demo/$1 [R=302,L]
 
   # Everything else without an extension: /imprint → imprint.html.
   RewriteCond %{REQUEST_FILENAME} !-f

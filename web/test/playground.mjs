@@ -2,16 +2,16 @@
  * Does the playground still do what it says?
  *
  * interop.mjs proves the arithmetic agrees across implementations. It cannot
- * see demo.html at all — a renamed element, a handler that throws, a panel that
+ * see send.html at all — a renamed element, a handler that throws, a panel that
  * quietly stops being rendered, and every check there still passes while the
  * page is broken for the one judge who tries it. This drives the page instead:
  * steps 1 to 4, in a real browser, with no wallet, exactly as a visitor would.
  *
- *   npx esbuild web/src/demo.js --bundle --format=esm --minify --target=es2022 --outfile=web/demo.js
+ *   npx esbuild web/src/send.js --bundle --format=esm --minify --target=es2022 --outfile=web/send.js
  *   node web/test/playground.mjs
  *
- * The bundle must be current — this loads web/demo.js, the file the site ships,
- * not web/src/demo.js. Running it against a stale bundle tests the last build.
+ * The bundle must be current — this loads web/send.js, the file the site ships,
+ * not web/src/send.js. Running it against a stale bundle tests the last build.
  *
  * Playwright is required here, unlike in interop.mjs, because there is nothing
  * to test without a browser. If it is missing the file says so and stops rather
@@ -24,7 +24,7 @@
  * key, and a test that mocked those would be testing the mock. They are
  * evidenced instead by an actual run, in evidence/v2-onchain.log.
  *
- * The page is served over HTTP rather than opened as a file, because demo.html
+ * The page is served over HTTP rather than opened as a file, because send.html
  * loads its bundle as an ES module and browsers refuse those from file:// —
  * which fails as a CORS error and looks, misleadingly, like a broken build.
  */
@@ -60,7 +60,7 @@ const types = { '.js': 'text/javascript', '.html': 'text/html', '.svg': 'image/s
  * pass while both tabs were broken.
  *
  * It is deliberately the same two rules as the rewrite, in the same order:
- * /passphrase and /message are both demo.html — one implementation, two
+ * /passphrase and /message are both send.html — one implementation, two
  * addresses — and every other /demo/<tab> is <tab>.html. Nothing else about the
  * path is invented.
  *
@@ -69,7 +69,7 @@ const types = { '.js': 'text/javascript', '.html': 'text/html', '.svg': 'image/s
  * and the page came back a 404 with no bundle on it.
  */
 const rewrite = (url) => url
-  .replace(/^\/demo\/(passphrase|message)\/?$/, '/demo.html')
+  .replace(/^\/demo\/(passphrase|message)\/?$/, '/send.html')
   .replace(/^\/demo\/([A-Za-z0-9_-]+)\/?$/, '/$1.html')
 
 const server = createServer((req, res) => {
@@ -135,7 +135,7 @@ try {
 
   for (const lang of LANGS) {
     console.log(`\n  A visitor, steps 1 to 4 · ?lang=${lang}\n`)
-    await page.goto(`http://127.0.0.1:${PORT}/demo.html?lang=${lang}`)
+    await page.goto(`http://127.0.0.1:${PORT}/send.html?lang=${lang}`)
     check(`the page renders in ${lang}`,
       (await page.getAttribute('html', 'data-i18n-lang')) === lang)
 
@@ -316,10 +316,10 @@ try {
     check('with no wallet, the page offers to reopen itself inside one',
       links.length >= 3)
     check('and the links carry this page, in this language',
-      links.every((h) => h.includes('demo.html') || h.includes(encodeURIComponent('demo.html'))) &&
+      links.every((h) => h.includes('send.html') || h.includes(encodeURIComponent('send.html'))) &&
       links.some((h) => h.includes(`lang%3D${lang}`) || h.includes(`lang=${lang}`)))
     check('and names an address to paste into any other wallet',
-      w.includes('demo.html'))
+      w.includes('send.html'))
   }
 
   // ── The other half of the loop ──────────────────────────────────────────
@@ -372,14 +372,14 @@ try {
     // somebody else. A parameter that quietly stops meaning anything is worse
     // than one that keeps meaning what it meant, so it still works where the
     // path says nothing.
-    await page.goto(`http://127.0.0.1:${PORT}/demo.html?lang=en&mode=message`)
+    await page.goto(`http://127.0.0.1:${PORT}/send.html?lang=en&mode=message`)
     check('?mode=message still starts where it says it will',
       !(await page.locator('#pane-message').isHidden()) &&
       (await page.evaluate(() => window.NEXTKEY.state().mode)) === 'message')
   }
 
   // ── A page one version behind its bundle ────────────────────────────────
-  // demo.html and demo.js are two files on a static host. They can be uploaded
+  // send.html and send.js are two files on a static host. They can be uploaded
   // separately and cached separately, and when they drift the symptom was
   // "Cannot set properties of null (setting 'hidden')" on a button press —
   // accurate, useless, and indistinguishable from a broken cipher to whoever is
@@ -390,12 +390,12 @@ try {
     const stale = await browser.newPage()
     const raw = []
     stale.on('pageerror', (e) => raw.push(e.message))
-    await stale.route('**/demo.html*', async (route) => {
+    await stale.route('**/send.html*', async (route) => {
       const res = await route.fetch()
       const body = (await res.text()).replace('id="step-chain"', 'id="step4"')
       await route.fulfill({ response: res, body })
     })
-    await stale.goto(`http://127.0.0.1:${PORT}/demo.html?lang=en`)
+    await stale.goto(`http://127.0.0.1:${PORT}/send.html?lang=en`)
     const banner = await stale.locator('body > div').first().innerText()
 
     check('a mismatched page says so, in words', /version/i.test(banner))

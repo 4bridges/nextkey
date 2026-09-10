@@ -235,7 +235,7 @@ check('the crossed-out provenance line is gone', (await page.locator('.provenanc
 // only a title to translate had a null key, and the older overlay on index and
 // poc wrote base[null] — the element's own text — over its contents, replacing
 // the icon with the word it had just collected from it. So this walks all five.
-for (const p of ['index.html', 'poc.html', 'demo.html', 'blog.html', 'explorer.html']) {
+for (const p of ['index.html', 'poc.html', 'send.html', 'blog.html', 'explorer.html']) {
   await page.goto(`${base}/${p}?lang=en`, { waitUntil: 'domcontentloaded' })
   const seen = await page.evaluate(() => {
     const a = document.querySelector('.barnav .navhome')

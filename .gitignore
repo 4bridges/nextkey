@@ -177,10 +177,16 @@ vite.config.ts.timestamp-*
 # web/i18n.js is deliberately NOT ignored: i18n-merge.mjs reads it as the base
 # it merges into, so it cannot be rebuilt from i18n.patch.json alone.
 /web/app.js
-/web/demo.js
+/web/send.js
+/web/sandbox.js
 /web/explorer.js
 /web/blog.js
 /web/donate.js
+
+# The API worker, bundled the same way and by the same pinned esbuild.
+# wrangler.toml sets no_bundle = true so that it deploys these bytes rather than
+# building its own: two bundlers producing the deployed artefact is one too many.
+/api/worker.js
 
 # Where deliveries from the assistant land on the author's machine. Working
 # material, not the project.

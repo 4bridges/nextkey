@@ -1,7 +1,7 @@
 /**
  * Stamp each page's script tags with a hash of the file they load.
  *
- * The failure this prevents: `demo.html` and `demo.js` are two files on a static
+ * The failure this prevents: `send.html` and `send.js` are two files on a static
  * host, uploaded separately and cached separately. When they drift, the newer
  * script looks for elements the older page does not have, and a judge on a
  * phone gets `Cannot set properties of null` — on a page whose entire subject
@@ -12,9 +12,9 @@
  * it depends on `mod_headers` being enabled, and when it is not, it fails
  * silently. This does not depend on the server at all:
  *
- *   <script src="./demo.js?v=3f9a1c7e">
+ *   <script src="./send.js?v=3f9a1c7e">
  *
- * Change one byte of `demo.js` and that becomes a URL the browser has never seen,
+ * Change one byte of `send.js` and that becomes a URL the browser has never seen,
  * so it fetches it — no revalidation, no expiry, nothing to configure. Change
  * nothing and the URL is identical, so the cached copy is used and the visitor
  * pays no bandwidth for a deploy that did not touch it.
@@ -29,9 +29,9 @@
  * Run it after building the bundles and before uploading. `--check` is for
  * making that non-optional later, in a deploy script or a hook.
  *
- * Note what this does *not* fix: a stale `demo.html` still in a browser's cache
+ * Note what this does *not* fix: a stale `send.html` still in a browser's cache
  * from before any of this existed. Nothing served can fix that, because the
- * browser never asks. One visit to a URL it has not seen — `demo.html?v=3` —
+ * browser never asks. One visit to a URL it has not seen — `send.html?v=3` —
  * clears it for good, and the page's own version check prints exactly that link
  * when it detects the mismatch.
  */
@@ -42,7 +42,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const WEB = join(dirname(fileURLToPath(import.meta.url)), '..', 'web')
-const PAGES = ['index.html', 'poc.html', 'id.html', 'demo.html', 'blog.html', 'explorer.html',
+const PAGES = ['index.html', 'poc.html', 'id.html', 'send.html', 'sandbox.html', 'blog.html', 'explorer.html',
                'donate.html', 'imprint.html', 'privacy.html']
 const check = process.argv.includes('--check')
 
@@ -58,8 +58,8 @@ for (const page of PAGES) {
 
   // Local scripts only: `/name.js`, with or without a version already on it.
   // Root-absolute since the pages started answering to two addresses each —
-  // /demo/passphrase and, later, /passphrase — because a relative `./demo.js`
-  // resolves to /demo/demo.js at one of those depths and 404s. Absolute is also
+  // /demo/passphrase and, later, /passphrase — because a relative `./send.js`
+  // resolves to /demo/send.js at one of those depths and 404s. Absolute is also
   // one cache entry for both networks rather than two.
   //
   // A path with a slash in it is somebody else's file to worry about, so the

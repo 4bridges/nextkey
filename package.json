@@ -7,13 +7,14 @@
   },
   "scripts": {
     "build": "npm run build:bundles && node scripts/stamp-assets.mjs",
-    "build:bundles": "esbuild web/src/app.js --bundle --format=esm --minify --target=es2022 --outfile=web/app.js && esbuild web/src/demo.js --bundle --format=esm --minify --target=es2022 --outfile=web/demo.js && esbuild web/src/explorer.js --bundle --format=esm --minify --target=es2022 --outfile=web/explorer.js && esbuild web/src/blog.js --bundle --format=esm --minify --target=es2022 --outfile=web/blog.js && esbuild web/src/donate.js --bundle --format=esm --minify --target=es2022 --outfile=web/donate.js",
+    "build:bundles": "esbuild web/src/app.js --bundle --format=esm --minify --target=es2022 --outfile=web/app.js && esbuild web/src/send.js --bundle --format=esm --minify --target=es2022 --outfile=web/send.js && esbuild web/src/explorer.js --bundle --format=esm --minify --target=es2022 --outfile=web/explorer.js && esbuild web/src/blog.js --bundle --format=esm --minify --target=es2022 --outfile=web/blog.js && esbuild web/src/donate.js --bundle --format=esm --minify --target=es2022 --outfile=web/donate.js && esbuild web/src/sandbox.js --bundle --format=esm --minify --target=es2022 --outfile=web/sandbox.js",
+    "build:api": "esbuild api/src/worker.js --bundle --format=esm --target=es2022 --outfile=api/worker.js",
     "build:contract": "node scripts/build-contract.mjs",
     "verify:stamps": "node scripts/stamp-assets.mjs --check",
     "test": "npm run test:crypto && npm run test:pages",
     "test:crypto": "node web/test/v2.mjs && node web/test/interop.mjs",
     "pretest:pages": "npm run build",
-    "test:pages": "node web/test/playground.mjs && node web/test/feed.mjs && node web/test/blog.mjs && node web/test/donate.mjs && node web/test/legal.mjs"
+    "test:pages": "node web/test/playground.mjs && node web/test/feed.mjs && node web/test/blog.mjs && node web/test/donate.mjs && node web/test/legal.mjs && node web/test/sandbox.mjs"
   },
   "repository": {
     "type": "git",

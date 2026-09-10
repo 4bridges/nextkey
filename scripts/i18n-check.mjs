@@ -1,7 +1,7 @@
 /**
  * Which translations are missing, and which have gone stale?
  *
- * The site carries 203 keys in nine languages. Adding a sentence to demo.js adds
+ * The site carries 203 keys in nine languages. Adding a sentence to send.js adds
  * nine obligations, and forgetting one costs a visitor exactly one sentence of
  * English in the middle of their own language — invisible from a desk where
  * everything is English anyway.
@@ -38,9 +38,10 @@ const STAMP = join(WEB, 'i18n.stamp.json')
 // blog.html and explorer.html shipped with their whole vocabulary outside the
 // check, so nine languages fell back to English and nothing went red. A
 // checker that does not know about a file cannot report it.
-const PAGES = ['index.html', 'poc.html', 'id.html', 'demo.html', 'blog.html', 'explorer.html',
+const PAGES = ['index.html', 'poc.html', 'id.html', 'send.html', 'sandbox.html', 'blog.html', 'explorer.html',
                'donate.html', 'imprint.html', 'privacy.html']
-const SOURCES = ['src/app.js', 'src/demo.js', 'src/blog.js', 'src/explorer.js', 'src/donate.js']
+const SOURCES = ['src/app.js', 'src/send.js', 'src/sandbox.js', 'src/blog.js',
+                 'src/explorer.js', 'src/donate.js']
 
 const digest = (s) => createHash('sha256').update(s).digest('hex').slice(0, 12)
 

@@ -164,7 +164,7 @@ const eye = (label) => `
 /**
  * Does this page match this bundle?
  *
- * demo.html and demo.js are deployed as two files, and they can be uploaded
+ * send.html and send.js are deployed as two files, and they can be uploaded
  * separately, cached separately, and end up one version apart. When that
  * happened the symptom was `Cannot set properties of null (setting 'hidden')`
  * on pressing a button — technically accurate, useless to everybody, and
@@ -252,7 +252,7 @@ const on = (id, ev, fn) => { const el = document.getElementById(id); if (el) el.
       ' — that link carries a fresh address, which every browser treats as a new page.</p>' +
       `<p style="margin:.5rem 0 0;font-family:ui-monospace,monospace;font-size:.85em">missing: ${missing.join(', ')}</p>`
     document.body.prepend(banner)
-    throw new Error(`demo.html is out of step with demo.js — missing: ${missing.join(', ')}`)
+    throw new Error(`send.html is out of step with send.js — missing: ${missing.join(', ')}`)
   }
 }
 

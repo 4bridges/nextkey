@@ -194,6 +194,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
       <a href="./id" data-i18n="nav.id">ID</a>
       <a href="./passphrase" data-i18n="nav.passphrase">Passphrase</a>
       <a href="./message" data-i18n="nav.message">Message</a>
+      <a href="./sandbox" data-i18n="nav.sandbox">Sandbox</a>
       <a href="./explorer" data-i18n="nav.explorer">Explorer</a>
       <a href="./blog" data-i18n="nav.blog">Blog</a>
       <a href="./donate" data-i18n="nav.donate">Donate</a>
@@ -280,6 +281,15 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
        operators see your IP address and the queries you make — including
        <strong>which names you look up</strong>. We receive none of it, and we cannot promise
        anything about what they do with it.</p>
+    <p>There is now one exception, and it is ours: the read-only API at
+       <span class="mono">api.nextkey.li</span>, which exists for callers with no node of their
+       own. Using it means <strong>telling us which name you are looking up</strong>, on top of
+       telling a node. So there is nowhere for that to be written down — the service has no request
+       log, no analytics and no storage of any kind attached to it, and no API keys, so there is
+       nothing to correlate lookups with even in principle. It is run on Cloudflare's network,
+       which keeps its own edge logs that we do not control. Nothing on this site uses it: the
+       pages read the chain from your browser as described above, and the Sandbox page is the only
+       one that contacts it, once, to ask whether it is answering.</p>
     <p>If you connect a wallet, the wallet is a separate program with its own privacy policy. The
        page learns the address you connect and nothing else; your private key never reaches it, and
        no transaction happens until you confirm it yourself.</p>
@@ -328,12 +338,11 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 <footer class="wrap">
   <p>
     <a class="foothome" href="/" data-i18n-title="nav.home" title="Home"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.75 20v-5.5h4.5V20"/></svg><span class="vh" data-i18n="nav.home">Home</span></a>
-    <a href="./poc" data-i18n="nav.poc">PoC</a>
     <a href="/imprint" data-i18n="foot.imprint">Imprint</a>
   </p>
 </footer>
 
-<script src="/i18n.js?v=f0456608"></script>
+<script src="/i18n.js?v=fed6a38c"></script>
 <script>
 /**
  * Same overlay as the landing page, same storage keys, so a language or theme
