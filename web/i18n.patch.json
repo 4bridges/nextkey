@@ -370,7 +370,18 @@
   "b.claimeddate": "直接从名称上读出的帖子，显示它所在的记录和它自己声称的日期。而本页亲眼看到写入的帖子，附的是区块和交易——那个日期属于链，不属于作者。",
   "x.feed.readnow": "刚刚从名称上读出",
   "x.feed.readnote": "没有交易的条目是从名称上读出来的，而不是作为事件找到的：在这个部署上，一条记录可以存在，却没有公共节点愿意提供的写入事件——只问事件的列表会漏掉它们，却看着很完整。",
-  "x.f.readonly": "这个名称没有公共节点能提供的创建事件，因此没有记录 id，也就无法就它的写入提出确切的问题。上面显示的是这个名称现在承载的内容，一条记录一条记录读出来的。"
+  "x.f.readonly": "这个名称没有公共节点能提供的创建事件，因此没有记录 id，也就无法就它的写入提出确切的问题。上面显示的是这个名称现在承载的内容，一条记录一条记录读出来的。",
+  "x.f.reversing": "正在向 ENS 询问该地址发布了哪个名称…",
+  "x.f.noreverse": "该地址在这个部署上没有发布任何名称。",
+  "x.f.noreversenote": "名称指向地址，而地址只有在持有者设置了主名称时才会指回来。借用的名称两者都没有：没有反向记录，也没有地址记录——这是实测而非假设——因为它只承载一样东西，即你的签名推导出的密钥。所以地址找不到它，而你的钱包一次签名就能。",
+  "b.filter.go": "只看这个名称",
+  "b.filter.all": "所有帖子",
+  "b.noneon": "这个名称上没有帖子。",
+  "b.noneonnote": "名称可以解析，本页也读过它的五个帖子记录——都是空的。清除筛选即可看到其余内容。",
+  "x.f.byid": "NextKey ID 无法反推，因此这里把它与每个已知名称发布的密钥逐一比对…",
+  "x.f.noid": "本页知道的名称中，没有一个发布了这个 NextKey ID。",
+  "x.f.noidnote": "ID 是对已发布密钥的哈希，因此无法还原成密钥。本页能做的是识别它——推导出每个能写出的名称的 ID 再比对——而它能写出的名称就是写进源码里的那些。别处名称上的 ID 并不是错的，只是从这里无法识别。",
+  "x.f.toid": "用你的钱包在 ID 页找到你的名称"
  },
  "de": {
   "t.wallet.none": "In diesem Browser hat keine Wallet geantwortet. Die meisten mobilen Browser tragen keine, ein Desktop-Browser nur dann, wenn eine Erweiterung installiert ist. Öffnen Sie diese Seite stattdessen im eigenen Browser Ihrer Wallet:",
@@ -748,7 +759,18 @@
   "b.claimeddate": "Ein Beitrag, der direkt vom Namen gelesen wurde, steht hier mit dem Record, in dem er liegt, und mit dem Datum, das er selbst behauptet. Ein Beitrag, dessen Schreibvorgang diese Seite gesehen hat, trägt stattdessen Block und Transaktion — dieses Datum gehört der Chain, nicht dem Autor.",
   "x.feed.readnow": "gerade vom Namen gelesen",
   "x.feed.readnote": "Die Einträge ohne Transaktion wurden von ihren Namen gelesen statt als Ereignis gefunden: auf diesem Deployment kann ein Record existieren, ohne dass es ein Schreib-Ereignis gibt, das ein öffentlicher Node ausliefert — eine Liste, die nur nach Ereignissen fragt, liesse sie weg und sähe dabei vollständig aus.",
-  "x.f.readonly": "Für diesen Namen gibt es kein Erzeugungs-Ereignis, das ein öffentlicher Node ausliefert, also keine Record-Id und keine exakte Frage nach seinen Writes. Oben steht, was der Name jetzt trägt, Record für Record gelesen."
+  "x.f.readonly": "Für diesen Namen gibt es kein Erzeugungs-Ereignis, das ein öffentlicher Node ausliefert, also keine Record-Id und keine exakte Frage nach seinen Writes. Oben steht, was der Name jetzt trägt, Record für Record gelesen.",
+  "x.f.reversing": "Frage ENS, welchen Namen diese Adresse veröffentlicht…",
+  "x.f.noreverse": "Diese Adresse veröffentlicht auf diesem Deployment keinen Namen.",
+  "x.f.noreversenote": "Ein Name zeigt auf eine Adresse, und eine Adresse zeigt nur zurück, wenn ihr Halter einen primären Namen gesetzt hat. Ein geliehener Name hat keines von beidem: keinen Reverse-Record und auch keinen Adress-Record — gemessen, nicht vermutet — denn er trägt genau eine Sache, den Schlüssel, den deine Signatur ableitet. Eine Adresse kann ihn deshalb nicht finden, deine Wallet in einer Signatur schon.",
+  "b.filter.go": "Nur dieser Name",
+  "b.filter.all": "Alle Beiträge",
+  "b.noneon": "Auf diesem Namen liegt kein Beitrag.",
+  "b.noneonnote": "Der Name löst auf, und diese Seite hat seine fünf Beitrags-Records gelesen: alle leer. Filter löschen zeigt den Rest.",
+  "x.f.byid": "Eine NextKey ID lässt sich nicht zurückrechnen, deshalb wird sie hier mit dem Schlüssel jedes Namens verglichen, den diese Seite kennt…",
+  "x.f.noid": "Kein Name, den diese Seite kennt, veröffentlicht diese NextKey ID.",
+  "x.f.noidnote": "Eine ID ist ein Hash über einen veröffentlichten Schlüssel und lässt sich nicht in ihn zurückverwandeln. Was diese Seite kann, ist sie erkennen — die ID jedes Namens ableiten, den sie buchstabieren kann, und vergleichen — und buchstabieren kann sie die Namen, die in ihrer Quelle stehen. Eine ID auf einem Namen von anderswo ist nicht falsch, sie ist von hier aus nur nicht erkennbar.",
+  "x.f.toid": "Deinen Namen mit der Wallet finden, auf dem ID-Reiter"
  },
  "es": {
   "t.wallet.none": "Ninguna cartera ha respondido en este navegador. La mayoría de los navegadores móviles no llevan ninguna, y uno de escritorio solo si hay una extensión instalada. Abra esta página en el navegador de su propia cartera:",
@@ -1126,7 +1148,18 @@
   "b.claimeddate": "Una publicación leída directamente de su nombre se muestra con el registro en el que está y con la fecha que ella misma declara. Una publicación cuya escritura vio esta página lleva su bloque y su transacción: esa fecha es de la cadena, no del autor.",
   "x.feed.readnow": "leído ahora mismo del nombre",
   "x.feed.readnote": "Las entradas sin transacción se leyeron de sus nombres en lugar de encontrarse como eventos: en este despliegue un registro puede existir sin un evento de escritura que un nodo público sirva, y una lista que solo pregunta por eventos los omitiría pareciendo completa.",
-  "x.f.readonly": "Este nombre no tiene un evento de creación que un nodo público sirva, así que no hay id de registro ni una pregunta exacta sobre sus escrituras. Arriba está lo que el nombre lleva ahora, leído registro por registro."
+  "x.f.readonly": "Este nombre no tiene un evento de creación que un nodo público sirva, así que no hay id de registro ni una pregunta exacta sobre sus escrituras. Arriba está lo que el nombre lleva ahora, leído registro por registro.",
+  "x.f.reversing": "Preguntando a ENS qué nombre publica esa dirección…",
+  "x.f.noreverse": "Esa dirección no publica ningún nombre en este despliegue.",
+  "x.f.noreversenote": "Un nombre apunta a una dirección, y una dirección solo apunta de vuelta si su titular ha fijado un nombre primario. Un nombre prestado no tiene ninguno de los dos: ni registro inverso ni registro de dirección —medido, no supuesto— porque lleva una sola cosa, la clave que deriva tu firma. Así que una dirección no puede encontrarlo y tu cartera sí, con una firma.",
+  "b.filter.go": "Solo este nombre",
+  "b.filter.all": "Todas las publicaciones",
+  "b.noneon": "No hay ninguna publicación en ese nombre.",
+  "b.noneonnote": "El nombre resuelve y esta página leyó sus cinco registros de publicación: todos vacíos. Borra el filtro para ver el resto.",
+  "x.f.byid": "Un NextKey ID no se puede invertir, así que se compara con la clave que publica cada nombre conocido aquí…",
+  "x.f.noid": "Ningún nombre que esta página conoce publica ese NextKey ID.",
+  "x.f.noidnote": "Un ID es un hash sobre una clave publicada, así que no se puede volver a convertir en ella. Lo que esta página puede hacer es reconocerlo —derivar el ID de cada nombre que sabe escribir y comparar— y los nombres que sabe escribir son los que están en su código. Un ID de un nombre de otra parte no es erróneo, simplemente no es reconocible desde aquí.",
+  "x.f.toid": "Encuentra tu nombre con tu cartera, en la pestaña ID"
  },
  "fa": {
   "t.wallet.none": "هیچ کیف‌پولی در این مرورگر پاسخ نداد. بیشتر مرورگرهای موبایل کیف‌پول ندارند و مرورگر دسکتاپ تنها اگر افزونه‌ای نصب شده باشد. این صفحه را به‌جای آن در مرورگر خودِ کیف‌پولتان باز کنید:",
@@ -1503,7 +1536,18 @@
   "b.claimeddate": "نوشته‌ای که مستقیم از نام خوانده شده، با رکوردی که در آن نشسته و تاریخی که خودش ادعا می‌کند نشان داده می‌شود. نوشته‌ای که این صفحه نوشتنش را دیده، بلاک و تراکنش را همراه دارد — آن تاریخ از زنجیره است، نه از نویسنده.",
   "x.feed.readnow": "همین حالا از نام خوانده شد",
   "x.feed.readnote": "ورودی‌های بدون تراکنش از نام‌شان خوانده شده‌اند، نه به‌عنوان رویداد پیدا شده: در این استقرار یک رکورد می‌تواند وجود داشته باشد بی‌آنکه رویداد نوشتنی باشد که یک نود عمومی تحویل دهد — فهرستی که فقط رویداد می‌پرسد آنها را جا می‌گذارد و کامل به نظر می‌رسد.",
-  "x.f.readonly": "این نام رویداد ایجادی ندارد که یک نود عمومی تحویل دهد، پس نه شناسهٔ رکوردی هست و نه پرسشی دقیق درباره نوشته‌هایش. بالا آنچه نام حالا دارد آمده، رکورد به رکورد خوانده‌شده."
+  "x.f.readonly": "این نام رویداد ایجادی ندارد که یک نود عمومی تحویل دهد، پس نه شناسهٔ رکوردی هست و نه پرسشی دقیق درباره نوشته‌هایش. بالا آنچه نام حالا دارد آمده، رکورد به رکورد خوانده‌شده.",
+  "x.f.reversing": "از ENS می‌پرسیم آن نشانی چه نامی منتشر می‌کند…",
+  "x.f.noreverse": "این نشانی روی این استقرار هیچ نامی منتشر نمی‌کند.",
+  "x.f.noreversenote": "یک نام به نشانی اشاره می‌کند و نشانی تنها زمانی به عقب اشاره می‌کند که دارنده‌اش نام اصلی را تنظیم کرده باشد. نام قرضی هیچ‌کدام را ندارد: نه رکورد معکوس و نه رکورد نشانی — سنجیده شده، نه فرض — چون تنها یک چیز دارد، کلیدی که امضای تو برمی‌گیرد. پس نشانی نمی‌تواند آن را بیابد و کیف پول تو با یک امضا می‌تواند.",
+  "b.filter.go": "فقط همین نام",
+  "b.filter.all": "همهٔ نوشته‌ها",
+  "b.noneon": "روی این نام نوشته‌ای نیست.",
+  "b.noneonnote": "نام حل می‌شود و این صفحه پنج رکورد نوشتهٔ آن را خوانده است: همه خالی. فیلتر را پاک کن تا باقی را ببینی.",
+  "x.f.byid": "شناسهٔ NextKey برگشت‌پذیر نیست، پس با کلیدی که هر نام شناخته‌شده منتشر می‌کند مقایسه می‌شود…",
+  "x.f.noid": "هیچ نامی که این صفحه می‌شناسد آن شناسهٔ NextKey را منتشر نمی‌کند.",
+  "x.f.noidnote": "شناسه یک هش روی کلید منتشرشده است، پس نمی‌توان آن را به کلید برگرداند. کاری که این صفحه می‌تواند بکند شناختن آن است — شناسهٔ هر نامی که می‌تواند بنویسد را می‌سازد و مقایسه می‌کند — و نام‌هایی که می‌تواند بنویسد همان‌هایی هستند که در منبعش آمده‌اند. شناسه‌ای روی نامی از جای دیگر غلط نیست، فقط از اینجا شناختنی نیست.",
+  "x.f.toid": "نامت را با کیف پولت در برگهٔ شناسه پیدا کن"
  },
  "fr": {
   "t.wallet.none": "Aucun portefeuille n’a répondu dans ce navigateur. La plupart des navigateurs mobiles n’en portent aucun, et un navigateur de bureau seulement si une extension est installée. Ouvrez plutôt cette page dans le navigateur intégré de votre portefeuille :",
@@ -1883,7 +1927,18 @@
   "b.claimeddate": "Un billet lu directement sur son nom est affiché avec l'enregistrement où il se trouve et la date qu'il revendique. Un billet dont cette page a vu l'écriture porte son bloc et sa transaction : cette date est celle de la chaîne, pas celle de l'auteur.",
   "x.feed.readnow": "lu à l’instant sur le nom",
   "x.feed.readnote": "Les entrées sans transaction ont été lues sur leurs noms au lieu d'être trouvées comme événements : sur ce déploiement, un enregistrement peut exister sans événement d'écriture qu'un nœud public serve — une liste qui ne demande que des événements les omettrait en paraissant complète.",
-  "x.f.readonly": "Ce nom n'a pas d'événement de création qu'un nœud public serve, donc pas d'identifiant d'enregistrement et aucune question exacte sur ses écritures. Ci-dessus se trouve ce que le nom porte maintenant, lu enregistrement par enregistrement."
+  "x.f.readonly": "Ce nom n'a pas d'événement de création qu'un nœud public serve, donc pas d'identifiant d'enregistrement et aucune question exacte sur ses écritures. Ci-dessus se trouve ce que le nom porte maintenant, lu enregistrement par enregistrement.",
+  "x.f.reversing": "On demande à ENS quel nom cette adresse publie…",
+  "x.f.noreverse": "Cette adresse ne publie aucun nom sur ce déploiement.",
+  "x.f.noreversenote": "Un nom pointe vers une adresse, et une adresse ne pointe en retour que si son détenteur a défini un nom principal. Un nom prêté n'a ni l'un ni l'autre : pas d'enregistrement inverse et pas d'enregistrement d'adresse non plus — mesuré, pas supposé — car il porte une seule chose, la clé que votre signature dérive. Une adresse ne peut donc pas le trouver, votre portefeuille si, en une signature.",
+  "b.filter.go": "Seulement ce nom",
+  "b.filter.all": "Tous les billets",
+  "b.noneon": "Aucun billet sur ce nom.",
+  "b.noneonnote": "Le nom se résout et cette page a lu ses cinq enregistrements de billet : tous vides. Effacez le filtre pour voir le reste.",
+  "x.f.byid": "Un NextKey ID ne se remonte pas, il est donc comparé à la clé publiée par chaque nom connu ici…",
+  "x.f.noid": "Aucun nom connu de cette page ne publie ce NextKey ID.",
+  "x.f.noidnote": "Un ID est un hachage sur une clé publiée : il ne peut pas y être ramené. Ce que cette page peut faire, c'est le reconnaître — dériver l'ID de chaque nom qu'elle sait écrire et comparer — et les noms qu'elle sait écrire sont ceux inscrits dans sa source. Un ID sur un nom venu d'ailleurs n'est pas faux, il n'est simplement pas reconnaissable d'ici.",
+  "x.f.toid": "Trouvez votre nom avec votre portefeuille, dans l’onglet ID"
  },
  "it": {
   "t.wallet.none": "Nessun portafoglio ha risposto in questo browser. La maggior parte dei browser per telefono non ne porta alcuno, e un browser desktop soltanto se è installata un’estensione. Apra invece questa pagina nel browser del suo portafoglio:",
@@ -2261,7 +2316,18 @@
   "b.claimeddate": "Un post letto direttamente dal suo nome è mostrato con il record in cui sta e con la data che dichiara da sé. Un post la cui scrittura questa pagina ha visto porta blocco e transazione: quella data è della catena, non dell’autore.",
   "x.feed.readnow": "letto ora dal nome",
   "x.feed.readnote": "Le voci senza transazione sono state lette dai loro nomi invece di essere trovate come eventi: su questo deployment un record può esistere senza un evento di scrittura che un nodo pubblico serva, e un elenco che chiede solo eventi le lascerebbe fuori sembrando completo.",
-  "x.f.readonly": "Questo nome non ha un evento di creazione che un nodo pubblico serva, quindi non c’è un id di record né una domanda esatta sulle sue scritture. Sopra c’è ciò che il nome porta adesso, letto record per record."
+  "x.f.readonly": "Questo nome non ha un evento di creazione che un nodo pubblico serva, quindi non c’è un id di record né una domanda esatta sulle sue scritture. Sopra c’è ciò che il nome porta adesso, letto record per record.",
+  "x.f.reversing": "Chiedo a ENS quale nome pubblica quell’indirizzo…",
+  "x.f.noreverse": "Quell’indirizzo non pubblica alcun nome su questo deployment.",
+  "x.f.noreversenote": "Un nome punta a un indirizzo, e un indirizzo punta indietro solo se chi lo detiene ha impostato un nome primario. Un nome in prestito non ha né l’uno né l’altro: nessun record inverso e nessun record di indirizzo — misurato, non supposto — perché porta una cosa sola, la chiave che la tua firma deriva. Un indirizzo quindi non può trovarlo, il tuo wallet sì, con una firma.",
+  "b.filter.go": "Solo questo nome",
+  "b.filter.all": "Tutti i post",
+  "b.noneon": "Nessun post su questo nome.",
+  "b.noneonnote": "Il nome si risolve e questa pagina ha letto i suoi cinque record di post: tutti vuoti. Cancella il filtro per vedere il resto.",
+  "x.f.byid": "Un NextKey ID non si inverte, quindi viene confrontato con la chiave che pubblica ogni nome noto qui…",
+  "x.f.noid": "Nessun nome noto a questa pagina pubblica quel NextKey ID.",
+  "x.f.noidnote": "Un ID è un hash su una chiave pubblicata, quindi non può essere ricondotto a essa. Ciò che questa pagina può fare è riconoscerlo — derivare l’ID di ogni nome che sa scrivere e confrontare — e i nomi che sa scrivere sono quelli nel suo sorgente. Un ID su un nome di altrove non è sbagliato, solo non è riconoscibile da qui.",
+  "x.f.toid": "Trova il tuo nome col tuo wallet, nella scheda ID"
  },
  "pt": {
   "t.wallet.none": "Nenhuma carteira respondeu neste navegador. A maioria dos navegadores móveis não traz nenhuma, e um navegador de desktop apenas se houver uma extensão instalada. Abra esta página no navegador da própria carteira:",
@@ -2639,7 +2705,18 @@
   "b.claimeddate": "Um post lido diretamente do seu nome aparece com o registo onde está e com a data que ele próprio afirma. Um post cuja escrita esta página viu leva o seu bloco e a sua transação: essa data é da cadeia, não do autor.",
   "x.feed.readnow": "lido agora a partir do nome",
   "x.feed.readnote": "As entradas sem transação foram lidas dos seus nomes em vez de encontradas como eventos: neste deployment um registo pode existir sem um evento de escrita que um nó público sirva — uma lista que só pergunta por eventos deixá-las-ia de fora e pareceria completa.",
-  "x.f.readonly": "Este nome não tem um evento de criação que um nó público sirva, logo não há id de registo nem uma pergunta exata sobre as suas escritas. Acima está o que o nome carrega agora, lido registo a registo."
+  "x.f.readonly": "Este nome não tem um evento de criação que um nó público sirva, logo não há id de registo nem uma pergunta exata sobre as suas escritas. Acima está o que o nome carrega agora, lido registo a registo.",
+  "x.f.reversing": "A perguntar ao ENS que nome esse endereço publica…",
+  "x.f.noreverse": "Esse endereço não publica nenhum nome neste deployment.",
+  "x.f.noreversenote": "Um nome aponta para um endereço, e um endereço só aponta de volta se o seu detentor tiver definido um nome primário. Um nome emprestado não tem nenhum dos dois: nem registo inverso nem registo de endereço — medido, não suposto — porque carrega uma coisa só, a chave que a tua assinatura deriva. Um endereço não o consegue encontrar e a tua carteira consegue, com uma assinatura.",
+  "b.filter.go": "Só este nome",
+  "b.filter.all": "Todos os posts",
+  "b.noneon": "Nenhum post nesse nome.",
+  "b.noneonnote": "O nome resolve e esta página leu os seus cinco registos de post: todos vazios. Limpa o filtro para ver o resto.",
+  "x.f.byid": "Um NextKey ID não se inverte, por isso é comparado com a chave que cada nome conhecido publica…",
+  "x.f.noid": "Nenhum nome que esta página conhece publica esse NextKey ID.",
+  "x.f.noidnote": "Um ID é um hash sobre uma chave publicada, logo não pode ser reconvertido nela. O que esta página pode fazer é reconhecê-lo — derivar o ID de cada nome que sabe escrever e comparar — e os nomes que sabe escrever são os que estão no seu código. Um ID num nome de outro lugar não está errado, apenas não é reconhecível daqui.",
+  "x.f.toid": "Encontra o teu nome com a tua carteira, no separador ID"
  },
  "ru": {
   "t.wallet.none": "В этом браузере ни один кошелёк не ответил. Большинство мобильных браузеров их не содержат, а десктопный — только если установлено расширение. Откройте эту страницу во встроенном браузере вашего кошелька:",
@@ -3017,7 +3094,18 @@
   "b.claimeddate": "Пост, прочитанный прямо с имени, показан вместе с записью, в которой он лежит, и датой, которую заявляет сам. Пост, чью запись эта страница видела, несёт блок и транзакцию — эта дата принадлежит цепочке, а не автору.",
   "x.feed.readnow": "прочитано с имени только что",
   "x.feed.readnote": "Записи без транзакции прочитаны с их имён, а не найдены как события: в этом развёртывании запись может существовать без события записи, которое отдаст публичный узел, — список, спрашивающий только события, пропустил бы их и выглядел бы полным.",
-  "x.f.readonly": "У этого имени нет события создания, которое отдаёт публичный узел, значит нет и id записи, и точного вопроса о его записях. Выше — то, что имя несёт сейчас, прочитанное запись за записью."
+  "x.f.readonly": "У этого имени нет события создания, которое отдаёт публичный узел, значит нет и id записи, и точного вопроса о его записях. Выше — то, что имя несёт сейчас, прочитанное запись за записью.",
+  "x.f.reversing": "Спрашиваем ENS, какое имя публикует этот адрес…",
+  "x.f.noreverse": "Этот адрес не публикует имени в этом развёртывании.",
+  "x.f.noreversenote": "Имя указывает на адрес, а адрес указывает обратно только если его владелец задал основное имя. У одолженного имени нет ни того, ни другого: ни обратной записи, ни записи адреса — измерено, а не предположено, — потому что он несёт одно: ключ, который выводит ваша подпись. Поэтому адрес его не найдёт, а ваш кошелёк найдёт, одной подписью.",
+  "b.filter.go": "Только это имя",
+  "b.filter.all": "Все посты",
+  "b.noneon": "На этом имени нет постов.",
+  "b.noneonnote": "Имя разрешается, и страница прочитала все пять его записей постов — пустые. Очистите фильтр, чтобы увидеть остальное.",
+  "x.f.byid": "NextKey ID нельзя обратить, поэтому он сравнивается с ключом каждого известного здесь имени…",
+  "x.f.noid": "Ни одно известное этой странице имя не публикует этот NextKey ID.",
+  "x.f.noidnote": "ID — это хеш от опубликованного ключа, обратно в ключ он не превращается. Эта страница может его узнать: вывести ID каждого имени, которое умеет написать, и сравнить, — а умеет она те имена, что записаны в её исходнике. ID на имени откуда-то ещё не ошибочен, он просто отсюда неузнаваем.",
+  "x.f.toid": "Найдите своё имя кошельком, на вкладке ID"
  },
  "ua": {
   "t.wallet.none": "У цьому браузері жоден гаманець не відповів. Більшість мобільних браузерів їх не мають, а десктопний — лише якщо встановлено розширення. Відкрийте цю сторінку у власному браузері свого гаманця:",
@@ -3395,6 +3483,17 @@
   "b.claimeddate": "Пост, прочитаний прямо з імені, показано разом із записом, у якому він лежить, і датою, яку він заявляє сам. Пост, чий запис ця сторінка бачила, несе блок і транзакцію — ця дата належить ланцюгу, а не авторові.",
   "x.feed.readnow": "прочитано з імені щойно",
   "x.feed.readnote": "Записи без транзакції прочитані з їхніх імен, а не знайдені як події: у цьому розгортанні запис може існувати без події запису, яку віддасть публічний вузол, — список, що питає лише події, пропустив би їх і виглядав би повним.",
-  "x.f.readonly": "У цього імені немає події створення, яку віддає публічний вузол, отже немає й id запису та точного питання про його записи. Вище — те, що ім’я несе зараз, прочитане запис за записом."
+  "x.f.readonly": "У цього імені немає події створення, яку віддає публічний вузол, отже немає й id запису та точного питання про його записи. Вище — те, що ім’я несе зараз, прочитане запис за записом.",
+  "x.f.reversing": "Питаємо ENS, яке ім’я публікує ця адреса…",
+  "x.f.noreverse": "Ця адреса не публікує імені в цьому розгортанні.",
+  "x.f.noreversenote": "Ім’я вказує на адресу, а адреса вказує назад лише тоді, коли її власник задав основне ім’я. Позичене ім’я не має ні того, ні іншого: ні зворотного запису, ні запису адреси — виміряно, а не припущено, — бо воно несе одне: ключ, який виводить ваш підпис. Тому адреса його не знайде, а ваш гаманець знайде, одним підписом.",
+  "b.filter.go": "Лише це ім’я",
+  "b.filter.all": "Усі пости",
+  "b.noneon": "На цьому імені немає постів.",
+  "b.noneonnote": "Ім’я розв’язується, і сторінка прочитала всі п’ять його записів постів — порожні. Очистіть фільтр, щоб побачити решту.",
+  "x.f.byid": "NextKey ID не можна обернути, тому його порівнюють із ключем кожного відомого тут імені…",
+  "x.f.noid": "Жодне відоме цій сторінці ім’я не публікує цей NextKey ID.",
+  "x.f.noidnote": "ID — це хеш від опублікованого ключа, назад у ключ він не перетворюється. Ця сторінка може його впізнати: вивести ID кожного імені, яке вміє написати, і порівняти, — а вміє вона ті імена, що записані в її джерелі. ID на імені звідкись інде не хибний, він просто звідси невпізнаваний.",
+  "x.f.toid": "Знайдіть своє ім’я гаманцем, на вкладці ID"
  }
 }

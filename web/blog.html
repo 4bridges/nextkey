@@ -487,6 +487,17 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     with an instruction attached.
   -->
   <section class="step" style="padding-left:0;padding-top:1.4rem">
+    <!-- One name at a time, for whoever came to read a particular one. An
+         address is allowed in the same box: it is what a wallet shows and what
+         a person copies, and ENS turns it into a name in one step. No example
+         in the field — an example in a filter reads as a suggestion. -->
+    <div class="row">
+      <input type="text" id="filter-name" spellcheck="false" autocomplete="off"
+             aria-label="A name, or an address that publishes one"
+             style="flex:1 1 14rem;min-width:0">
+      <button class="act ghost" id="filter-go" type="button" data-i18n="b.filter.go">Only this name</button>
+      <button class="act ghost" id="filter-all" type="button" hidden data-i18n="b.filter.all">All posts</button>
+    </div>
     <div class="row">
       <span class="note" id="blog-live" style="align-self:center"></span>
     </div>
@@ -622,7 +633,7 @@ value: {"v":1,"title":"…","body":"…","at":"2026-09-08T12:00:00Z"}</pre>
     </p>
 </footer>
 
-<script src="/i18n.js?v=2a834f17"></script>
+<script src="/i18n.js?v=91f06949"></script>
 <script>
 /**
  * The same overlay as the other two pages, same storage keys, so a language or
@@ -778,6 +789,6 @@ value: {"v":1,"title":"…","body":"…","at":"2026-09-08T12:00:00Z"}</pre>
   label()
 })()
 </script>
-<script type="module" src="/blog.js?v=04d5d676"></script>
+<script type="module" src="/blog.js?v=c32bd56a"></script>
 </body>
 </html>

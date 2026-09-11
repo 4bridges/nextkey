@@ -28,6 +28,9 @@ import { packetToBytes } from 'viem/ens'
 import { sepolia } from 'viem/chains'
 import { TOPIC_RECORD, TEXT_UPDATED_TOPIC, logReader, asWrite, probeWidth } from './nk-logs.mjs'
 import { DEMO_KEY, POOL, POOL_RESOLVER } from './demo-wallet.js'
+// For the filter: a NextKey ID is recognised by deriving it from the key a name
+// publishes, because it cannot be turned back into one.
+import { un64, nextkeyId } from './nk-crypto.mjs'
 
 // ─── The deployment ────────────────────────────────────────────────────────
 // The hackathon Universal Resolver, overridden as everywhere else: viem ships
@@ -130,7 +133,7 @@ const plain = (e) => {
 }
 
 const REQUIRED_ELEMENTS = [
-  'posts', 'blog-live', 'title', 'body', 'write-state',
+  'posts', 'blog-live', 'filter-name', 'filter-go', 'filter-all', 'title', 'body', 'write-state',
   'edit-connect', 'edit-wallet', 'edit-name', 'edit-load', 'edit-list',
   'edit-form', 'edit-title', 'edit-body', 'edit-save', 'edit-empty', 'edit-out',
   'lane-lent', 'post-lent', 'lent-out',
@@ -205,9 +208,11 @@ const readPost = async (name) => {
  * The first slot decides whether the other four are read at all, so a pool of
  * two hundred costs two hundred reads rather than a thousand.
  */
+const candidates = () => [...new Set([...ALLOW, ...POOL.map((l) => `${l}.${PARENT}`),
+                                      ...session, ...(asked() ? [asked()] : [])])]
+
 const sweepPosts = async (onProgress) => {
-  const names = [...new Set([...ALLOW, ...POOL.map((l) => `${l}.${PARENT}`),
-                             ...session, ...(asked() ? [asked()] : [])])]
+  const names = candidates()
   const found = []
   for (let i = 0; i < names.length; i += READ_BATCH) {
     const slice = names.slice(i, i + READ_BATCH)
@@ -250,6 +255,7 @@ const asked = () => {
  */
 const blog = {
   read: [],           // posts read straight off the names, see sweepPosts
+  only: '',           // the one name the filter is showing, or '' for all
   addresses: null,
   width: null,
   head: null,
@@ -381,6 +387,85 @@ const merged = () => {
   return [...reads, ...blog.items]
 }
 
+/**
+ * The filter: one name, an address, or a NextKey ID.
+ *
+ * Three shapes, one question — whose posts am I looking at. A name is taken as
+ * it stands. An address is what a wallet shows and what a person copies, and
+ * ENS turns it into a name in one step, so it is allowed here. A NextKey ID
+ * cannot be turned into anything: it is a hash over a published key, so the
+ * page recognises it instead, by deriving the ID of every name it can spell and
+ * comparing. That works for the names in its source and honestly not for
+ * others, which is said rather than reported as "nothing found".
+ */
+const NEXTKEY_ID = /^NK-[0-9A-HJ-KMNP-TV-Z]{5}-[0-9A-HJ-KMNP-TV-Z]{5}-[0-9A-HJ-KMNP-TV-Z]{5}$/i
+
+const idOfKey = (value) => {
+  try {
+    const pk = un64(value)
+    return pk.length === 32 ? nextkeyId(pk) : null
+  } catch { return null }
+}
+
+const nameForId = async (id, onProgress) => {
+  const want = id.toUpperCase()
+  const names = candidates()
+  for (let i = 0; i < names.length; i += READ_BATCH) {
+    const slice = names.slice(i, i + READ_BATCH)
+    const keys = await Promise.all(slice.map((n) =>
+      reader.getEnsText({ name: n, key: 'nextkey.pubkey' }).catch(() => null)))
+    for (let j = 0; j < slice.length; j++) {
+      if (keys[j] && idOfKey(keys[j]) === want) return slice[j]
+    }
+    onProgress?.(Math.min(i + READ_BATCH, names.length), names.length)
+  }
+  return null
+}
+
+const filterTo = async (typed) => {
+  const out = $('posts')
+  const wanted = typed.trim().toLowerCase()
+  show($('filter-all'), !!wanted)
+  if (!wanted) { blog.only = ''; return render() }
+
+  let name = wanted
+  if (NEXTKEY_ID.test(wanted)) {
+    say(out, 'busy', `<p>${t('x.f.byid', 'A NextKey ID does not run backwards, so this compares it against the key every name here publishes…')}</p>`)
+    const match = await nameForId(wanted, (done, total) =>
+      say(out, 'busy', `<p>${t('x.f.byid', 'A NextKey ID does not run backwards, so this compares it against the key every name here publishes…')}
+        <span class="mono">${done}/${total}</span></p>`))
+    if (!match) return say(out, '', `
+      <p>${t('x.f.noid', 'No name this page knows publishes that NextKey ID.')}</p>
+      <p class="note">${t('x.f.noidnote', 'An ID is a hash over a published key, so it cannot be turned back into one. What this page can do is recognise it — derive the ID of every name it can spell and compare — and the names it can spell are the ones written into its source. An ID on a name from anywhere else is not wrong, it is simply not recognisable from here.')}</p>`,
+      { filter: wanted, name: null })
+    name = match
+  } else if (/^0x[0-9a-f]{40}$/.test(wanted)) {
+    say(out, 'busy', `<p>${t('x.f.reversing', 'Asking ENS which name that address publishes…')}</p>`)
+    const primary = await reader.getEnsName({ address: wanted }).catch(() => null)
+    if (!primary) return say(out, '', `
+      <p>${t('x.f.noreverse', 'That address publishes no name on this deployment.')}</p>
+      <p class="note">${t('x.f.noreversenote', 'A name points at an address, and an address points back only when its holder has set a primary name. A lent name has neither: no reverse record and no address record either — measured, not assumed — because it carries one thing only, the key your signature derives. So an address cannot find it and your wallet can, in one signature.')}</p>
+      <p class="note"><a href="./id">${t('x.f.toid', 'Find your name with your wallet, on the ID tab')}</a></p>`,
+      { filter: wanted, name: null })
+    name = primary.toLowerCase()
+  }
+
+  $('filter-name').value = name
+  blog.only = name
+  // A name nobody listed here is read on the spot: one name is five records,
+  // and refusing to look would make the filter narrower than the page.
+  if (!blog.read.some((p) => p.name === name)) {
+    say(out, 'busy', `<p>${t('b.loading', 'Reading those names from Sepolia…')}</p>`)
+    const extra = await readPost(name)
+    blog.read = [...blog.read.filter((p) => p.name !== name), ...extra]
+  }
+  render()
+}
+
+$('filter-go').addEventListener('click', () => filterTo($('filter-name').value))
+$('filter-all').addEventListener('click', () => { $('filter-name').value = ''; filterTo('') })
+$('filter-name').addEventListener('keydown', (e) => { if (e.key === 'Enter') filterTo($('filter-name').value) })
+
 const blogSort = () => {
   blog.items.sort((a, b) => (a.block === b.block ? b.index - a.index : (a.block > b.block ? -1 : 1)))
   const seen = new Set()
@@ -407,7 +492,14 @@ const blogStatus = () => {
  */
 const render = () => {
   const out = $('posts')
-  const all = merged()
+  const every = merged()
+  const all = blog.only
+    ? every.filter((p) => (p.name ?? blog.found.get(p.record)) === blog.only)
+    : every
+  if (blog.only && !all.length) return say(out, '', `
+    <p>${t('b.noneon', 'No post on that name.')}</p>
+    <p class="note">${t('b.noneonnote', 'The name resolves and this page read its post records; all five are empty. Clear the filter to see the rest.')}</p>`,
+    { posts: 0, filter: blog.only })
   if (!all.length) return say(out, '', `
     <p>${t('b.none', 'No posts on those names yet.')}</p>
     <p class="note">${t('b.nonenote', 'Nothing is wrong: a name carries a post only once somebody writes one. Write the first one below.')}</p>`,

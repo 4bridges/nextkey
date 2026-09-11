@@ -552,7 +552,7 @@ $('history').addEventListener('click', async () => {
     say(out, 'ok', `
       ${shown.map((w) => `
       <div style="border-top:1px solid var(--line);padding:.7rem 0">
-        <p style="margin:0 0 .2rem">${esc(meaning(w.key, w.value))}${w.name ? ` — ${esc(w.name)}` : ''}</p>
+        <p style="margin:0 0 .2rem">${esc(meaning(w.key, w.value))}</p>
         <p class="note" style="margin:0">
           <span class="mono break">${esc(w.key)}</span> ·
           ${t('x.log.block', 'block')} ${esc(String(w.block))}${when.has(w.block) ? ` · ${esc(when.get(w.block))} UTC` : ''} ·
@@ -606,6 +606,7 @@ const FRESH_FOR = 6_000       // how long an arrival stays marked
 
 const feed = {
   read: [],           // records read off their names, see readRecords
+  names: new Map(),   // record id → name, where a creation event says so
   addresses: null,   // every resolver this page watches, discovered and given
   width: null,
   head: null,        // the newest block this page has already read
@@ -751,10 +752,62 @@ const feedWidth = async (head) => {
 }
 
 /** Decode one window of resolver logs into feed entries. */
+/**
+ * Which name a record belongs to, where that can be established.
+ *
+ * The window used to say "a grant was given" and nothing about whose name it
+ * happened on, because a write event carries a record id and not a name. That
+ * is true and it was too pessimistic: the *creation* event of a record carries
+ * both the record id and the namehash, and a namehash can be recognised — not
+ * reversed, recognised — by hashing the names this page can spell and comparing.
+ * So every window asks for creation events as well and keeps the pairs it can
+ * name. A record whose creation event is not in the window, or whose name is
+ * not one of ours, still shows without a name; that is the honest remainder,
+ * and it is now the exception rather than every single row.
+ */
+const KNOWN_BY_HASH = new Map(READ_NAMES.map((n) => [namehash(n).toLowerCase(), n]))
+
+/**
+ * The name behind a NextKey ID, if it is one this page can recognise.
+ *
+ * An ID is seventy bits of a hash over a published key. It does not run
+ * backwards, so there is no lookup — only recognition: read the key each name
+ * publishes, derive its ID, compare. That works for the names this page can
+ * spell and for no others, and the difference is said out loud rather than
+ * reported as "not found".
+ */
+const nameForId = async (id, onProgress) => {
+  const want = id.toUpperCase()
+  for (let i = 0; i < READ_NAMES.length; i += READ_BATCH) {
+    const slice = READ_NAMES.slice(i, i + READ_BATCH)
+    const keys = await Promise.all(slice.map((n) => read(n, RECORD_PUBKEY)))
+    for (let j = 0; j < slice.length; j++) {
+      if (keys[j] && idOf(keys[j]) === want) return slice[j]
+    }
+    onProgress?.(Math.min(i + READ_BATCH, READ_NAMES.length), READ_NAMES.length)
+  }
+  return null
+}
+
+const NEXTKEY_ID = /^NK-[0-9A-HJ-KMNP-TV-Z]{5}-[0-9A-HJ-KMNP-TV-Z]{5}-[0-9A-HJ-KMNP-TV-Z]{5}$/i
+
+const nameRecords = async (from, to) => {
+  try {
+    const created = await logsWith({
+      address: feed.addresses, topics: [TOPIC_RECORD], fromBlock: from, toBlock: to,
+    })
+    for (const c of created) {
+      const who = KNOWN_BY_HASH.get(String(c.topics[2] ?? '').toLowerCase())
+      if (who) feed.names.set(String(c.topics[1] ?? '').toLowerCase(), who)
+    }
+  } catch { /* one window without names is a row without a name, not a failure */ }
+}
+
 const feedLogs = async (from, to) => {
-  const logs = await logsWith({
-    address: feed.addresses, topics: active().topics(), fromBlock: from, toBlock: to,
-  })
+  const [logs] = await Promise.all([
+    logsWith({ address: feed.addresses, topics: active().topics(), fromBlock: from, toBlock: to }),
+    nameRecords(from, to),
+  ])
   const out = []
   for (const log of logs) {
     try {
@@ -762,6 +815,7 @@ const feedLogs = async (from, to) => {
       if (!active().keep({ key: args.key, value: args.value })) continue
       out.push({
         key: args.key, value: args.value,
+        record: String(log.topics[1] ?? '').toLowerCase(),
         block: log.blockNumber, tx: log.transactionHash,
         index: log.logIndex ?? 0,
         seen: 0,
@@ -814,7 +868,15 @@ const feedRender = () => {
       <a href="${esc(ensLink(feed.name))}" target="_blank" rel="noopener noreferrer">${t('b.explorer', 'See it in the ENS explorer')}</a></p>` : ''}
     ${shown.map((w) => `
     <div class="ev${now - w.seen < FRESH_FOR ? ' fresh' : ''}">
-      <p style="margin:0 0 .2rem">${esc(meaning(w.key, w.value))}</p>
+      ${(() => { const who = w.name ?? feed.names.get(w.record) ?? null
+        // The name first: it is who this line is about, and a list of lines that
+        // all begin with the same four verbs is read by its subject.
+        // No dash between them: with the name first the line is a sentence —
+        // "anna.nextkey.eth created a NextKey ID" — and a dash would turn a
+        // subject and its verb back into two labels stuck together.
+        return `<p style="margin:0 0 .2rem">${who
+          ? `<a class="mono" href="${esc(ensLink(who))}" target="_blank" rel="noopener noreferrer">${esc(who)}</a> `
+          : ''}${esc(meaning(w.key, w.value))}</p>` })()}
       ${w.key === RECORD_PUBKEY && idOf(w.value)
         ? `<p class="note" style="margin:0 0 .2rem">${t('t.id.label', 'NextKey ID')}
              <span class="mono nkid">${esc(idOf(w.value))}</span></p>`
@@ -1094,12 +1156,50 @@ const feedSelect = async (which, name) => {
       feed.items = []
       return say($('feed-out'), '', `<p>${t('x.feed.needname', 'Type a name to see only its writes.')}</p>`)
     }
-    if (feed.cache.has(`name:${wanted}`)) {
-      const kept = feed.cache.get(`name:${wanted}`)
-      Object.assign(feed, { name: wanted, ...kept })
+    // An address is a fair thing to paste into a box that asks about a name:
+    // it is what a wallet shows, what an explorer link carries, and what a
+    // person copies. ENS answers the question in one step — the reverse record
+    // — so the filter takes either and says which one it followed. An address
+    // with no name published on this deployment is a fact about the address,
+    // not a mistake by the visitor, and it is said as one.
+    let asName = wanted
+    if (NEXTKEY_ID.test(wanted)) {
+      say($('feed-out'), 'busy', `<p>${t('x.f.byid', 'A NextKey ID does not run backwards, so this compares it against the key every name here publishes…')}</p>`)
+      const match = await nameForId(wanted, (done, total) =>
+        say($('feed-out'), 'busy', `<p>${t('x.f.byid', 'A NextKey ID does not run backwards, so this compares it against the key every name here publishes…')}
+          <span class="mono">${done}/${total}</span></p>`))
+      if (!match) {
+        feed.items = []
+        feed.read = []
+        return say($('feed-out'), '', `
+          <p>${t('x.f.noid', 'No name this page knows publishes that NextKey ID.')}</p>
+          <p class="note">${t('x.f.noidnote', 'An ID is a hash over a published key, so it cannot be turned back into one. What this page can do is recognise it — derive the ID of every name it can spell and compare — and the names it can spell are the ones written into its source. An ID on a name from anywhere else is not wrong, it is simply not recognisable from here.')}</p>`,
+          { filter: 'name', nextkeyId: wanted, name: null })
+      }
+      asName = match
+      $('feed-name').value = asName
+    } else if (/^0x[0-9a-f]{40}$/.test(wanted)) {
+      say($('feed-out'), 'busy', `<p>${t('x.f.reversing', 'Asking ENS which name that address publishes…')}</p>`)
+      const primary = await reader.getEnsName({ address: wanted }).catch(() => null)
+      if (!primary) {
+        feed.items = []
+        feed.read = []
+        return say($('feed-out'), '', `
+          <p>${t('x.f.noreverse', 'That address publishes no name on this deployment.')}</p>
+          <p class="note">${t('x.f.noreversenote', 'A name points at an address, and an address points back only when its holder has set a primary name. A lent name has neither: no reverse record and no address record either — measured, not assumed — because it carries one thing only, the key your signature derives. So an address cannot find it and your wallet can, in one signature.')}</p>
+      <p class="note"><a href="./id">${t('x.f.toid', 'Find your name with your wallet, on the ID tab')}</a></p>`,
+          { filter: 'name', address: wanted, name: null })
+      }
+      asName = primary.toLowerCase()
+      $('feed-name').value = asName
+    }
+
+    if (feed.cache.has(`name:${asName}`)) {
+      const kept = feed.cache.get(`name:${asName}`)
+      Object.assign(feed, { name: asName, ...kept })
       feedChips(); feedRender(); return feedStamps()
     }
-    return feedFindName(wanted)
+    return feedFindName(asName)
   }
 
   // Leaving the name filter gives the resolvers back: a record id belongs to
