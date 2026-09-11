@@ -322,6 +322,48 @@ check('and the tab says what it is running on, and what it is not',
   /Sepolia testnet/i.test(await page.textContent('footer')) &&
   /not audited/i.test(await page.textContent('footer')))
 
+// ── A thumb between tabs ────────────────────────────────────────────────────
+// On a phone the bar is eight symbols across the top; a swipe is the gesture a
+// reader already uses between pages of a set. The events are synthesised here
+// because a test has no thumb — what is being checked is the rule, not the
+// hardware: far enough, level enough, and the tab order the bar itself lists.
+const swipe = async (dx, dy = 0, from = 'body') => page.evaluate(([dx, dy, from]) => {
+  const el = document.querySelector(from)
+  const at = (x, y) => new Touch({ identifier: 1, target: el, clientX: x, clientY: y })
+  const fire = (type, x, y) => el.dispatchEvent(new TouchEvent(type, {
+    bubbles: true, cancelable: true,
+    touches: type === 'touchend' ? [] : [at(x, y)],
+    changedTouches: [at(x, y)], targetTouches: type === 'touchend' ? [] : [at(x, y)],
+  }))
+  fire('touchstart', 200, 400)
+  fire('touchend', 200 + dx, 400 + dy)
+}, [dx, dy, from])
+
+await page.goto(`${base}/blog.html?lang=en`, { waitUntil: 'domcontentloaded' })
+await swipe(-120)
+await page.waitForTimeout(400)
+check('a swipe left goes to the next tab in the bar',
+  /sandbox/.test(page.url()))
+
+await page.goto(`${base}/blog.html?lang=en`, { waitUntil: 'domcontentloaded' })
+await swipe(120)
+await page.waitForTimeout(400)
+check('and a swipe right goes back to the one before it',
+  /explorer/.test(page.url()))
+
+await page.goto(`${base}/blog.html?lang=en`, { waitUntil: 'domcontentloaded' })
+await swipe(-30)
+await swipe(-120, 200)
+await page.waitForTimeout(400)
+check('a short flick and a diagonal scroll change nothing',
+  /blog\.html/.test(page.url()))
+
+await page.goto(`${base}/blog.html?lang=en&keep=1`, { waitUntil: 'domcontentloaded' })
+await swipe(-120)
+await page.waitForTimeout(400)
+check('and the language and everything else in the address travels with it',
+  /lang=en/.test(page.url()) && /keep=1/.test(page.url()))
+
 check('and the page raised no errors at all', errors.length === 0)
 if (errors.length) console.log(errors)
 
