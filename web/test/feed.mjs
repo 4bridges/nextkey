@@ -184,7 +184,10 @@ await page.goto(`${base}/explorer.html?lang=de`, { waitUntil: 'networkidle' })
 await page.waitForSelector('#feed-out .ev', { timeout: 15_000 })
 const de = await page.textContent('#feed-out')
 check('the window speaks German too', /gab jemandem Zugriff/.test(de))
-check('including the heading', /Alles, was gerade auf NextKey passiert/.test(await page.textContent('#step-feed h2')))
+// The heading is the page's h1 now, not the section's h2 — the window is what
+// this page opens with. Asserted through h1 so a heading that quietly moved
+// back into the section is a failure rather than a silent pass.
+check('including the heading', /Alles, was gerade auf NextKey passiert/.test(await page.textContent('h1')))
 
 // ── More than one resolver, and it says which ──
 check('every candidate resolver is watched in one query', Array.isArray(asked) && asked.length >= 1)
