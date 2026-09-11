@@ -531,30 +531,21 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   <!-- What the ID is, for whoever wants to check rather than trust ────────── -->
   <details class="more">
     <summary data-i18n="t.id.what.h">What a NextKey ID actually is</summary>
-    <p data-i18n="t.id.what.p1">It is your published key, written so a person can handle it. The key itself is
-      44 characters of base64: it cannot be read aloud, a truncated copy of it looks exactly like a complete
-      one, and its punctuation does not survive being pasted into a chat window. Every one of those is a way
-      to send a secret to the wrong person.</p>
-    <p data-i18n="t.id.what.p2">So the ID is derived from the key rather than issued alongside it. There is no
+    <p data-i18n="t.id.what.p1">It is your published key, written so a person can handle it.</p>
+    <p data-i18n="t.id.what.p2">The ID is derived from the nextkey.pubkey key rather than issued alongside it. There is no
       registry, nothing is allocated, nothing is written to the chain for it, and there is nothing to lose —
       the same key gives the same ID to anybody who computes it, offline, on any machine. Every name that
       already publishes a key already has one.</p>
     <p data-i18n-html="t.id.what.p3">It is not a secret and it is not a permission. The key stays in
       <span class="mono">nextkey.pubkey</span> and is what the arithmetic uses; the ID is what the interface
-      says. Seventy bits of a SHA-256 over the key, in Crockford's alphabet — no I, L, O or U — plus one
-      check character, which catches a mistyped and a swapped character. Anyone verifying rather than
-      reading compares the key.</p>
+      says. Anyone verifying rather than reading compares the key.</p>
   </details>
 
   <details class="more">
     <summary data-i18n="t.id.limits.h">What this does not give you</summary>
-    <p data-i18n="t.id.limits.p1">A lent name is borrowed, not owned. It is one of this project's names and
-      the record on it was written and paid for by this page, which is what makes the first step free — and
-      it means we could take it back. The name below is the answer to that, and the ID does not change when
-      you move: it belongs to the wallet, not to the name.</p>
-    <p data-i18n-html="t.id.limits.p2">Being receivable also means being visible. Publishing a key says publicly
-      that this name can receive secrets, and every read of it leaves your browser for a public node. That is
-      stated in the <a href="/privacy">privacy notice</a> rather than left to be discovered.</p>
+    <p data-i18n="t.id.limits.p1">A lent name is borrowed, not owned. It belongs to NextKey, and the record
+      on it was written by NextKey — which means we could take it back. Your NextKey ID does not change when
+      you move to a name of your own: it belongs to the wallet, not to the name.</p>
   </details>
 
 </main>
@@ -574,7 +565,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     </p>
 </footer>
 
-<script src="/i18n.js?v=01289bd2"></script>
+<script src="/i18n.js?v=05aa991f"></script>
 <script>
 /**
  * The same overlay as the other two pages, same storage keys, so a language or
@@ -607,8 +598,8 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     base[key] = (html ? el.innerHTML : el.textContent).replace(/\s+/g, ' ').trim()
   })
   var META = document.querySelector('meta[name="description"]')
-  base['t.meta.title'] = document.title
-  base['t.meta.desc'] = META ? META.getAttribute('content') : ''
+  base['meta.title.id'] = document.title
+  base['meta.desc.id'] = META ? META.getAttribute('content') : ''
 
   function store(k, v) { try { localStorage.setItem(k, v) } catch (e) {} }
   function recall(k) { try { return localStorage.getItem(k) } catch (e) { return null } }
@@ -634,8 +625,8 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
       if (v == null) return
       if (html) el.innerHTML = v; else el.textContent = v
     })
-    document.title = pick('t.meta.title')
-    if (META) META.setAttribute('content', pick('t.meta.desc'))
+    document.title = pick('meta.title.id')
+    if (META) META.setAttribute('content', pick('meta.desc.id'))
 
     var root = document.documentElement
     root.setAttribute('lang', TAGS[code] || 'en')

@@ -1711,5 +1711,10 @@ before the deadline. The mapping that already exists is exact today.
 
 **The check for it asserts the second question, not the happy path.** The mocked node
 answers `0x` for every `eth_call` except the registrar's, so ENS has nothing to say;
-a page that asked only ENS leaves the address in the box and fails. Two checks, and
-`feed.mjs` is 46 now.
+a page that asked only ENS leaves the address in the box and fails. Two checks — and
+`feed.mjs` ends the day at 43, because three assertions went with the folded panel the
+explorer lost in the same round: the block range it searched, the resolvers it read, and
+the sentence saying the list can report a grant and not who received it. Those three are
+a deletion the page was asked for, not a claim that stopped being true; the range and the
+resolvers are still named wherever the window comes back empty or refused, which is where
+the confusion they guard against actually happens.

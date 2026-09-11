@@ -143,10 +143,6 @@ check('the window is what the page opens with',
   /Everything happening on NextKey/.test((await page.textContent('h1')).trim()) &&
   (await page.locator('#name, #look, #try').count()) === 0)
 check('a grant is described as a grant', /gave access/.test(text))
-// The line itself is four words now. The claim it used to carry — that the
-// chain does not say who was granted anything — is in the folded panel under
-// the list, where it is argued rather than repeated on every row.
-check('and the chain is not asked to name the person', /cannot say to whom/.test(text))
 check('an emptied record reads as a withdrawal', /took a grant back/.test(text))
 check('the ephemeral key is named for what it does', /where grants on this name are addressed/.test(text))
 check('a record that is not ours is left out', !/ens\.something\.else/.test(text))
@@ -154,8 +150,6 @@ check('the record name is shown in full', /nextkey\.g2\.251c755ded0bd0ebc999282c
 check('the block is named', /11661869/.test(text))
 check('and the transaction is one click away',
   (await page.locator('#feed-out a[href^="https://sepolia.etherscan.io/tx/"]').count()) >= 4)
-check('the resolver it read is on the page', /0x04B2DB6567Cc68d059c061215Adf9a99adD1cA65/i.test(text))
-check('what it cannot say is said out loud', /does not run backwards/.test(text))
 
 // ── The live part ──
 // The label is waited for, not sampled. The window says "Live" once its first

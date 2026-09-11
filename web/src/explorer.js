@@ -891,12 +891,10 @@ const feedRender = () => {
     </div>`).join('')}
     ${feed.filter === 'name' && !feed.recordId ? `<p class="note">${t('x.f.readonly', 'This name has no creation event a public node will serve, so there is no record id and no exact question to ask about its writes. What stands above is what the name carries now, read one record at a time.')}</p>` : ''}
     ${anyRead ? `<p class="note">${t('x.feed.readnote', 'The entries without a transaction were read off their names rather than found as events: a record can exist on this deployment without a write event a public node will serve, and a list that only asked for events would leave those out and look complete.')}</p>` : ''}
-    <p class="note">${t('x.log.window', 'Searched')} ${esc(String(feed.scanned))} ${t('x.log.blocks', 'blocks on')} ${feedWhere()}${all.length > FEED_SHOW ? ` · ${t('x.feed.showing', 'showing the newest')} ${FEED_SHOW} ${t('x.feed.of', 'of')} ${all.length}` : ''}.</p>
+    ${all.length > FEED_SHOW ? `<p class="note">${t('x.feed.showing', 'showing the newest')} ${FEED_SHOW} ${t('x.feed.of', 'of')} ${all.length}.</p>` : ''}
     ${feed.filter === 'granted' || feed.filter === 'revoked' ? `<p class="note">${t('x.feed.partial', 'A grant’s record name is derived, so the node cannot select these — they were picked out of the range above by hand. This is therefore what is in that range, not what exists.')}</p>` : ''}
     ${active().deep && feed.filter !== 'all' ? `<p class="note">${t('x.feed.exact', 'This filter is asked of the node directly, so it reaches back as far as the search went and misses nothing inside it.')}</p>` : ''}
-    ${why(t('x.log.how', 'How this is read'), `
-      <p>${t('x.feed.hownote', 'One log filter on one resolver, and no server: every text write it has made, kept if the record name begins with nextkey. The value is shown as it stands on the chain, because it is public either way.')}</p>
-      <p>${t('x.feed.noname', 'What is missing here is deliberate. The event carries a record id, not a name, and the event that ties the two together carries a namehash, which does not run backwards. So this list can say a grant was given and cannot say to whom — which is the claim the rest of this page makes, seen from outside.')}</p>`)}`,
+`,
     { feed: all.length, read: feed.read.length, resolvers: feed.addresses, scanned: String(feed.scanned) })
 }
 

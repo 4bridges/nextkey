@@ -127,8 +127,13 @@ for (const page of PAGES) {
   // something. The page title and the meta description are not elements the
   // overlay can address by attribute — they are set by the small inline script
   // at the foot of every page, as `base['meta.title']` and `pick('meta.title')`.
-  // Four keys live only there: meta.title and meta.desc on the landing page,
-  // d.meta.title and d.meta.desc on the live view and the two legal pages.
+  // Twenty keys live only there: meta.title.<page> and meta.desc.<page>, one
+  // pair per page. They were three shared pairs until a check ran that could
+  // see them — t.meta.* was in no language at all, so six pages kept an English
+  // title in nine languages, and d.meta.* was one value shared by the live view
+  // and the two legal pages, which meant the imprint in German announced itself
+  // as the live view. One page, one key: a title is a property of a page, and
+  // a key shared between pages can only ever be right for one of them.
   //
   // This pass exists because they were reported as unused and very nearly
   // deleted. Deleting them would not have broken a test or thrown an error: it

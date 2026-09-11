@@ -356,7 +356,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     </p>
 </footer>
 
-<script src="/i18n.js?v=01289bd2"></script>
+<script src="/i18n.js?v=05aa991f"></script>
 <script>
 /**
  * Same overlay as the landing page, same storage keys, so a language or theme
@@ -390,8 +390,8 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     base[key] = (html ? el.innerHTML : el.textContent).replace(/\s+/g, ' ').trim()
   })
   var META = document.querySelector('meta[name="description"]')
-  base['d.meta.title'] = document.title
-  base['d.meta.desc'] = META ? META.getAttribute('content') : ''
+  base['meta.title.imprint'] = document.title
+  base['meta.desc.imprint'] = META ? META.getAttribute('content') : ''
 
   function store(k, v) { try { localStorage.setItem(k, v) } catch (e) {} }
   function recall(k) { try { return localStorage.getItem(k) } catch (e) { return null } }
@@ -413,8 +413,8 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
       if (v == null) return
       if (html) el.innerHTML = v; else el.textContent = v
     })
-    document.title = pick('d.meta.title')
-    if (META) META.setAttribute('content', pick('d.meta.desc'))
+    document.title = pick('meta.title.imprint')
+    if (META) META.setAttribute('content', pick('meta.desc.imprint'))
 
     var root = document.documentElement
     root.setAttribute('lang', TAGS[code] || 'en')

@@ -178,8 +178,8 @@ check('the window has no controls to fiddle with',
 check('the heading is the one asked for', /Community Posts/.test(await page.textContent('h1')))
 check('the window is not a numbered step any more',
   (await page.locator('.step .n').count()) === 2)
-check('writing is step one, and it is called a new post',
-  (await page.textContent('.step:has(#post-lent) h2')).includes('New post'))
+check('writing is step one, and it is called writing a post',
+  (await page.textContent('.step:has(#post-lent) h2')).includes('Write a post'))
 check('and editing is step two',
   (await page.textContent('.step:has(#edit-save) h2')).includes('Edit a post'))
 check('both steps start closed', (await page.locator('.fold[open]').count()) === 0)

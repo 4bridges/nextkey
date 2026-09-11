@@ -460,16 +460,16 @@ merges into and it cannot be rebuilt from `i18n.patch.json` alone.
 And the tests, which need no chain at all:
 
 ```bash
-npm test                       # all eight suites, 327 checks
+npm test                       # all eight suites, 324 checks
 npm run test:crypto            # 60 — no bundle needed, and only interop wants a browser
-npm run test:pages             # 267 — builds first, then drives the pages in Chromium
+npm run test:pages             # 264 — builds first, then drives the pages in Chromium
 
 node web/test/v2.mjs           # 18 — the v2 construction, padding, backwards compatibility
 node web/test/interop.mjs      # 42 — browser and command line derive the same keys and the same
                                #      NextKey ID: the same 21 checks in Node and again inside Chromium
 node web/test/playground.mjs   # 91 — send.html driven in a real browser, in two languages, at both
                                #      of the addresses it answers to
-node web/test/feed.mjs         # 46 — the explorer's live window and its filters
+node web/test/feed.mjs         # 43 — the explorer's live window and its filters
 node web/test/blog.mjs         # 45 — the community page, its names, its editing step, and the
                                #      tab bar: eight destinations, none of them clipped at 320px
 node web/test/donate.mjs       # 24 — the donation page: the ENS name, the address, the QR code, balances

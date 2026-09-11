@@ -435,14 +435,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 
 <div class="wrap" style="padding-top:2.6rem">
   <p class="eyebrow" data-i18n="nav.sandbox">Sandbox</p>
-  <h1 data-i18n="sb.h1">Build against this</h1>
-  <p class="lead" data-i18n="sb.lead">
-    Four surfaces, and none of them needs our permission: the records on chain, an open HTTP API
-    for callers with no node of their own, the command line, and the page itself. Everything here
-    is readable, checkable, and works the same whether a person or an agent is asking.
-  </p>
-
-  <p class="provenance" data-i18n="hero.prov">Prototype · ENSv2 on Sepolia testnet · Built at ETHGlobal ETHOnline 2026</p>
+  <h1 data-i18n="sb.h1">Build with the NextKey ID</h1>
 </div>
 
 <main class="wrap">
@@ -465,9 +458,6 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     </div>
     <div class="out" id="api-health" hidden></div>
 
-    <p class="note" data-i18n-html="sb.api.override">This page reads whichever address it is pointed at:
-      <span class="mono">?api=https://…</span> overrides it, so a deployment can be checked before it is
-      written into anything.</p>
   </section>
 
   <!-- Try it ─────────────────────────────────────────────────────────────── -->
@@ -478,7 +468,6 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     <div class="row">
       <input type="text" id="try-name" spellcheck="false" autocomplete="off"
              aria-label="A name on the hackathon deployment"
-             data-i18n-ph="sb.try.ph" placeholder="anna.nextkey.eth"
              style="flex:1 1 16rem;min-width:0">
       <button class="act" id="try-go" type="button" data-i18n="sb.try.btn">Send the request</button>
     </div>
@@ -556,7 +545,7 @@ nextkey.mjs eph    &lt;name&gt;</pre>
 
   <!-- In the page ────────────────────────────────────────────────────────── -->
   <section class="step" style="padding-left:0">
-    <h2 data-i18n="sb.page.h">Inside the pages</h2>
+    <h2 data-i18n="sb.page.h">NextKey in the browser</h2>
     <p data-i18n-html="sb.page.p">An agent driving a browser does not have to read the prose.
       <span class="mono">window.NEXTKEY.state()</span> returns what has happened so far as JSON, every result
       panel carries the same thing on a <span class="mono">data-nk</span> attribute, and no private key
@@ -569,30 +558,25 @@ nextkey.mjs eph    &lt;name&gt;</pre>
 
   <!-- Read it yourself ───────────────────────────────────────────────────── -->
   <section class="step" style="padding-left:0">
-    <h2 data-i18n="sb.docs.h">Read it rather than trust it</h2>
-    <p data-i18n="sb.docs.p">The live view reads five names off Sepolia on every load and shows what they
+    <h2 data-i18n="sb.docs.h">Look at the live PoC rather than believe it</h2>
+    <p data-i18n="sb.docs.p">The PoC live view reads five names off Sepolia on every load and shows what they
       carry — no cache, no replay, no screenshots. The repository carries the reasoning as well as the code,
       including the reversals, which is the part worth reading.</p>
     <p>
-      <a class="btn btn-primary" href="./poc" data-i18n="sb.docs.poc">The live view</a>
+      <a class="btn btn-primary" href="./poc" data-i18n="sb.docs.poc">Live PoC</a>
       <a class="btn btn-quiet" href="./explorer" data-i18n="nav.explorer">Explorer</a>
-      <a class="btn btn-quiet" href="https://github.com/4bridges/nextkey#readme" target="_blank" rel="noopener noreferrer" data-i18n="sb.docs.readme">The README</a>
-      <a class="btn btn-quiet" href="https://github.com/4bridges/nextkey/blob/main/docs/decisions.md" target="_blank" rel="noopener noreferrer" data-i18n="sb.docs.log">The decision log</a>
-      <a class="btn btn-quiet" href="https://github.com/4bridges/nextkey/blob/main/docs/architecture.md" target="_blank" rel="noopener noreferrer" data-i18n="sb.docs.arch">Architecture</a>
+      <a class="btn btn-quiet" href="https://github.com/4bridges/nextkey#readme" target="_blank" rel="noopener noreferrer" data-i18n="sb.docs.readme">README</a>
     </p>
   </section>
 
   <details class="more">
-    <summary data-i18n="sb.cost.h">What running this API costs, said plainly</summary>
-    <p data-i18n="sb.cost.p1">NextKey ran no server at all until this existed. A caller who uses the endpoint
-      is telling us which name they are looking up, on top of telling the node. So there is nowhere for that
-      to be written down: no request log, no analytics, no key-value store, no database — the worker's
+    <summary data-i18n="sb.cost.h">About the API</summary>
+    <p data-i18n="sb.cost.p1">A caller who uses the endpoint is telling us which name they are looking up,
+      on top of telling the node. There is nowhere for that to be written down: no request log, no analytics, no key-value store, no database — the worker's
       configuration file has none of them attached, which is a stronger statement than a policy saying we
       choose not to. There are no API keys either, so there is nothing to correlate lookups with even in
       principle.</p>
-    <p data-i18n-html="sb.cost.p2">The residue we do not control is Cloudflare's own edge logging. That is in the
-      <a href="/privacy">privacy notice</a> rather than left out of it. If none of this is acceptable to you,
-      read the chain directly — the records above are all you need, and that path never involves us at all.</p>
+    <p data-i18n="sb.cost.p2">The residue we do not control is Cloudflare's own edge logging.</p>
   </details>
 
 </main>
@@ -612,7 +596,7 @@ nextkey.mjs eph    &lt;name&gt;</pre>
     </p>
 </footer>
 
-<script src="/i18n.js?v=01289bd2"></script>
+<script src="/i18n.js?v=05aa991f"></script>
 <script>
 /**
  * The same overlay as the other two pages, same storage keys, so a language or
@@ -645,8 +629,8 @@ nextkey.mjs eph    &lt;name&gt;</pre>
     base[key] = (html ? el.innerHTML : el.textContent).replace(/\s+/g, ' ').trim()
   })
   var META = document.querySelector('meta[name="description"]')
-  base['t.meta.title'] = document.title
-  base['t.meta.desc'] = META ? META.getAttribute('content') : ''
+  base['meta.title.sandbox'] = document.title
+  base['meta.desc.sandbox'] = META ? META.getAttribute('content') : ''
 
   function store(k, v) { try { localStorage.setItem(k, v) } catch (e) {} }
   function recall(k) { try { return localStorage.getItem(k) } catch (e) { return null } }
@@ -672,8 +656,8 @@ nextkey.mjs eph    &lt;name&gt;</pre>
       if (v == null) return
       if (html) el.innerHTML = v; else el.textContent = v
     })
-    document.title = pick('t.meta.title')
-    if (META) META.setAttribute('content', pick('t.meta.desc'))
+    document.title = pick('meta.title.sandbox')
+    if (META) META.setAttribute('content', pick('meta.desc.sandbox'))
 
     var root = document.documentElement
     root.setAttribute('lang', TAGS[code] || 'en')

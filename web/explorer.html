@@ -457,8 +457,10 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 </div>
 
 <main class="wrap">
-  <!-- Empty unless a ?name= link asked for one. -->
-  <section class="step" style="padding-left:0;padding-top:2rem">
+  <!-- Empty unless a ?name= link asked for one, and then it must take no
+       room at all: the window below is the page, and a reserved gap above it
+       reads as something that failed to load. -->
+  <section class="step" style="padding:0">
     <div class="out" id="verdict" hidden></div>
     <div class="out" id="records" hidden></div>
   </section>
@@ -503,7 +505,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     It sits last so the name flow above stays together, which also puts it
     directly under the lookup box on an untouched page, where the eye lands.
   -->
-  <section class="step" id="step-feed" style="padding-left:0">
+  <section class="step" id="step-feed" style="padding-left:0;padding-top:1rem">
     <!-- Heading and lead are the page's own now, at the top. --><!--
       One filter at a time, and each is a fresh question to the node rather than
       a sieve over what is already on screen — which is why these are buttons
@@ -548,7 +550,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     </p>
 </footer>
 
-<script src="/i18n.js?v=01289bd2"></script>
+<script src="/i18n.js?v=05aa991f"></script>
 <script>
 /**
  * The same overlay as the other two pages, same storage keys, so a language or
@@ -581,8 +583,8 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     base[key] = (html ? el.innerHTML : el.textContent).replace(/\s+/g, ' ').trim()
   })
   var META = document.querySelector('meta[name="description"]')
-  base['t.meta.title'] = document.title
-  base['t.meta.desc'] = META ? META.getAttribute('content') : ''
+  base['meta.title.explorer'] = document.title
+  base['meta.desc.explorer'] = META ? META.getAttribute('content') : ''
 
   function store(k, v) { try { localStorage.setItem(k, v) } catch (e) {} }
   function recall(k) { try { return localStorage.getItem(k) } catch (e) { return null } }
@@ -608,8 +610,8 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
       if (v == null) return
       if (html) el.innerHTML = v; else el.textContent = v
     })
-    document.title = pick('t.meta.title')
-    if (META) META.setAttribute('content', pick('t.meta.desc'))
+    document.title = pick('meta.title.explorer')
+    if (META) META.setAttribute('content', pick('meta.desc.explorer'))
 
     var root = document.documentElement
     root.setAttribute('lang', TAGS[code] || 'en')
@@ -704,6 +706,6 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   label()
 })()
 </script>
-<script type="module" src="/explorer.js?v=539344ae"></script>
+<script type="module" src="/explorer.js?v=c5818142"></script>
 </body>
 </html>

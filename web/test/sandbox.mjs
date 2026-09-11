@@ -72,7 +72,7 @@ const DEAD = 'http://127.0.0.1:1'
 await page.goto(`${base}/demo/sandbox?lang=en&api=${encodeURIComponent(DEAD)}`,
                 { waitUntil: 'networkidle' })
 
-check('the page is the sandbox', (await page.textContent('h1')).trim() === 'Build against this')
+check('the page is the sandbox', (await page.textContent('h1')).trim() === 'Build with the NextKey ID')
 
 const health = await text('#api-health')
 check('it says it could not reach the API, rather than that it is live',
