@@ -230,6 +230,35 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   details.more.done > p,details.more.done .row,details.more.done input{opacity:.55}
   details.more.done .out{opacity:1}
 
+  /* ── A choice, not a chapter ──
+     `details.more` below is reading matter: two panels of argument a visitor
+     may skip. This one is a second way to do the thing the page is for, and it
+     was wearing the same clothes — so it read as more to read rather than as
+     an offer, and the one button that costs a transaction was the least visible
+     thing on the page. It keeps the fold, because it asks for testnet ether
+     that most visitors do not have; it loses the panel look. The accent line
+     and the +/x sign say "another option in here", and the summary sits in the
+     accent colour like a control rather than in ink like a heading. */
+  details.option{border:0;border-inline-start:3px solid var(--accent);
+    background:transparent;border-radius:0;padding:.1rem 0 .1rem 1rem;margin:1.4rem 0}
+  [dir="rtl"] details.option{padding:.1rem 1rem .1rem 0}
+  details.option > summary{cursor:pointer;font-weight:640;color:var(--accent);
+    list-style:none;display:flex;align-items:baseline;gap:.5rem;
+    font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  details.option > summary::-webkit-details-marker{display:none}
+  details.option > summary::marker{content:""}
+  /* The sign is drawn here rather than typed into the markup, so it stays out
+     of the translations and out of what a screen reader reads aloud. */
+  details.option > summary::before{content:"+";font-weight:700;font-size:1.15em;line-height:1;
+    opacity:.85;translate:0 .05em}
+  details.option[open] > summary::before{content:"\00d7"}
+  details.option > summary:hover{text-decoration:underline}
+  details.option > summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+  details.option p{color:var(--muted);font-size:.96rem;max-width:40rem;
+    font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  details.option.done > p,details.option.done .row,details.option.done input{opacity:.55}
+  details.option.done .out{opacity:1}
+
   /* ── Anything a reader may skip ── */
   details.more{border:1px solid var(--line);border-radius:9px;background:var(--surface);
     padding:.8rem 1.2rem;margin:1.6rem 0}
@@ -278,6 +307,20 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   .fallback p{margin:0 0 .6rem}
   .fallback p:last-child{margin:0}
   footer{border-top:1px solid var(--line);padding:2rem 0 3rem;color:var(--muted);font-size:.94rem;margin-top:2.5rem}
+  /* ── The footer says the same thing the bar says, the same way ──
+     It used to be four or five words per page, a different four on each one,
+     and "Start demo" pointing at a tab that is now called Passphrase. It is
+     the bar's own symbols now: one row, every page, each with its title and
+     its visually hidden label, so a hover and a screen reader both still say
+     the word. `gap` rather than a right margin on every link — a row that
+     wraps needs spacing on both axes. */
+  footer .footnav{display:flex;flex-wrap:wrap;align-items:center;gap:.55rem 1.15rem;margin:0}
+  footer .footnav a{color:var(--muted);display:inline-flex;align-items:center;margin:0}
+  footer .footnav a svg{width:1.25rem;height:1.25rem;display:block}
+  footer .footnav a:hover{color:var(--ink)}
+  footer .footnav a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+  footer .footmeta{margin:1.1rem 0 0}
+  [dir="rtl"] footer .footnav a{margin:0}
   footer p{max-width:44rem}
   footer a{margin-right:1.1rem}
   /* ── One header on every page ──
@@ -420,10 +463,16 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     <h2 data-i18n="t.id.wallet.h">Start with the wallet you already have</h2>
     <p data-i18n="t.id.wallet.p">Nothing is created here. Your NextKey ID is derived from a signature, so the
       same wallet gives you the same ID on any machine, for ever.</p>
-    <div class="row">
-      <button class="act ghost" id="connect" type="button"
-              data-i18n="t.s6.connect.btn">Connect a wallet</button>
-    </div>
+    <!-- A "Connect a wallet" button stood here, and it was a step that did
+         nothing on its own: the button below asks the wallet for an account
+         itself and then for one signature. Two buttons where the first only
+         unlocks the second is a form, not a flow. So the sentence above is
+         followed directly by the one thing there is to press.
+
+         The panel stays. It is empty and hidden until there is no wallet to
+         talk to at all — which is every phone browser — and then it is where
+         the links that reopen this page inside a wallet appear. Take it away
+         and that answer has nowhere to go. -->
     <div class="out" id="wallet-out" hidden></div>
   </section>
 
@@ -436,7 +485,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
        folded panels at the foot. The same words are still on the Message tab,
        where the block does need to introduce itself. -->
 
-  <section class="step" id="be-receivable-box" style="padding-left:0">
+  <section class="step" id="be-receivable-box" style="padding-left:0;padding-top:0">
     <div class="row">
       <button class="act" id="be-receivable" type="button" data-i18n="t.id.recv.btn">Get your NextKey ID</button>
       <span class="note" id="recv-state"></span>
@@ -456,7 +505,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
        ether: a visitor who has none should meet one button, not a form they
        cannot use. The summary still says what is inside, so nobody who wants a
        name of their own has to guess that this is where it is. -->
-  <details class="more" id="own-name-box">
+  <details class="option" id="own-name-box">
     <summary data-i18n="t.own.h">Or take a name that is yours</summary>
     <p data-i18n-html="t.own.p">The same key, on a name nobody can take back. A contract hands out one
       name per address under <span class="mono">nextkey.eth</span> and publishes your key on it in the same
@@ -507,18 +556,21 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 </main>
 
 <footer class="wrap">
-  <p data-i18n="t.foot">Prototype · ENSv2 beta on Sepolia testnet · not audited · nothing on this page is
-    sent to a server. Do not put a phrase here that guards real funds.</p>
-  <p>
-    <a class="foothome" href="/" data-i18n-title="nav.home" title="Home"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.75 20v-5.5h4.5V20"/></svg><span class="vh" data-i18n="nav.home">Home</span></a>
-    <a href="./explorer" data-i18n="nav.explorer">Explorer</a>
-    <a href="./blog" data-i18n="nav.blog">Blog</a>
-    <a href="/imprint" data-i18n="foot.imprint">Imprint</a>
-    <a href="/privacy" data-i18n="foot.privacy">Privacy</a>
-  </p>
+    <p class="footnav">
+      <a class="foothome" href="/" data-i18n-title="nav.home" title="Home"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.75 20v-5.5h4.5V20"/></svg><span class="vh" data-i18n="nav.home">Home</span></a>
+      <a href="./id" data-i18n-title="nav.id" title="ID"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="10.8" r="2.1"/><path d="M5.9 16.3c.45-1.5 1.65-2.3 3.1-2.3s2.65.8 3.1 2.3"/><path d="M14.8 9.8h4.2M14.8 13.4h4.2"/></svg><span class="vh" data-i18n="nav.id">ID</span></a>
+      <a href="./passphrase" data-i18n-title="nav.passphrase" title="Passphrase"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.8" cy="12" r="3.6"/><path d="M11.4 12H20.5"/><path d="M18 12v3.1"/><path d="M14.7 12v2.4"/></svg><span class="vh" data-i18n="nav.passphrase">Passphrase</span></a>
+      <a href="./message" data-i18n-title="nav.message" title="Message"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.2"/><path d="m3.9 7.2 8.1 5.9 8.1-5.9"/></svg><span class="vh" data-i18n="nav.message">Message</span></a>
+      <a href="./explorer" data-i18n-title="nav.explorer" title="Explorer"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.6" cy="10.6" r="5.9"/><path d="m14.9 14.9 5.1 5.1"/></svg><span class="vh" data-i18n="nav.explorer">Explorer</span></a>
+      <a href="./blog" data-i18n-title="nav.blog" title="Blog"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12.1c0 3.9-3.8 7.1-8.5 7.1-1 0-2-.15-2.9-.42L4.2 20.4l1.6-3.6c-1.4-1.3-2.3-3-2.3-4.7C3.5 8.2 7.3 5 12 5s8.5 3.2 8.5 7.1Z"/></svg><span class="vh" data-i18n="nav.blog">Blog</span></a>
+      <a href="./sandbox" data-i18n-title="nav.sandbox" title="Sandbox"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.2"/><path d="m7.2 9.9 2.6 2.3-2.6 2.3"/><path d="M12.6 14.9H17"/></svg><span class="vh" data-i18n="nav.sandbox">Sandbox</span></a>
+      <a href="./donate" data-i18n-title="nav.donate" title="Donate"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.2S4.3 15.4 4.3 10.5A4.1 4.1 0 0 1 12 8.2a4.1 4.1 0 0 1 7.7 2.3c0 4.9-7.7 9.7-7.7 9.7Z"/></svg><span class="vh" data-i18n="nav.donate">Donate</span></a>
+      <a href="/imprint" data-i18n-title="foot.imprint" title="Imprint"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3.2" width="14" height="17.6" rx="2.2"/><path d="M8.6 8.2h6.8M8.6 12h6.8M8.6 15.8h4.2"/></svg><span class="vh" data-i18n="foot.imprint">Imprint</span></a>
+      <a href="/privacy" data-i18n-title="foot.privacy" title="Privacy"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2 19 6v5.3c0 4.2-2.9 7.3-7 9.1-4.1-1.8-7-4.9-7-9.1V6z"/><path d="m9.1 12.1 2.2 2.2 3.9-4"/></svg><span class="vh" data-i18n="foot.privacy">Privacy</span></a>
+    </p>
 </footer>
 
-<script src="/i18n.js?v=7e179f30"></script>
+<script src="/i18n.js?v=ca35c498"></script>
 <script>
 /**
  * The same overlay as the other two pages, same storage keys, so a language or
@@ -674,6 +726,6 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   label()
 })()
 </script>
-<script type="module" src="/send.js?v=4a773436"></script>
+<script type="module" src="/send.js?v=d0932a2c"></script>
 </body>
 </html>

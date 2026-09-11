@@ -216,9 +216,13 @@ for (const a of document.querySelectorAll('nav.barnav a[href^="./"]')) {
   }
 }
 
-const NEEDED_EVERYWHERE = [
-  'connect', 'wallet-out',
-]
+/**
+ * `connect` and `wallet-out` used to be required on both tabs, because both
+ * carried a "Connect a wallet" button. The ID tab does not any more: the two
+ * buttons it has ask the wallet for an account themselves, so a separate
+ * connect step only unlocked another button. They are part of the send
+ * contract below now, where step 6 still has one.
+ */
 
 /**
  * The two identity panels — being receivable, and claiming a name of your own —
@@ -233,11 +237,15 @@ const NEEDED_EVERYWHERE = [
  * supposed to have turns a deliberate removal into a red banner across the tab.
  */
 const NEEDED_ON_ID = [
+  // No 'connect' — see above. 'wallet-out' stays: the deep links for a browser
+  // with no wallet are written into it, and this module reads it at load time.
+  'wallet-out',
   'be-receivable', 'be-receivable-box', 'recv-state', 'id-out',
   'own-name-box', 'own-label', 'claim-name', 'own-state', 'claim-out',
 ]
 
 const NEEDED_TO_SEND = [
+  'connect', 'wallet-out',
   't-eyebrow', 't-h1', 't-lead',
   'pane-wallet', 'pane-message',
   'phrase', 'gen', 'wallet-made', 'message-made', 'pane-message-box',
@@ -253,9 +261,7 @@ const NEEDED_TO_SEND = [
   'step-revoke', 'revoke', 'revoke-out',
 ]
 
-const REQUIRED_ELEMENTS = PAGE === 'send'
-  ? [...NEEDED_EVERYWHERE, ...NEEDED_TO_SEND]
-  : [...NEEDED_EVERYWHERE, ...NEEDED_ON_ID]
+const REQUIRED_ELEMENTS = PAGE === 'send' ? NEEDED_TO_SEND : NEEDED_ON_ID
 
 /**
  * Wire a handler, if this page has the thing to wire it to.

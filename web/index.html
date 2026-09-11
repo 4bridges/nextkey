@@ -273,6 +273,20 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   .status strong{display:block;margin-bottom:.3rem}
   .status p{margin:0;color:var(--muted)}
   footer{border-top:1px solid var(--line);padding:2.2rem 0 3.5rem;color:var(--muted);font-size:.95rem}
+  /* ── The footer says the same thing the bar says, the same way ──
+     It used to be four or five words per page, a different four on each one,
+     and "Start demo" pointing at a tab that is now called Passphrase. It is
+     the bar's own symbols now: one row, every page, each with its title and
+     its visually hidden label, so a hover and a screen reader both still say
+     the word. `gap` rather than a right margin on every link — a row that
+     wraps needs spacing on both axes. */
+  footer .footnav{display:flex;flex-wrap:wrap;align-items:center;gap:.55rem 1.15rem;margin:0}
+  footer .footnav a{color:var(--muted);display:inline-flex;align-items:center;margin:0}
+  footer .footnav a svg{width:1.25rem;height:1.25rem;display:block}
+  footer .footnav a:hover{color:var(--ink)}
+  footer .footnav a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+  footer .footmeta{margin:1.1rem 0 0}
+  [dir="rtl"] footer .footnav a{margin:0}
   footer a{margin-right:1.2rem;display:inline-block}
   kbd,.k{background:var(--code);border-radius:4px;padding:.12em .4em;font-size:.94em}
   /* ── One header on every page ──
@@ -395,15 +409,20 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 
   <!-- 1 — Hero -->
   <section class="hero">
-    <h1 data-i18n="hero.h1">Share a secret — human-in-the-loop</h1>
+    <h1 data-i18n="hero.h1">Share a passphrase with a human-in-the-loop</h1>
     <p class="lead" data-i18n="hero.lead">
-      Create a wallet on NextKey, seal and grant your secret, and get it back only with a
-      human-in-the-loop. NextKey also provides you secure messaging.
+      Create a passphrase on NextKey, seal it and grant it. Send it to a Ledger wallet and you get
+      it back only with a human-in-the-loop. NextKey also lets you write and send secure messages,
+      and brings its own explorer and a community blog.
     </p>
+    <!-- Two buttons, not three. The GitHub link is in the footer, where the
+         licence and the three deployments are, and a repository was never what
+         a first-time reader should be offered second. The second one leads to
+         the live proof-of-concept — something running, rather than an
+         invitation to build something. -->
     <div class="actions">
       <a class="btn btn-primary" href="./id" data-i18n="hero.cta2">Get your NextKey ID</a>
-      <a class="btn btn-quiet" href="./sandbox" data-i18n="hero.cta3">Build against it</a>
-      <a class="btn btn-quiet" href="https://github.com/4bridges/nextkey" data-i18n="hero.gh" target="_blank" rel="noopener noreferrer">View on GitHub</a>
+      <a class="btn btn-quiet" href="./poc" data-i18n="hero.cta3">Live PoC</a>
     </div>
     <figure class="handover">
       <svg viewBox="0 0 880 176" role="img" aria-labelledby="hv-t hv-d">
@@ -472,7 +491,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 
   <!-- 1b — What is here -->
   <section class="prose">
-    <h2 data-i18n="tabs.h">What is here</h2>
+    <h2 data-i18n="tabs.h">What NextKey offers you</h2>
     <p data-i18n="tabs.p">Four things you can do, each at its own address. None of them asks you to register
       with us, and the first three need no ether.</p>
 
@@ -497,10 +516,6 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
         five names off the chain every time it loads.</dd>
     </dl>
 
-    <p class="note" data-i18n-html="tabs.net">Everything here runs on the <strong>Sepolia testnet</strong>,
-      which is why its addresses begin <span class="mono">/demo/</span>. The same tabs will answer without
-      that prefix on mainnet — same pages, same records, a different chain. Nothing you do here costs real
-      money, and nothing you put here is protecting any.</p>
   </section>
 
   <!-- 2 — Look one up -->
@@ -526,7 +541,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 
   <!-- 3 — The problem -->
   <section class="prose">
-    <h2 data-i18n="prob.h">The problem</h2>
+    <h2 data-i18n="prob.h">The problem NextKey solves</h2>
     <p data-i18n="prob.p1">
       An AI-agent that needs a wallet has two options today and both are bad. Give it a key, and
       the key is in the AI-agent — in a log, a prompt, a crash dump, a repository. Withhold the
@@ -540,10 +555,10 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 
   <!-- 3 — How it works -->
   <section>
-    <h2 data-i18n="how.h">How it works</h2>
+    <h2 data-i18n="how.h">How NextKey works</h2>
     <ol class="steps">
       <li>
-        <h3 data-i18n="how.1h">Create a wallet</h3>
+        <h3 data-i18n="how.1h">Create a passphrase</h3>
         <p data-i18n="how.1p">Twelve words and the address they control, generated where the AI-agent runs. They are
            encrypted before they go anywhere, with a key that never leaves that machine.</p>
       </li>
@@ -739,16 +754,33 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 </main>
 
 <footer class="wrap">
-  <a href="https://github.com/4bridges/nextkey" target="_blank" rel="noopener noreferrer">GitHub</a>
-  <a href="https://github.com/4bridges/nextkey/blob/main/LICENSE" data-i18n="foot.lic" target="_blank" rel="noopener noreferrer">AGPL-3.0 License</a>
-  <!-- The three deployments this prototype was built against. Named, not
-       badged: they are references, and the imprint says they imply no
-       endorsement. -->
-  <a href="https://ens.domains" target="_blank" rel="noopener noreferrer">ENS</a>
-  <a href="https://chain.link" target="_blank" rel="noopener noreferrer">Chainlink</a>
-  <a href="https://www.ledger.com" target="_blank" rel="noopener noreferrer">Ledger</a>
-  <a href="/imprint" data-i18n="foot.imprint">Imprint</a>
-  <a href="/privacy" data-i18n="foot.privacy">Privacy</a>
+    <p class="footnav">
+      <a class="foothome" href="/" data-i18n-title="nav.home" title="Home"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.75 20v-5.5h4.5V20"/></svg><span class="vh" data-i18n="nav.home">Home</span></a>
+      <a href="./id" data-i18n-title="nav.id" title="ID"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="10.8" r="2.1"/><path d="M5.9 16.3c.45-1.5 1.65-2.3 3.1-2.3s2.65.8 3.1 2.3"/><path d="M14.8 9.8h4.2M14.8 13.4h4.2"/></svg><span class="vh" data-i18n="nav.id">ID</span></a>
+      <a href="./passphrase" data-i18n-title="nav.passphrase" title="Passphrase"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.8" cy="12" r="3.6"/><path d="M11.4 12H20.5"/><path d="M18 12v3.1"/><path d="M14.7 12v2.4"/></svg><span class="vh" data-i18n="nav.passphrase">Passphrase</span></a>
+      <a href="./message" data-i18n-title="nav.message" title="Message"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.2"/><path d="m3.9 7.2 8.1 5.9 8.1-5.9"/></svg><span class="vh" data-i18n="nav.message">Message</span></a>
+      <a href="./explorer" data-i18n-title="nav.explorer" title="Explorer"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.6" cy="10.6" r="5.9"/><path d="m14.9 14.9 5.1 5.1"/></svg><span class="vh" data-i18n="nav.explorer">Explorer</span></a>
+      <a href="./blog" data-i18n-title="nav.blog" title="Blog"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12.1c0 3.9-3.8 7.1-8.5 7.1-1 0-2-.15-2.9-.42L4.2 20.4l1.6-3.6c-1.4-1.3-2.3-3-2.3-4.7C3.5 8.2 7.3 5 12 5s8.5 3.2 8.5 7.1Z"/></svg><span class="vh" data-i18n="nav.blog">Blog</span></a>
+      <a href="./sandbox" data-i18n-title="nav.sandbox" title="Sandbox"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.2"/><path d="m7.2 9.9 2.6 2.3-2.6 2.3"/><path d="M12.6 14.9H17"/></svg><span class="vh" data-i18n="nav.sandbox">Sandbox</span></a>
+      <a href="./donate" data-i18n-title="nav.donate" title="Donate"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.2S4.3 15.4 4.3 10.5A4.1 4.1 0 0 1 12 8.2a4.1 4.1 0 0 1 7.7 2.3c0 4.9-7.7 9.7-7.7 9.7Z"/></svg><span class="vh" data-i18n="nav.donate">Donate</span></a>
+      <a href="/imprint" data-i18n-title="foot.imprint" title="Imprint"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3.2" width="14" height="17.6" rx="2.2"/><path d="M8.6 8.2h6.8M8.6 12h6.8M8.6 15.8h4.2"/></svg><span class="vh" data-i18n="foot.imprint">Imprint</span></a>
+      <a href="/privacy" data-i18n-title="foot.privacy" title="Privacy"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2 19 6v5.3c0 4.2-2.9 7.3-7 9.1-4.1-1.8-7-4.9-7-9.1V6z"/><path d="m9.1 12.1 2.2 2.2 3.9-4"/></svg><span class="vh" data-i18n="foot.privacy">Privacy</span></a>
+    </p>
+    <p class="footmeta">
+      <!-- Which chain this is, in one line. The paragraph that used to say it
+           on the page is gone, and this cannot go with it: a landing page that
+           never says "testnet" is a landing page claiming mainnet. It is four
+           words here instead of four sentences up there. -->
+      <span data-i18n="foot.net">Prototype · ENSv2 on Sepolia testnet</span>
+      <a href="https://github.com/4bridges/nextkey" target="_blank" rel="noopener noreferrer">GitHub</a>
+      <a href="https://github.com/4bridges/nextkey/blob/main/LICENSE" data-i18n="foot.lic" target="_blank" rel="noopener noreferrer">AGPL-3.0 License</a>
+      <!-- The three deployments this prototype was built against. Named, not
+           badged: they are references, and the imprint says they imply no
+           endorsement. -->
+      <a href="https://ens.domains" target="_blank" rel="noopener noreferrer">ENS</a>
+      <a href="https://chain.link" target="_blank" rel="noopener noreferrer">Chainlink</a>
+      <a href="https://www.ledger.com" target="_blank" rel="noopener noreferrer">Ledger</a>
+    </p>
 </footer>
 
 <script type="application/ld+json">
@@ -793,7 +825,7 @@ document.addEventListener('submit', function (e) {
   location.href = './explorer' + (v ? '?name=' + encodeURIComponent(v) : '')
 })
 </script>
-<script src="/i18n.js?v=7e179f30"></script>
+<script src="/i18n.js?v=ca35c498"></script>
 <script>
 /**
  * Translation is applied over the page, not baked into it.
