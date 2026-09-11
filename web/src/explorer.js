@@ -420,11 +420,11 @@ $('check').addEventListener('click', async () => {
  */
 const meaning = (key, value) => {
   const gone = !value
-  if (key === RECORD_EPH) return t('x.m.eph', 'set up grants settings')
+  if (key === RECORD_EPH) return t('x.m.eph', 'set up a grant')
   if (key === RECORD_EPH_SEALED) return t('x.m.sealed', 'wrapped that key to the owner, so a recipient can be added later without a signature')
   if (key === RECORD_SECRET) return gone
     ? t('x.m.secretgone', 'removed the secret')
-    : t('x.m.secret', 'sealed a text')
+    : t('x.m.secret', 'sealed a secret')
   if (key === RECORD_PUBKEY) return t('x.m.pubkey', 'created a NextKey ID')
   if (key === RECORD_POST) return gone
     ? t('x.m.postgone', 'took its post down')

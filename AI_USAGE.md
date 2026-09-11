@@ -38,6 +38,22 @@ convention applied unevenly across a history and then abandoned halfway.
 
 The same pattern held to the last day, and the useful part is what caught it. Building the name registrar, the assistant wrote the role grant against `grantRoles(ROOT_RESOURCE, …)` — from the documentation, not from the contract, which refuses that call with `EACRootResourceNotAllowed()`. It then wrote a check that read a text record straight off the resolver, which has no such function and reverts empty, and reported a working contract as broken. Neither was found by reasoning; both were found by putting the question to the deployed contract with a script that distinguishes *refused* from *there is no such function* — a distinction that has now cost this project time three separate times, and is written into `docs/decisions.md` each time. The assistant is fastest at exactly the thing it should be trusted least on: producing a confident interface from documentation.
 
+On the last day it happened twice more, and both are worth the space because
+the pattern is the same one. Asked why the community page showed no posts, the
+assistant probed `hero1.nextkey.eth` and reported that the pool carried none —
+the names are zero-padded, `hero01`, and the question had never reached the
+chain. What broke the deadlock was a sentence from the author about how that
+post had been written; reading the record directly then produced the finding the
+day turned on, which is that a record can exist here with no write event a public
+node will serve. Later, asked why the donation page could see so little history,
+the assistant diagnosed a limit on the *width* of a block range and proposed
+narrower windows. Measuring the endpoint showed a wall of *age*: an 800-block
+window is served at the head and refused a few thousand blocks back. Narrower
+windows would have asked more often and reached no further. Both times the
+correct answer came from putting the question to the deployment rather than to
+the model, and both times the wrong answer had arrived with no less confidence
+than the right one.
+
 **Verification.** Every factual claim in the submission — contract addresses, SDK behaviour, sponsor qualification requirements — was checked against primary sources: the sponsor documentation, the prize pages, and answers given by sponsor teams in the event Discord.
 
 ## What is not AI-generated
@@ -95,6 +111,16 @@ contract — drafted in working sessions with the assistant, reviewed screen by
 screen by the author, run against the chain by him, and committed by him. Every
 commit in this repository was made by the author; the assistant has never had
 credentials to push.
+
+The copy is the author's in a stricter sense than that on the pages a visitor
+reads. On the last day he went through all 110 status messages in the explorer
+and rewrote 38 of them himself; the assistant extracted the list, applied what
+came back, carried it into nine languages and updated the checks that asserted
+the old sentences. The same holds for the page text throughout: the assistant
+drafted, the author struck out, and what is on the site is what he wrote. Where
+the assistant corrected something in his copy — two typos and the spelling of
+the project's own name — it said so rather than fixing it quietly, because a
+disclosure file that claims the words are his has to mean it.
 
 ## Statement
 
