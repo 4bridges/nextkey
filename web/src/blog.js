@@ -27,7 +27,7 @@ import { privateKeyToAccount } from 'viem/accounts'
 import { packetToBytes } from 'viem/ens'
 import { sepolia } from 'viem/chains'
 import { TOPIC_RECORD, TEXT_UPDATED_TOPIC, logReader, asWrite, probeWidth } from './nk-logs.mjs'
-import { DEMO_KEY, POOL, POOL_RESOLVER } from './demo-wallet.js'
+import { DEMO_KEY, POOL, POOL_RESOLVER, claimedName } from './demo-wallet.js'
 // For the filter: a NextKey ID is recognised by deriving it from the key a name
 // publishes, because it cannot be turned back into one.
 import { un64, nextkeyId } from './nk-crypto.mjs'
@@ -440,10 +440,15 @@ const filterTo = async (typed) => {
       { filter: wanted, name: null })
     name = match
   } else if (/^0x[0-9a-f]{40}$/.test(wanted)) {
-    say(out, 'busy', `<p>${t('x.f.reversing', 'Asking ENS which name that address publishes…')}</p>`)
+    // ENS first because it is the general answer, the registrar second
+    // because it is the exact one: one name per address is a rule it
+    // enforces, so it keeps the mapping and answers in a single call. See
+    // claimedName in demo-wallet.js.
+    say(out, 'busy', `<p>${t('x.f.reversing', 'Asking ENS, then the registrar, which name that address holds…')}</p>`)
     const primary = await reader.getEnsName({ address: wanted }).catch(() => null)
+      ?? await claimedName(reader, wanted)
     if (!primary) return say(out, '', `
-      <p>${t('x.f.noreverse', 'That address publishes no name on this deployment.')}</p>
+      <p>${t('x.f.noreverse', 'Neither ENS nor the NextKey registrar knows a name for that address.')}</p>
       <p class="note">${t('x.f.noreversenote', 'A name points at an address, and an address points back only when its holder has set a primary name. A lent name has neither: no reverse record and no address record either — measured, not assumed — because it carries one thing only, the key your signature derives. So an address cannot find it and your wallet can, in one signature.')}</p>
       <p class="note"><a href="./id">${t('x.f.toid', 'Find your name with your wallet, on the ID tab')}</a></p>`,
       { filter: wanted, name: null })

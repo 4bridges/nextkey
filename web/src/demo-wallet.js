@@ -79,3 +79,33 @@ export const NAMES_CONTRACT = '0xc3b7a8b73ed7022a594f236e60d33f5cc61b1863'
 
 /** The parent every name it hands out sits under. */
 export const NAMES_PARENT = 'nextkey.eth'
+
+/**
+ * Address → name, asked of the registrar rather than of ENS.
+ *
+ * ENS answers this question with the reverse record, and almost nobody on a
+ * testnet has set one. The registrar answers it for free, because it has to:
+ * one name per address is a rule it enforces, so it keeps `nameOf[address]`
+ * and the mapping is public. That makes an address search exact — one
+ * eth_call, no sweep, no guessing — for every name claimed through "or take a
+ * name that is yours". It knows nothing about the lent pool names, which were
+ * registered before this contract existed; for those the honest answer stays
+ * the honest answer.
+ */
+export const NAMES_ABI = [{
+  type: 'function',
+  name: 'nameOf',
+  stateMutability: 'view',
+  inputs: [{ name: '', type: 'address' }],
+  outputs: [{ name: '', type: 'string' }],
+}]
+
+/** The claimed name of an address, or null. Never throws. */
+export async function claimedName(client, address) {
+  try {
+    const label = await client.readContract({
+      address: NAMES_CONTRACT, abi: NAMES_ABI, functionName: 'nameOf', args: [address],
+    })
+    return label ? `${label}.${NAMES_PARENT}`.toLowerCase() : null
+  } catch { return null }
+}

@@ -27,7 +27,7 @@ import { un64, fingerprint, nextkeyId } from './nk-crypto.mjs'
 import { TOPIC_RECORD, TEXT_UPDATED_TOPIC, TEXT_UPDATED, logReader } from './nk-logs.mjs'
 // The names this page can spell. Needed because a record's write is not always
 // findable as an event — see readRecords below.
-import { POOL } from './demo-wallet.js'
+import { POOL, claimedName } from './demo-wallet.js'
 
 const UNIVERSAL_RESOLVER = '0xd26f2040d083af1cd2962ba303f4bea0c4faf142'
 
@@ -1179,13 +1179,21 @@ const feedSelect = async (which, name) => {
       asName = match
       $('feed-name').value = asName
     } else if (/^0x[0-9a-f]{40}$/.test(wanted)) {
-      say($('feed-out'), 'busy', `<p>${t('x.f.reversing', 'Asking ENS which name that address publishes…')}</p>`)
+      // Two sources, in the order of what they promise. ENS is the general
+      // answer and gives a name anybody set anywhere, so it is asked first;
+      // the registrar is the narrow one and is exact where it applies,
+      // because one name per address is a rule it enforces and therefore a
+      // mapping it keeps. Between them every name claimed on this site is
+      // findable from its address. Names the site only lends are in neither,
+      // which is what the message below says.
+      say($('feed-out'), 'busy', `<p>${t('x.f.reversing', 'Asking ENS, then the registrar, which name that address holds…')}</p>`)
       const primary = await reader.getEnsName({ address: wanted }).catch(() => null)
+        ?? await claimedName(reader, wanted)
       if (!primary) {
         feed.items = []
         feed.read = []
         return say($('feed-out'), '', `
-          <p>${t('x.f.noreverse', 'That address publishes no name on this deployment.')}</p>
+          <p>${t('x.f.noreverse', 'Neither ENS nor the NextKey registrar knows a name for that address.')}</p>
           <p class="note">${t('x.f.noreversenote', 'A name points at an address, and an address points back only when its holder has set a primary name. A lent name has neither: no reverse record and no address record either — measured, not assumed — because it carries one thing only, the key your signature derives. So an address cannot find it and your wallet can, in one signature.')}</p>
       <p class="note"><a href="./id">${t('x.f.toid', 'Find your name with your wallet, on the ID tab')}</a></p>`,
           { filter: 'name', address: wanted, name: null })

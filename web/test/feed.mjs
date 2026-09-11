@@ -33,6 +33,15 @@ const base = `http://127.0.0.1:${server.address().port}`
 const TEXT_UPDATED = '0x14cf4389d9a790cb32a054e033d7e3d3b78119dee4fea3c0983aac1db3f54015'
 const HEAD = 11661900n
 
+// The registrar, and the one call the mock answers for real. ENS answers
+// address → name with a reverse record and almost nobody sets one; the
+// registrar has to keep the mapping, because one name per address is a rule it
+// enforces. So the address search asks ENS first and the registrar second, and
+// the check below is that the second question is asked at all.
+const NAMES_CONTRACT = '0xc3b7a8b73ed7022a594f236e60d33f5cc61b1863'
+const CLAIMED_LABEL = 'claimed'
+const CLAIMED_BY = '0x2222222222222222222222222222222222222222'
+
 const log = (key, value, block, tx, index) => ({
   address: '0x04b2db6567cc68d059c061215adf9a99add1ca65',
   topics: [TEXT_UPDATED, toHex(1n, { size: 32 }), keccak256(toHex(key))],
@@ -89,7 +98,13 @@ await page.route('https://ethereum-sepolia-rpc.publicnode.com/**', async (route)
       return FIRST.filter((l) => BigInt(l.blockNumber) >= from
         && BigInt(l.blockNumber) <= BigInt(c.params[0].toBlock) && bykey(l))
     }
-    if (c.method === 'eth_call') return '0x'          // the resolver lookup fails → fallback address
+    if (c.method === 'eth_call') {
+      // Everything except the registrar answers nothing, which is what a
+      // resolver lookup does here → the page falls back to the address.
+      if (c.params?.[0]?.to?.toLowerCase() === NAMES_CONTRACT)
+        return encodeAbiParameters([{ type: 'string' }], [CLAIMED_LABEL])
+      return '0x'
+    }
     return null
   }
   if (refuse && calls.some((c) => c.method === 'eth_getLogs' && c.params[0].topics)) {
@@ -268,6 +283,21 @@ if (!askedForName) {
   console.log(`      (the window said instead: ${saw.slice(0, 200)}${saw.length > 200 ? '…' : ''})`)
 }
 check('and offers a field to type it in', !(await page.locator('#feed-namerow').isHidden()))
+
+// ── An address in the name box ──
+// What a person has is a wallet, and what a wallet shows is an address. ENS
+// alone would answer "no name" for almost every address on a testnet, so the
+// registrar is asked too — and a name claimed on this site is then findable
+// from its address in one call, with no sweep and no guessing.
+await page.fill('#feed-name', CLAIMED_BY)
+await page.click('#feed-namego')
+const gotName = await page.waitForFunction(
+  (want) => document.getElementById('feed-name').value === want,
+  `${CLAIMED_LABEL}.nextkey.eth`, { timeout: 15_000 }).then(() => true).catch(() => false)
+check('an address is answered by the registrar when ENS has no reverse record', gotName)
+if (!gotName) console.log(`      (the box holds: ${await page.inputValue('#feed-name')})`)
+check('and the address is not reported as nameless',
+  !/knows a name for that address|kennt einen Namen/i.test(await page.textContent('#feed-out')))
 
 await page.goto(`${base}/explorer.html?show=post`, { waitUntil: 'networkidle' })
 await page.waitForSelector('#feed-out .ev', { timeout: 15_000 })
