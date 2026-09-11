@@ -146,6 +146,12 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   textarea{min-height:5.5rem;resize:vertical}
   textarea:focus,input[type=text]:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:var(--accent)}
   .row{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;margin:.8rem 0}
+  /* A `display` of its own beats the browser's `[hidden]{display:none}`, so a
+     row the script had hidden was on screen the whole time — which is how the
+     Edit button under the message box came to greet a visitor who had not typed
+     anything yet. Every other hideable thing on this page already declares its
+     own rule (.out, .step, .lane, .langmenu); the row did not. */
+  .row[hidden]{display:none}
   button.act{
     font:inherit;font-weight:620;font-size:.97rem;
     font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
@@ -345,9 +351,9 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
       <a href="./id" data-i18n-title="nav.id" title="ID"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="10.8" r="2.1"/><path d="M5.9 16.3c.45-1.5 1.65-2.3 3.1-2.3s2.65.8 3.1 2.3"/><path d="M14.8 9.8h4.2M14.8 13.4h4.2"/></svg><span class="vh" data-i18n="nav.id">ID</span></a>
       <a href="./passphrase" data-i18n-title="nav.passphrase" title="Passphrase"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.8" cy="12" r="3.6"/><path d="M11.4 12H20.5"/><path d="M18 12v3.1"/><path d="M14.7 12v2.4"/></svg><span class="vh" data-i18n="nav.passphrase">Passphrase</span></a>
       <a href="./message" data-i18n-title="nav.message" title="Message"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.2"/><path d="m3.9 7.2 8.1 5.9 8.1-5.9"/></svg><span class="vh" data-i18n="nav.message">Message</span></a>
-      <a href="./sandbox" data-i18n-title="nav.sandbox" title="Sandbox"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.2"/><path d="m7.2 9.9 2.6 2.3-2.6 2.3"/><path d="M12.6 14.9H17"/></svg><span class="vh" data-i18n="nav.sandbox">Sandbox</span></a>
       <a href="./explorer" data-i18n-title="nav.explorer" title="Explorer"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.6" cy="10.6" r="5.9"/><path d="m14.9 14.9 5.1 5.1"/></svg><span class="vh" data-i18n="nav.explorer">Explorer</span></a>
       <a href="./blog" data-i18n-title="nav.blog" title="Blog"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12.1c0 3.9-3.8 7.1-8.5 7.1-1 0-2-.15-2.9-.42L4.2 20.4l1.6-3.6c-1.4-1.3-2.3-3-2.3-4.7C3.5 8.2 7.3 5 12 5s8.5 3.2 8.5 7.1Z"/></svg><span class="vh" data-i18n="nav.blog">Blog</span></a>
+      <a href="./sandbox" data-i18n-title="nav.sandbox" title="Sandbox"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.2"/><path d="m7.2 9.9 2.6 2.3-2.6 2.3"/><path d="M12.6 14.9H17"/></svg><span class="vh" data-i18n="nav.sandbox">Sandbox</span></a>
       <a href="./donate" data-i18n-title="nav.donate" title="Donate"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.2S4.3 15.4 4.3 10.5A4.1 4.1 0 0 1 12 8.2a4.1 4.1 0 0 1 7.7 2.3c0 4.9-7.7 9.7-7.7 9.7Z"/></svg><span class="vh" data-i18n="nav.donate">Donate</span></a>
     </nav>
     <div class="barctl">
@@ -392,13 +398,11 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
        page. The English below is what a reader without JavaScript gets, and it
        is the passphrase side, which is where the tab bar opens. -->
   <p class="eyebrow" id="t-eyebrow" data-i18n="nav.passphrase">Passphrase</p>
-  <h1 id="t-h1" data-i18n="t.h1">Wallet recovery with a human-in-the-loop</h1>
+  <h1 id="t-h1" data-i18n="t.h1">Passphrase recovery with a human-in-the-loop</h1>
   <p class="lead" id="t-lead" data-i18n="t.lead">
-    Create a wallet here with social recovery to a human-in-the-loop. Only that human can
-    recover the wallet.
+    Create a passphrase here with social recovery to a human-in-the-loop. Only that human can
+    recover the wallet with their Ledger.
   </p>
-
-  <p class="provenance" data-i18n="hero.prov">Prototype · ENSv2 on Sepolia testnet · Built at ETHGlobal ETHOnline 2026</p>
 
   <noscript>
     <div class="fallback">
@@ -413,59 +417,28 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 
 <main class="wrap">
 
-  <!-- Being receivable ─────────────────────────────────────────────────────
-       Deliberately not a numbered step and deliberately before them. The steps
-       answer "who do I send this to"; this answers "how does anyone send
-       anything to me", which is a different question asked by a different
-       person, and putting it inside step 2 made both of them harder to read. -->
-  <section class="step" id="be-receivable-box" style="padding-left:0">
-    <h2 data-i18n="t.recv.h">Can anyone send you a secret?</h2>
-    <p data-i18n="t.recv.p">Only if your ENS name publishes a key — that record is the whole of the opt-in, and
-      there is no registration with NextKey. If you have no key yet, one signature is enough: nothing is
-      generated and nothing is stored, the key comes out of your wallet and comes back out of it on any
-      machine. We lend you a name and pay for the record.</p>
-    <div class="row">
-      <button class="act ghost" id="be-receivable" type="button" data-i18n="t.s2.recv.btn">Make me receivable</button>
-      <span class="note" id="recv-state"></span>
-    </div>
-    <div class="out" id="id-out" hidden></div>
-  </section>
-
-  <!-- A name of your own ────────────────────────────────────────────────────
-       Below the lent name, not instead of it. The lent name costs one signature
-       and no gas and is the right first step for somebody trying this out; this
-       one costs a transaction the visitor pays and gives them something that is
-       theirs afterwards. Offering only the second would turn away everybody
-       without testnet ether, and offering only the first would mean nobody ever
-       owns anything. -->
-  <section class="step" id="own-name-box" style="padding-left:0">
-    <h2 data-i18n="t.own.h">Or take a name that is yours</h2>
-    <p data-i18n-html="t.own.p">The same key, on a name nobody can take back. A contract hands out one
-      name per address under <span class="mono">nextkey.eth</span> and publishes your key on it in the same
-      transaction — you pay for that transaction, and afterwards the name belongs to your address, not to us.
-      You can point it at another resolver whenever you like.</p>
-    <div class="row">
-      <input type="text" id="own-label" spellcheck="false" autocomplete="off"
-             aria-label="The name you would like, without the ending"
-             style="flex:1 1 12rem;min-width:0">
-      <span class="mono note" id="own-suffix">.nextkey.eth</span>
-      <button class="act ghost" id="claim-name" type="button" data-i18n="t.own.btn">Claim this name</button>
-      <span class="note" id="own-state"></span>
-    </div>
-    <p class="note" data-i18n="t.own.cost">This one needs Sepolia ether in your wallet, because you are the one
-      signing it. If you have none, the lent name above asks for nothing.</p>
-    <div class="out" id="claim-out" hidden></div>
-  </section>
+  <!-- Being receivable, and a name of your own, both moved to the ID tab ────
+       Two panels used to stand here, above step 1: "can anyone send you a
+       secret?" and "or take a name that is yours". They answer a question this
+       page does not ask. A visitor arrives here to send something to somebody
+       else, and met two blocks about their own identity before the first step —
+       three hundred words and two buttons, one of which spends a name, in front
+       of the one thing they came to do.
+       They are the whole subject of the ID tab, which is where they live now
+       and where the bar points at them. Nothing was deleted: the same two
+       panels, the same ids, the same handlers in send.js, one tab to the left.
+       Because the ids are gone from *this* page, the element contract in
+       send.js no longer asks for them here — see NEEDED_ON_ID there. -->
 
   <!-- 1 ─────────────────────────────────────────────────────────────────── -->
   <section class="step">
     <div class="n">1</div>
-    <h2 id="s1-h" data-i18n="t.s1.h">Create wallet</h2>
+    <h2 id="s1-h" data-i18n="t.s1.h">Create a passphrase</h2>
     <p id="s1-p" data-i18n="t.s1.p">A fresh twelve-word phrase.</p>
 
     <div id="pane-wallet">
       <div class="row">
-        <button class="act" id="gen" type="button" data-i18n="t.s1.gen.btn">New wallet</button>
+        <button class="act" id="gen" type="button" data-i18n="t.s1.gen.btn">New passphrase</button>
       </div>
       <div class="out" id="wallet-made" hidden></div>
     </div>
@@ -670,7 +643,7 @@ nextkey.mjs revoke &lt;label&gt; &lt;recipient&gt;</pre>
   </p>
 </footer>
 
-<script src="/i18n.js?v=8191fd23"></script>
+<script src="/i18n.js?v=7e179f30"></script>
 <script>
 /**
  * The same overlay as the other two pages, same storage keys, so a language or
@@ -826,6 +799,6 @@ nextkey.mjs revoke &lt;label&gt; &lt;recipient&gt;</pre>
   label()
 })()
 </script>
-<script type="module" src="/send.js?v=5fd8174c"></script>
+<script type="module" src="/send.js?v=4a773436"></script>
 </body>
 </html>

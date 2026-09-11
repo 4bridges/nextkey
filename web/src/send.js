@@ -218,6 +218,21 @@ for (const a of document.querySelectorAll('nav.barnav a[href^="./"]')) {
 
 const NEEDED_EVERYWHERE = [
   'connect', 'wallet-out',
+]
+
+/**
+ * The two identity panels — being receivable, and claiming a name of your own —
+ * are on the ID tab and nowhere else now. They used to stand on the send tabs
+ * too, above step 1, answering a question that page does not ask.
+ *
+ * The handlers below are unchanged and stay in this one bundle: `on()` wires
+ * nothing when the element is absent, and every function that touches these
+ * ids is reachable only from one of those handlers. What would break is asking
+ * for them everywhere — the contract below is what prints "this page and its
+ * script are different versions", so a list naming elements a page is not
+ * supposed to have turns a deliberate removal into a red banner across the tab.
+ */
+const NEEDED_ON_ID = [
   'be-receivable', 'be-receivable-box', 'recv-state', 'id-out',
   'own-name-box', 'own-label', 'claim-name', 'own-state', 'claim-out',
 ]
@@ -240,7 +255,7 @@ const NEEDED_TO_SEND = [
 
 const REQUIRED_ELEMENTS = PAGE === 'send'
   ? [...NEEDED_EVERYWHERE, ...NEEDED_TO_SEND]
-  : NEEDED_EVERYWHERE
+  : [...NEEDED_EVERYWHERE, ...NEEDED_ON_ID]
 
 /**
  * Wire a handler, if this page has the thing to wire it to.
@@ -345,12 +360,16 @@ const phraseBox = $('phrase')
 const MODE_TEXT = {
   wallet: {
     eyebrow: ['nav.passphrase', 'Passphrase'],
-    hero: ['t.h1', 'Wallet recovery with a human-in-the-loop'],
-    lead: ['t.lead', 'Create a wallet here with social recovery to a human-in-the-loop. Only that human can recover the wallet.'],
-    h1: ['t.s1.h', 'Create wallet'],
+    hero: ['t.h1', 'Passphrase recovery with a human-in-the-loop'],
+    lead: ['t.lead', 'Create a passphrase here with social recovery to a human-in-the-loop. Only that human can recover the wallet with their Ledger.'],
+    h1: ['t.s1.h', 'Create a passphrase'],
     p1: ['t.s1.p', 'A fresh twelve-word phrase.'],
     h2: ['t.s2.h', 'Choose your grant'],
-    p2: ['t.s2.p', 'A name on ENS, any public address. Your grant will receive it — no need to register with NextKey.'],
+    // The same sentence the markup carries, word for word. Two spellings of one
+    // key is how a page ends up saying different things with and without
+    // JavaScript — and the older of the two was still pointing at "the third
+    // button", which was the receivable button, which is on the ID tab now.
+    p2: ['t.s2.p', 'An ENS name that publishes a key — that record is the whole of the opt-in, and there is no registration with NextKey. Nobody in mind? A demo grant made here works just as well for trying it out.'],
   },
   message: {
     eyebrow: ['nav.message', 'Message'],

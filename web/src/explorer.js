@@ -52,7 +52,6 @@ const reader = createPublicClient({
   transport: http(RPC, { retryCount: 1, retryDelay: 400, timeout: 10_000 }),
 })
 
-const EXAMPLES = ['vault.nextkey.eth', 'nextkeyv2.eth', 'anna.nextkey.eth', 'bob.nextkey.eth']
 
 // ─── Language ──────────────────────────────────────────────────────────────
 const t = (key, en) => {
@@ -85,7 +84,12 @@ const plain = (e) => {
 }
 
 const REQUIRED_ELEMENTS = [
-  'name', 'look', 'try', 'verdict', 'records',
+  // No 'name', 'look' or 'try'. The box that asked for a name is gone from the
+  // page; the reading it produced is not. `lookup()` below is reached by a
+  // ?name= link — which is how the README and the other pages point at a name
+  // anyway — and it still writes into these two panels and opens the two
+  // sections after them.
+  'verdict', 'records',
   'step-check', 'who', 'check', 'check-out',
   'step-log', 'history', 'log-out',
   'step-feed', 'feed-refresh', 'feed-pause', 'feed-live', 'feed-out',
@@ -344,18 +348,10 @@ const lookup = async (name) => {
   }
 }
 
-$('look').addEventListener('click', () => {
-  const name = $('name').value.trim().toLowerCase()
-  if (!name) return say($('verdict'), 'bad', `<p>${t('x.needname', 'Type a name first.')}</p>`)
-  lookup(name)
-})
-
-$('name').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('look').click() })
-
-$('try').addEventListener('click', () => {
-  $('name').value = EXAMPLES[Math.floor(Math.random() * EXAMPLES.length)]
-  $('look').click()
-})
+// The three handlers that used to be here — the button, Enter in the box, and
+// "try an example" — belonged to a form the page no longer has. `lookup()` is
+// called from one place now, at the foot of this file, with the name a ?name=
+// link asked for.
 
 // ─── The attack, offered to the visitor ────────────────────────────────────
 
@@ -1092,10 +1088,7 @@ window.__nextkeyRerender = () => {
 
 {
   const asked = new URLSearchParams(location.search).get('name')
-  if (asked) {
-    $('name').value = asked.trim().toLowerCase()
-    $('look').click()
-  }
+  if (asked) lookup(asked.trim().toLowerCase())
   // The live window fills itself. It is the one thing on this page that needs
   // no question asked first, and a visitor who arrives with nothing to type
   // should still see the chain moving.

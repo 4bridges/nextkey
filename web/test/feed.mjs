@@ -119,6 +119,14 @@ await page.waitForSelector('#feed-out .ev', { timeout: 15_000 })
 
 const text = await page.textContent('#feed-out')
 check('the window fills itself, without a name being typed', (await page.locator('#feed-out .ev').count()) >= 4)
+// The window is the page now. It used to be the third thing on it, under a
+// heading asking for a name and a box to type one into; the box is gone and the
+// window's own heading is the page's. A page that quietly grew a lookup form
+// again would put the one thing here that needs nothing typed back below the
+// fold.
+check('the window is what the page opens with',
+  /Everything happening on NextKey/.test((await page.textContent('h1')).trim()) &&
+  (await page.locator('#name, #look, #try').count()) === 0)
 check('a grant is described as a grant', /granted access to somebody/.test(text))
 check('and the chain is not asked to name the person', /not on the chain/.test(text))
 check('an emptied record reads as a withdrawal', /took a grant back/.test(text))

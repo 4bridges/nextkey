@@ -111,7 +111,10 @@ const plain = (e) => {
 
 const REQUIRED_ELEMENTS = [
   'addr', 'ensname', 'qrname', 'copy', 'copied', 'connect', 'disconnect', 'who',
-  'amounts', 'amount', 'send', 'send-out', 'live', 'refresh', 'balances', 'gifts',
+  // No 'refresh': the section reads itself every twenty seconds and the live
+  // mark says so, so the button was a second way to do what was already
+  // happening.
+  'amounts', 'amount', 'send', 'send-out', 'live', 'balances', 'gifts',
 ]
 
 {
@@ -297,9 +300,11 @@ const balances = async () => {
     rows.push(`<div class="bal"><span class="balv">${esc(amount(v, tk.decimals))}</span><span class="note">${esc(tk.symbol)}</span></div>`)
   })
 
+  // The figure alone. The sentence that used to stand under it — read from the
+  // chain, exact at this block — is what the whole page is about and was being
+  // repeated beside every number.
   say($('balances'), 'ok', `
-    <div class="bals">${rows.join('')}</div>
-    <p class="note">${t('v.bal.note', 'Read from the chain, not from a database of ours. A balance is exact: it is what the address holds at this block.')}</p>`,
+    <div class="bals">${rows.join('')}</div>`,
     { eth: eth === null ? null : formatEther(eth) })
 }
 
@@ -327,7 +332,7 @@ const giftsIn = async (from, to) => {
 const render = () => {
   const shown = state.gifts.slice(0, SHOW)
   say($('gifts'), 'ok', `
-    <p class="count"><strong>${state.gifts.length}</strong> ${t('v.count', 'stablecoin donations found')}</p>
+    <p class="count"><strong>${state.gifts.length}</strong> ${t('v.count', 'stablecoin donations')}</p>
     ${shown.map((g) => `
       <div class="ev">
         <p style="margin:0 0 .2rem"><strong>${esc(amount(g.value, g.decimals))} ${esc(g.symbol)}</strong></p>
@@ -337,8 +342,7 @@ const render = () => {
           <a href="${SCAN}/tx/${esc(g.tx)}" target="_blank" rel="noopener noreferrer">${t('x.log.tx', 'transaction')}</a>
         </p>
       </div>`).join('')}
-    <p class="note">${t('v.eth.note', 'Sending ETH emits no event, so a plain ETH donation cannot be listed here — there is nothing on the chain to filter for, and this page has no indexer. The balance above counts it exactly; Etherscan has the full list.')}</p>
-    <p class="note"><a href="${SCAN}/address/${ADDRESS}" target="_blank" rel="noopener noreferrer">${t('v.onetherscan', 'See it on Etherscan')}</a></p>`,
+`,
     { gifts: state.gifts.length })
 }
 
@@ -432,7 +436,6 @@ const poll = async () => {
   } catch { /* the next one tries again */ } finally { state.filling = false }
 }
 
-$('refresh').addEventListener('click', () => { state.width = null; load() })
 setInterval(poll, EVERY)
 document.addEventListener('visibilitychange', () => { if (!document.hidden) poll() })
 
