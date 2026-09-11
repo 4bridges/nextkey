@@ -161,10 +161,11 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   footer p{max-width:44rem}
   footer a{margin-right:1.1rem}
   /* ── One header on every page ──
-     The bar keeps the landing page's width even where the text below is set
-     narrower for reading: chrome that changes size between pages reads as a
-     different site, and the reading measure is a decision about paragraphs,
-     not about navigation. */
+     It used to keep the landing page's 62rem on every page, on the argument
+     that chrome which changes size between pages reads as a different site.
+     Over a narrower page that argument lost: the language button sat past the
+     right edge of everything beneath it, which reads as a header belonging to
+     some other page. The bar ends where its own page ends now. */
   .bar .wrap{max-width:62rem}
   .barnav{display:flex;align-items:center;gap:1.1rem;margin-inline-start:1.4rem;
     flex-grow:1;justify-content:space-between;font-size:.95rem;
@@ -356,7 +357,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     </p>
 </footer>
 
-<script src="/i18n.js?v=05aa991f"></script>
+<script src="/i18n.js?v=5449afc7"></script>
 <script>
 /**
  * Same overlay as the landing page, same storage keys, so a language or theme

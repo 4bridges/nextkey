@@ -66,7 +66,10 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   }
   code,pre,.mono{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace}
   a{color:inherit}
-  .wrap{max-width:62rem;margin:0 auto;padding:0 1.5rem}
+  /* One column for the whole page: the bar, the text and the footer all end
+     at the reading measure. The bar used to keep its own wider width, which
+     read as a header belonging to a different page than the one under it. */
+  .wrap{max-width:calc(var(--measure) + 3rem);margin:0 auto;padding:0 1.5rem}
   section{padding:4.5rem 0;border-top:1px solid var(--line)}
   section:first-of-type{border-top:0}
   h1,h2,h3{line-height:1.25;letter-spacing:-.015em;margin:0 0 .8rem}
@@ -255,7 +258,11 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   /* The one block wider than the reading measure, on purpose: three columns
      side by side are not a paragraph, and at 44rem they would be two columns
      and a stray. */
-  .cards{display:grid;gap:1.6rem;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));max-width:58rem}
+  /* Three columns inside the same measure as everything else: the two card
+     sections were the only blocks on the page running wider, which read as two
+     different layouts on one page. The column floor is what keeps them three
+     abreast at 44rem and lets them stack on a phone. */
+  .cards{display:grid;gap:1.6rem;grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));max-width:var(--measure)}
   .card p{color:var(--muted);margin:.2rem 0 0;font-size:1rem}
   .card .mono{font-size:.94rem}
   /* FAQ */
@@ -298,11 +305,12 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   footer a{margin-right:1.2rem;display:inline-block}
   kbd,.k{background:var(--code);border-radius:4px;padding:.12em .4em;font-size:.94em}
   /* ── One header on every page ──
-     The bar keeps the landing page's width even where the text below is set
-     narrower for reading: chrome that changes size between pages reads as a
-     different site, and the reading measure is a decision about paragraphs,
-     not about navigation. */
-  .bar .wrap{max-width:62rem}
+     It used to keep the landing page's 62rem on every page, on the argument
+     that chrome which changes size between pages reads as a different site.
+     Over a narrower page that argument lost: the language button sat past the
+     right edge of everything beneath it, which reads as a header belonging to
+     some other page. The bar ends where its own page ends now. */
+  .bar .wrap{max-width:calc(var(--measure) + 3rem)}
   .barnav{display:flex;align-items:center;gap:1.1rem;margin-inline-start:1.4rem;
     flex-grow:1;justify-content:space-between;font-size:.95rem;
     font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
@@ -451,7 +459,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
         <!-- sender -->
         <rect class="node" x="1" y="46" width="196" height="84" rx="9"/>
         <text class="nm" x="99" y="80">youragent.eth</text>
-        <text class="sub" x="99" y="102" data-i18n="dia.a">seals its wallet</text>
+        <text class="sub" x="99" y="102" data-i18n="dia.a">seals the passphrase</text>
 
         <!-- sealed payload travelling: the wires are joins, not distance, so
              they are as short as the arrow needs to read as one. -->
@@ -475,7 +483,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
            aria-label="A sealed wallet passes from youragent.eth, through a condition checked in an enclave, to yourname.eth.">
         <div class="hs-node">
           <span class="hs-nm">youragent.eth</span>
-          <span class="hs-s" data-i18n="dia.a">seals its wallet</span>
+          <span class="hs-s" data-i18n="dia.a">seals the passphrase</span>
         </div>
         <div class="hs-arrow"></div>
         <div class="hs-seal">
@@ -832,7 +840,7 @@ document.addEventListener('submit', function (e) {
   location.href = './explorer' + (v ? '?name=' + encodeURIComponent(v) : '')
 })
 </script>
-<script src="/i18n.js?v=05aa991f"></script>
+<script src="/i18n.js?v=5449afc7"></script>
 <script>
 /**
  * Translation is applied over the page, not baked into it.
