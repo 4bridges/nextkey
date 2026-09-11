@@ -1219,13 +1219,13 @@ on('be-receivable', 'click', async () => {
     if (already) {
       receivableAt(already)
       return say(out, 'ok', `
-        <p>${t('t.id.already', 'You are already receivable — the same wallet gives the same key, so this name is still yours:')} <span class="mono">${esc(already)}</span></p>
+        <p>${t('t.id.already', 'You already have an ID and a name.')}</p>
         <dl>
           <dt>${t('t.id.label', 'NextKey ID')}</dt><dd class="mono break nkid">${esc(nextkeyId(pk))}</dd>
           <dt>${t('t.name', 'name')}</dt><dd class="mono">${esc(already)}</dd>
           <dt>${t('t.pubkey', 'published key')}</dt><dd class="mono break">${esc(value0)}</dd>
         </dl>
-        <p class="note">${t('t.id.alreadynote', 'Nothing was written and no name was spent. That is the point of deriving the key rather than generating one: there is only ever one of you, however many browsers you press this in.')}</p>`,
+`,
         { step: 2, recipient: 'derived', name: already, nextkeyId: nextkeyId(pk), publicKey: value0, wrote: false })
     }
 
@@ -1453,7 +1453,7 @@ function ownedAt(full) {
   // Being receivable is now true by a different route, so the section above
   // should not still be inviting a press that would spend a lent name.
   $('be-receivable').disabled = true
-  $('recv-state').textContent = `${t('t.recv.at', 'receivable at')} ${full}`
+  if (PAGE !== 'id') $('recv-state').textContent = `${t('t.recv.at', 'receivable at')} ${full}`
   $('be-receivable-box').classList.add('done')
   const to = $('ens-name')
   if (to && !to.value.trim()) to.value = full
@@ -1470,7 +1470,11 @@ function ownedAt(full) {
  */
 function receivableAt(name) {
   $('be-receivable').disabled = true
-  $('recv-state').textContent = `${t('t.recv.at', 'receivable at')} ${name}`
+  // The label beside the button is for the Message tab, where this block still
+  // introduces itself with a heading and a paragraph. On the ID tab the panel
+  // below the button says the same thing in full, two lines lower, and saying
+  // it twice made the shorter one look like a different fact.
+  if (PAGE !== 'id') $('recv-state').textContent = `${t('t.recv.at', 'receivable at')} ${name}`
   $('be-receivable-box').classList.add('done')
   // Only the send tabs have a recipient field to fill in.
   const to = $('ens-name')

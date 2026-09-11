@@ -285,7 +285,11 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
      its visually hidden label, so a hover and a screen reader both still say
      the word. `gap` rather than a right margin on every link — a row that
      wraps needs spacing on both axes. */
-  footer .footnav{display:flex;flex-wrap:wrap;align-items:center;gap:.55rem 1.15rem;margin:0}
+  footer .footnav{display:flex;flex-wrap:wrap;align-items:center;
+    /* Spread, like the bar above: the row runs the whole measure and the eye
+       gets the same margin at both ends. The gap is the floor, not the step, so
+       the spacing follows the window instead of the number of symbols. */
+    justify-content:space-between;gap:.55rem 1.15rem;margin:0}
   footer .footnav a{color:var(--muted);display:inline-flex;align-items:center;margin:0}
   footer .footnav a svg{width:1.25rem;height:1.25rem;display:block}
   footer .footnav a:hover{color:var(--ink)}
@@ -662,7 +666,7 @@ nextkey.mjs revoke &lt;label&gt; &lt;recipient&gt;</pre>
     </p>
 </footer>
 
-<script src="/i18n.js?v=ca35c498"></script>
+<script src="/i18n.js?v=2a834f17"></script>
 <script>
 /**
  * The same overlay as the other two pages, same storage keys, so a language or
@@ -818,6 +822,6 @@ nextkey.mjs revoke &lt;label&gt; &lt;recipient&gt;</pre>
   label()
 })()
 </script>
-<script type="module" src="/send.js?v=d0932a2c"></script>
+<script type="module" src="/send.js?v=436c2cfe"></script>
 </body>
 </html>

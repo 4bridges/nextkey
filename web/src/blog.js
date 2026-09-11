@@ -90,6 +90,7 @@ const POST_TOPICS = POST_SLOTS.map((k) => keccak256(stringToHex(k)))
 // property of the name, so the address is not guessed from one anchor.
 const FEED_RESOLVERS = ['0x04B2DB6567Cc68d059c061215Adf9a99adD1cA65']
 const ENS_APP = 'https://hackathon-deployment-portal-app.ens-cf.workers.dev'
+const READ_BATCH = 10       // how many names are read at once, see sweepPosts
 const FEED_WINDOWS = 20     // the node does the selecting, so this reaches far
 const FEED_SHOW = 25
 const FEED_EVERY = 20_000
@@ -175,6 +176,52 @@ const readPost = async (name) => {
   return POST_SLOTS.map((key, i) => parsePost(name, key, raw[i])).filter(Boolean)
 }
 
+/**
+ * The posts, read rather than searched.
+ *
+ * This page used to find posts the way the explorer finds anything: by asking
+ * the resolver for its `TextUpdated` events. That is the right instinct and it
+ * failed on the one post that exists. Measured against the chain on 11
+ * September: `hero01.nextkey.eth` carries a post, its resolver is the pool
+ * resolver, and on that resolver — over its entire life, 1.5 million blocks in
+ * fifty-thousand-block windows, with not one range refused — there is no write
+ * event for a post record and no creation event for that name. The same query
+ * shape finds `hero72`, `hero02` and `hero150` exactly as documented, record id
+ * in topic 1 and namehash in topic 2, so neither the topic hashes nor the
+ * window walk are wrong. Why that one write left no trace is a question about
+ * the deployment, and the answer does not change what this page owes a reader.
+ *
+ * So the posts are read instead of searched. One `text()` call per name and
+ * slot, through the same resolver, which is the exact call that returns the
+ * post that the log sweep cannot see. It cannot miss, it needs no block range,
+ * and no public endpoint's log retention applies to it.
+ *
+ * What it costs: this page can only read names it can spell. That is the same
+ * limit the first version of the window had, and it is why the pool is listed
+ * in the source rather than discovered. The log sweep stays as well — it is
+ * what finds a post on a name nobody here listed, and it brings the block a
+ * write landed in, which is the only date that is not a claim.
+ *
+ * The first slot decides whether the other four are read at all, so a pool of
+ * two hundred costs two hundred reads rather than a thousand.
+ */
+const sweepPosts = async (onProgress) => {
+  const names = [...new Set([...ALLOW, ...POOL.map((l) => `${l}.${PARENT}`),
+                             ...session, ...(asked() ? [asked()] : [])])]
+  const found = []
+  for (let i = 0; i < names.length; i += READ_BATCH) {
+    const slice = names.slice(i, i + READ_BATCH)
+    const heads = await Promise.all(slice.map((n) =>
+      reader.getEnsText({ name: n, key: POST_SLOTS[0] }).catch(() => null)))
+    for (let j = 0; j < slice.length; j++) {
+      if (!heads[j]) continue
+      for (const p of await readPost(slice[j])) found.push(p)
+    }
+    onProgress?.(Math.min(i + READ_BATCH, names.length), names.length, found.length)
+  }
+  return found
+}
+
 /** The one name a visitor asked for by hand, if any. */
 const asked = () => {
   const from = new URLSearchParams(location.search).get('from')
@@ -202,6 +249,7 @@ const asked = () => {
  * author would be the one unforgivable thing here.
  */
 const blog = {
+  read: [],           // posts read straight off the names, see sweepPosts
   addresses: null,
   width: null,
   head: null,
@@ -308,6 +356,31 @@ const resolveNames = async () => {
   if (touched) render()
 }
 
+/**
+ * The two sources, in one list.
+ *
+ * Read first, then the events. Not a ranking of importance — a read post is a
+ * fact about a name this page can spell, and an event post is a fact about a
+ * name it often cannot, so the two cannot be ordered against each other by
+ * date at all: one date is a claim in the post, the other is a block. Putting
+ * the exact set first and saying which is which under the list beats inventing
+ * a comparison between them.
+ *
+ * A post that appears in both — a name we can spell whose write did leave an
+ * event — is shown once, with the event's block and transaction, because those
+ * are the parts a reader can check.
+ */
+const merged = () => {
+  const byName = new Map()
+  for (const p of blog.items) {
+    const who = blog.found.get(p.record)
+    if (who) byName.set(`${who}|${p.key}`, true)
+  }
+  const reads = blog.read.filter((p) => !byName.has(`${p.name}|${p.key}`))
+  reads.sort((a, b) => String(b.at ?? '').localeCompare(String(a.at ?? '')))
+  return [...reads, ...blog.items]
+}
+
 const blogSort = () => {
   blog.items.sort((a, b) => (a.block === b.block ? b.index - a.index : (a.block > b.block ? -1 : 1)))
   const seen = new Set()
@@ -334,21 +407,27 @@ const blogStatus = () => {
  */
 const render = () => {
   const out = $('posts')
-  if (!blog.items.length) return say(out, '', `
+  const all = merged()
+  if (!all.length) return say(out, '', `
     <p>${t('b.none', 'No posts on those names yet.')}</p>
     <p class="note">${t('b.nonenote', 'Nothing is wrong: a name carries a post only once somebody writes one. Write the first one below.')}</p>`,
     { posts: 0 })
 
   const now = Date.now()
-  const shown = blog.items.slice(0, FEED_SHOW)
+  const shown = all.slice(0, FEED_SHOW)
+  // A post read off its name carries no transaction, because this page never
+  // saw the write — only the record it left. Saying that under the list is the
+  // honest version; printing a date and a link that stand for nothing would be
+  // the other kind.
+  const claimed = shown.some((p) => !p.tx)
   say(out, 'ok', `
     ${shown.map((p) => {
-      const who = blog.found.get(p.record) ?? null
+      const who = p.name ?? blog.found.get(p.record) ?? null
       const day = blog.when.get(String(p.block)) ?? (p.at ? String(p.at).slice(0, 10) : '')
       const text = [p.title, p.body].filter(Boolean).join(' ')
       return `
       <article class="post">
-        <div class="bubble${now - p.seen < FRESH_FOR ? ' fresh' : ''}">
+        <div class="bubble${now - (p.seen ?? 0) < FRESH_FOR ? ' fresh' : ''}">
           <p class="bubbletext">${esc(text)}</p>
         </div>
         <p class="bubblemeta">
@@ -356,12 +435,15 @@ const render = () => {
             ? `<a class="mono" href="${esc(ENS_APP)}/${encodeURIComponent(who)}" target="_blank" rel="noopener noreferrer">${esc(who)}</a>`
             : `<span class="mono">${esc(t('b.noname', 'a name this page cannot name'))}</span>`}
           ${day ? ` · ${esc(day)}` : ''}
-          · <a href="https://sepolia.etherscan.io/tx/${esc(p.tx)}" target="_blank" rel="noopener noreferrer">${t('x.log.tx', 'transaction')}</a>
+          ${p.tx
+            ? `· <a href="https://sepolia.etherscan.io/tx/${esc(p.tx)}" target="_blank" rel="noopener noreferrer">${t('x.log.tx', 'transaction')}</a>`
+            : `· <span class="note">${esc(p.key)}</span>`}
         </p>
       </article>`
     }).join('')}
-    ${blog.items.length > FEED_SHOW ? `<p class="note">${t('x.feed.showing', 'showing the newest')} ${FEED_SHOW} ${t('x.feed.of', 'of')} ${blog.items.length}.</p>` : ''}`,
-    { posts: blog.items.length })
+    ${claimed ? `<p class="note">${t('b.claimeddate', 'A post read straight off its name is shown with the record it sits in and the date it claims for itself. A post this page saw being written carries its block and its transaction instead — that date is the chain’s, not the author’s.')}</p>` : ''}
+    ${all.length > FEED_SHOW ? `<p class="note">${t('x.feed.showing', 'showing the newest')} ${FEED_SHOW} ${t('x.feed.of', 'of')} ${all.length}.</p>` : ''}`,
+    { posts: all.length })
 }
 
 /** Dates come from the block, not from the post, because a post can claim anything. */
@@ -386,6 +468,19 @@ const blogFill = async () => {
   try {
     say(out, 'busy', `<p>${t('b.loading', 'Reading those names from Sepolia…')}</p>`)
     knownNames()
+
+    // The exact pass first: every name this page can spell, read directly. It
+    // is what makes a post visible at all — see sweepPosts — so it runs before
+    // the log sweep and paints as soon as it finds something.
+    blog.read = await sweepPosts((done, total, hits) => {
+      if (!mineStill()) return
+      if (hits) render()
+      else say(out, 'busy', `<p>${t('b.loading', 'Reading those names from Sepolia…')}
+        <span class="mono">${done}/${total}</span></p>`)
+    })
+    if (!mineStill()) return
+    render()
+
     if (!blog.addresses) blog.addresses = await blogAddresses()
 
     const head = await reader.getBlockNumber({ cacheTime: 0 })
@@ -393,11 +488,17 @@ const blogFill = async () => {
       const probe = await probeWidth(logsWith, {
         address: blog.addresses, topics: [TEXT_UPDATED_TOPIC, null, POST_TOPICS], head })
       blog.width = probe.width
-      if (!probe.width) return say(out, 'bad', `
-        <p>${t('x.log.norange', 'The node refused every block range this page asked for.')}</p>
-        <p class="note mono">${esc(plain(probe.error))}</p>
-        <p class="note">${t('x.feed.norangenote', 'That is a limit of the public endpoint, not a statement about NextKey. Nothing here is broken and nothing is missing — this one node will not serve log queries at the moment. Press Refresh in a minute.')}</p>`,
-        { posts: null, error: 'ranges-refused' })
+      if (!probe.width) {
+        // A refusal is only worth saying when there is nothing else on screen.
+        // The read pass above does not use block ranges at all, so when it
+        // found posts they are already there and the node's mood is not news.
+        if (blog.read.length) return
+        return say(out, 'bad', `
+          <p>${t('x.log.norange', 'The node refused every block range this page asked for.')}</p>
+          <p class="note mono">${esc(plain(probe.error))}</p>
+          <p class="note">${t('x.feed.norangenote', 'That is a limit of the public endpoint, not a statement about NextKey. Nothing here is broken and nothing is missing — this one node will not serve log queries at the moment. Press Refresh in a minute.')}</p>`,
+          { posts: null, error: 'ranges-refused' })
+      }
     }
 
     blog.items = []

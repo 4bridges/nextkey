@@ -25,6 +25,9 @@ import { createPublicClient, http, namehash, decodeEventLog, keccak256, stringTo
 import { sepolia } from 'viem/chains'
 import { un64, fingerprint, nextkeyId } from './nk-crypto.mjs'
 import { TOPIC_RECORD, TEXT_UPDATED_TOPIC, TEXT_UPDATED, logReader } from './nk-logs.mjs'
+// The names this page can spell. Needed because a record's write is not always
+// findable as an event — see readRecords below.
+import { POOL } from './demo-wallet.js'
 
 const UNIVERSAL_RESOLVER = '0xd26f2040d083af1cd2962ba303f4bea0c4faf142'
 
@@ -417,18 +420,18 @@ $('check').addEventListener('click', async () => {
  */
 const meaning = (key, value) => {
   const gone = !value
-  if (key === RECORD_EPH) return t('x.m.eph', 'published the key that every grant on this name is addressed from')
+  if (key === RECORD_EPH) return t('x.m.eph', 'set up where grants on this name are addressed')
   if (key === RECORD_EPH_SEALED) return t('x.m.sealed', 'wrapped that key to the owner, so a recipient can be added later without a signature')
   if (key === RECORD_SECRET) return gone
     ? t('x.m.secretgone', 'removed the ciphertext')
-    : t('x.m.secret', 'wrote the ciphertext')
-  if (key === RECORD_PUBKEY) return t('x.m.pubkey', 'published a key, so anybody can seal something to this name')
+    : t('x.m.secret', 'sealed a text')
+  if (key === RECORD_PUBKEY) return t('x.m.pubkey', 'created a NextKey ID')
   if (key === RECORD_POST) return gone
     ? t('x.m.postgone', 'took its post down')
     : t('x.m.post', 'published a post, in the clear')
   if (key.startsWith('nextkey.g2.')) return gone
     ? t('x.m.revoked', 'took a grant back — the wrapped key is gone, the ciphertext is not')
-    : t('x.m.granted', 'granted access to somebody. Which somebody is not on the chain')
+    : t('x.m.granted', 'gave access')
   if (key.startsWith('nextkey.a2.')) return t('x.m.ack', 'a recipient acknowledged reading it')
   if (key.startsWith('nextkey.grant.')) return gone
     ? t('x.m.v1revoked', 'took back a v1 grant')
@@ -549,7 +552,7 @@ $('history').addEventListener('click', async () => {
     say(out, 'ok', `
       ${shown.map((w) => `
       <div style="border-top:1px solid var(--line);padding:.7rem 0">
-        <p style="margin:0 0 .2rem">${esc(meaning(w.key, w.value))}</p>
+        <p style="margin:0 0 .2rem">${esc(meaning(w.key, w.value))}${w.name ? ` — ${esc(w.name)}` : ''}</p>
         <p class="note" style="margin:0">
           <span class="mono break">${esc(w.key)}</span> ·
           ${t('x.log.block', 'block')} ${esc(String(w.block))}${when.has(w.block) ? ` · ${esc(when.get(w.block))} UTC` : ''} ·
@@ -602,6 +605,7 @@ const FEED_EVERY = 20_000     // how often a poll asks for new blocks
 const FRESH_FOR = 6_000       // how long an arrival stays marked
 
 const feed = {
+  read: [],           // records read off their names, see readRecords
   addresses: null,   // every resolver this page watches, discovered and given
   width: null,
   head: null,        // the newest block this page has already read
@@ -659,6 +663,49 @@ const FILTERS = {
              keep: (w) => isNextkey(w.key) },
 }
 const active = () => FILTERS[feed.filter] ?? FILTERS.all
+
+/**
+ * Records read off their names, for the two questions the events cannot answer.
+ *
+ * Measured against the chain on 11 September: `hero01.nextkey.eth` carries a
+ * post, its resolver is the pool resolver, and that resolver has no write event
+ * for a post record and no creation event for that name — over its whole life,
+ * 1.5 million blocks, no range refused. The same queries find `hero72`,
+ * `hero02` and `hero150` exactly as documented. So a record can exist without a
+ * findable event, and two things here were built on the assumption that it
+ * cannot: the post filter, which asked the node for post writes, and the name
+ * filter, which needs a record id and gets it only from a creation event.
+ *
+ * Both are answered by reading instead. One `text()` call per name and key —
+ * the same call that returns the post the sweep cannot see. What it cannot do
+ * is find a name nobody here listed, which is exactly what the log sweep is
+ * still for. The two are shown together and the list says which is which: a
+ * read record has no block and no transaction, because this page never saw the
+ * write, only what it left behind.
+ */
+const PARENT = 'nextkey.eth'
+const READ_BATCH = 10
+const READ_NAMES = [PARENT, 'nextkeyv2.eth', `anna.${PARENT}`, `bob.${PARENT}`, `agent.${PARENT}`,
+                    `vault.${PARENT}`, ...POOL.map((l) => `${l}.${PARENT}`)]
+
+const readRecords = async (names, keys, onProgress) => {
+  const out = []
+  for (let i = 0; i < names.length; i += READ_BATCH) {
+    const slice = names.slice(i, i + READ_BATCH)
+    const rows = await Promise.all(slice.map(async (name) => {
+      const first = await read(name, keys[0])
+      if (!first && keys.length > 1 && keys[0] === RECORD_POST) return [[name, keys[0], first]]
+      const rest = await Promise.all(keys.slice(1).map((k) => read(name, k)))
+      return [[name, keys[0], first], ...keys.slice(1).map((k, j) => [name, k, rest[j]])]
+    }))
+    for (const row of rows.flat()) {
+      const [name, key, value] = row
+      if (value) out.push({ name, key, value, record: null, block: null, tx: null, index: 0, seen: 0 })
+    }
+    onProgress?.(Math.min(i + READ_BATCH, names.length), names.length, out.length)
+  }
+  return out
+}
 
 /**
  * Every resolver worth watching.
@@ -752,8 +799,14 @@ const feedStatus = () => {
 
 const feedRender = () => {
   const out = $('feed-out')
-  const shown = feed.items.slice(0, FEED_SHOW)
+  // Read records first, then the events. They answer different questions —
+  // what a name carries now, and what somebody did to it — and only the second
+  // has a date this page can stand behind. Mixing them by time would invent a
+  // comparison that does not exist; saying which is which does not.
+  const all = [...feed.read, ...feed.items]
+  const shown = all.slice(0, FEED_SHOW)
   const now = Date.now()
+  const anyRead = shown.some((w) => !w.tx)
 
   say(out, 'ok', `
     ${feed.filter === 'name' && feed.name ? `<p class="note" style="margin:0 0 .4rem">
@@ -762,20 +815,27 @@ const feedRender = () => {
     ${shown.map((w) => `
     <div class="ev${now - w.seen < FRESH_FOR ? ' fresh' : ''}">
       <p style="margin:0 0 .2rem">${esc(meaning(w.key, w.value))}</p>
+      ${w.key === RECORD_PUBKEY && idOf(w.value)
+        ? `<p class="note" style="margin:0 0 .2rem">${t('t.id.label', 'NextKey ID')}
+             <span class="mono nkid">${esc(idOf(w.value))}</span></p>`
+        : ''}
       <p class="note" style="margin:0">
-        <span class="mono break">${esc(w.key)}</span> ·
-        ${t('x.log.block', 'block')} ${esc(String(w.block))}${feed.when.has(String(w.block)) ? ` · ${esc(feed.when.get(String(w.block)))} UTC` : ''} ·
-        <a href="https://sepolia.etherscan.io/tx/${esc(w.tx)}" target="_blank" rel="noopener noreferrer">${t('x.log.tx', 'transaction')}</a>
+        <span class="mono break">${esc(w.key)}</span>${w.tx
+          ? ` · ${t('x.log.block', 'block')} ${esc(String(w.block))}${feed.when.has(String(w.block)) ? ` · ${esc(feed.when.get(String(w.block)))} UTC` : ''} ·
+        <a href="https://sepolia.etherscan.io/tx/${esc(w.tx)}" target="_blank" rel="noopener noreferrer">${t('x.log.tx', 'transaction')}</a>`
+          : ` · ${esc(t('x.feed.readnow', 'read off the name just now'))}`}
       </p>
       ${w.value ? `<pre class="mono">${esc(clip(w.value, 220))}</pre>` : ''}
     </div>`).join('')}
-    <p class="note">${t('x.log.window', 'Searched')} ${esc(String(feed.scanned))} ${t('x.log.blocks', 'blocks on')} ${feedWhere()}${feed.items.length > FEED_SHOW ? ` · ${t('x.feed.showing', 'showing the newest')} ${FEED_SHOW} ${t('x.feed.of', 'of')} ${feed.items.length}` : ''}.</p>
+    ${feed.filter === 'name' && !feed.recordId ? `<p class="note">${t('x.f.readonly', 'This name has no creation event a public node will serve, so there is no record id and no exact question to ask about its writes. What stands above is what the name carries now, read one record at a time.')}</p>` : ''}
+    ${anyRead ? `<p class="note">${t('x.feed.readnote', 'The entries without a transaction were read off their names rather than found as events: a record can exist on this deployment without a write event a public node will serve, and a list that only asked for events would leave those out and look complete.')}</p>` : ''}
+    <p class="note">${t('x.log.window', 'Searched')} ${esc(String(feed.scanned))} ${t('x.log.blocks', 'blocks on')} ${feedWhere()}${all.length > FEED_SHOW ? ` · ${t('x.feed.showing', 'showing the newest')} ${FEED_SHOW} ${t('x.feed.of', 'of')} ${all.length}` : ''}.</p>
     ${feed.filter === 'granted' || feed.filter === 'revoked' ? `<p class="note">${t('x.feed.partial', 'A grant’s record name is derived, so the node cannot select these — they were picked out of the range above by hand. This is therefore what is in that range, not what exists.')}</p>` : ''}
     ${active().deep && feed.filter !== 'all' ? `<p class="note">${t('x.feed.exact', 'This filter is asked of the node directly, so it reaches back as far as the search went and misses nothing inside it.')}</p>` : ''}
     ${why(t('x.log.how', 'How this is read'), `
       <p>${t('x.feed.hownote', 'One log filter on one resolver, and no server: every text write it has made, kept if the record name begins with nextkey. The value is shown as it stands on the chain, because it is public either way.')}</p>
       <p>${t('x.feed.noname', 'What is missing here is deliberate. The event carries a record id, not a name, and the event that ties the two together carries a namehash, which does not run backwards. So this list can say a grant was given and cannot say to whom — which is the claim the rest of this page makes, seen from outside.')}</p>`)}`,
-    { feed: feed.items.length, resolvers: feed.addresses, scanned: String(feed.scanned) })
+    { feed: all.length, read: feed.read.length, resolvers: feed.addresses, scanned: String(feed.scanned) })
 }
 
 /** Timestamps are a nicety, so they are fetched after the list is already up. */
@@ -813,6 +873,25 @@ const feedFill = async () => {
   try {
     say(out, 'busy', `<p>${t('x.feed.reading', 'Reading everything NextKey has written…')}</p>`)
 
+    // The exact pass, where the events cannot answer: the post filter reads the
+    // names it can spell, and the name filter reads the one name it was given.
+    // It runs first and paints as soon as it has something, so the slow log
+    // walk never decides whether a reader sees anything at all.
+    feed.read = []
+    if (feed.filter === 'post') {
+      feed.read = await readRecords(READ_NAMES, POST_KEYS, (done, total, hits) => {
+        if (!mineStill()) return
+        if (hits) feedRender()
+        else say(out, 'busy', `<p>${t('x.feed.reading', 'Reading everything NextKey has written…')}
+          <span class="mono">${done}/${total}</span></p>`)
+      })
+    } else if (feed.filter === 'name' && feed.name) {
+      feed.read = await readRecords([feed.name],
+        [RECORD_PUBKEY, RECORD_EPH, RECORD_EPH_SEALED, RECORD_SECRET, RECORD_POST])
+    }
+    if (!mineStill()) return
+    if (feed.read.length) feedRender()
+
     if (!feed.addresses) feed.addresses = await feedAddresses()
 
     const head = await reader.getBlockNumber()
@@ -841,7 +920,12 @@ const feedFill = async () => {
     // allowed to reach much further back. A filter we have to sort ourselves
     // reads every write in the range, so it stays modest — and says how far it
     // got, which is the difference between a short list and a complete one.
-    const budget = active().deep ? FEED_WINDOWS_DEEP : FEED_WINDOWS
+    // Without a record id the name filter has nothing exact to ask the node, and
+    // asking without it would put another name's writes under this one. The read
+    // pass above has already answered; the log walk sits this one out.
+    const budget = (feed.filter === 'name' && !feed.recordId)
+      ? 0
+      : (active().deep ? FEED_WINDOWS_DEEP : FEED_WINDOWS)
     for (let i = 0; i < budget && to > 0n && feed.items.length < FEED_SHOW; i++) {
       if (!mineStill()) return
       const from = to > width ? to - width + 1n : 0n
@@ -866,7 +950,10 @@ const feedFill = async () => {
     if (!mineStill()) return
     feed.head = head
 
-    if (!feed.items.length) return say(out, feed.refused ? 'bad' : '', `
+    // Nothing found as an event is only an empty answer when nothing was read
+    // either. With read records on screen, the log sweep adding none of its own
+    // is not news — and overwriting them with "nothing here" was the bug.
+    if (!feed.items.length && !feed.read.length) return say(out, feed.refused ? 'bad' : '', `
       <p>${feed.refused
         ? t('x.log.refused', 'The node stopped answering partway through.')
         : (feed.filter === 'all'
@@ -972,17 +1059,13 @@ const feedFindName = async (name) => {
     { filter: 'name', name, error: 'ranges-refused' })
 
   const created = await walkBack(resolver, [TOPIC_RECORD, null, namehash(name)], head, width)
-  if (!created.found.length) return say(out, created.refused ? 'bad' : '', `
-    <p>${created.refused
-      ? t('x.log.refused', 'The node stopped answering partway through.')
-      : t('x.log.notinrange', 'No record-creation event in the stretch this page could search.')}</p>
-    <p class="note">${t('x.log.scanned', 'Searched back')} ${esc(String(created.scanned))} ${t('x.log.blocksfrom', 'blocks from the current head, in steps of')} ${esc(String(width))}.</p>
-    <p class="note">${created.refused
-      ? t('x.feed.refusednote', 'So this is not a quiet chain — it is a request that came back empty-handed. A public endpoint will refuse a range that matches too much, and the fix is to press Refresh, which starts again from the current head.')
-      : t('x.feed.oldname', 'The name resolves, so it was created — just further back than a public endpoint will let a browser walk. Without that one event there is no record id, and without a record id this filter has nothing exact to ask for.')}</p>`,
-    { filter: 'name', name, recordId: null, scanned: String(created.scanned) })
-
-  feed.recordId = created.found[0].topics[1]
+  // No creation event is no longer the end of the answer. It used to be: the
+  // record id comes from that event, the exact log filter needs the record id,
+  // and so a name whose creation event cannot be found — `anna.nextkey.eth`,
+  // `hero01.nextkey.eth`, both of which plainly carry records — reported
+  // nothing at all. What the name carries can be read without any of that, so
+  // that is what is shown, and the list says it was read rather than found.
+  feed.recordId = created.found.length ? created.found[0].topics[1] : null
   feed.addresses = [resolver]
   feed.width = width
   feed.items = []

@@ -127,10 +127,13 @@ check('the window fills itself, without a name being typed', (await page.locator
 check('the window is what the page opens with',
   /Everything happening on NextKey/.test((await page.textContent('h1')).trim()) &&
   (await page.locator('#name, #look, #try').count()) === 0)
-check('a grant is described as a grant', /granted access to somebody/.test(text))
-check('and the chain is not asked to name the person', /not on the chain/.test(text))
+check('a grant is described as a grant', /gave access/.test(text))
+// The line itself is four words now. The claim it used to carry — that the
+// chain does not say who was granted anything — is in the folded panel under
+// the list, where it is argued rather than repeated on every row.
+check('and the chain is not asked to name the person', /cannot say to whom/.test(text))
 check('an emptied record reads as a withdrawal', /took a grant back/.test(text))
-check('the ephemeral key is named for what it does', /every grant on this name is addressed from/.test(text))
+check('the ephemeral key is named for what it does', /where grants on this name are addressed/.test(text))
 check('a record that is not ours is left out', !/ens\.something\.else/.test(text))
 check('the record name is shown in full', /nextkey\.g2\.251c755ded0bd0ebc999282cba38ce78/.test(text))
 check('the block is named', /11661869/.test(text))
@@ -165,7 +168,7 @@ const after = await page.textContent('#feed-out')
 check('a new write arrives on its own', /published a post, in the clear/.test(after))
 check('and lands at the top', (await page.locator('#feed-out .ev').first().textContent()).includes('published a post'))
 check('marked as an arrival', await freshMark)
-check('and nothing that was already there is lost', /granted access to somebody/.test(after))
+check('and nothing that was already there is lost', /gave access/.test(after))
 
 // ── Pause ──
 await page.click('#feed-pause')
@@ -183,7 +186,7 @@ await page.evaluate(() => localStorage.setItem('nextkey.lang', 'de'))
 await page.goto(`${base}/explorer.html?lang=de`, { waitUntil: 'networkidle' })
 await page.waitForSelector('#feed-out .ev', { timeout: 15_000 })
 const de = await page.textContent('#feed-out')
-check('the window speaks German too', /gab jemandem Zugriff/.test(de))
+check('the window speaks German too', /gab Zugriff/.test(de))
 // The heading is the page's h1 now, not the section's h2 — the window is what
 // this page opens with. Asserted through h1 so a heading that quietly moved
 // back into the section is a failure rather than a silent pass.
@@ -235,14 +238,14 @@ await page.waitForFunction(() => {
 }, null, { timeout: 15_000 })
 const posts = await page.textContent('#feed-out')
 check('a post filter shows the post', /published a post, in the clear/.test(posts))
-check('and nothing else', !/granted access to somebody/.test(posts))
+check('and nothing else', !/gave access/.test(posts))
 check('it was the node that selected them, and the page says so',
   /asked of the node directly/.test(posts))
 check('the request really carried the key topic — the node did the selecting',
   topicLog.some((t) => Array.isArray(t?.[2]) && t[2].length === 5))
 
 await page.click('#feed-chips button[data-f="granted"]')
-await page.waitForFunction(() => /granted access to somebody/.test(document.getElementById('feed-out').textContent),
+await page.waitForFunction(() => /gave access/.test(document.getElementById('feed-out').textContent),
   null, { timeout: 15_000 })
 const grants = await page.textContent('#feed-out')
 check('a grant filter keeps only grants that were given', !/published a post/.test(grants))
