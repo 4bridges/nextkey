@@ -203,7 +203,7 @@ const ROLES = {
     note: t('x.role.recipientnote', 'A grant to this name does not live here. It lives on the name that holds the secret, at an address derived from this key and that name’s ephemeral one. So there is nothing to count on this page, and nothing missing either.'),
   }),
   vault: () => ({
-    line: t('x.role.vault', 'This name is holding a secret. Whoever it was granted to can open it; nobody else can, and the chain does not say who they are.'),
+    line: t('x.role.vault', 'This name is holding a secret. Whoever it was granted to can open it; nobody else can, and the blockchain does not say who they are.'),
     note: t('x.role.vaultnote', 'The grants sit on this name, under derived addresses. That is what the history below shows: each grant appearing, and each one taken back.'),
   }),
   both: () => ({
@@ -211,12 +211,12 @@ const ROLES = {
     note: t('x.role.bothnote', 'Which is ordinary — the two roles are unrelated, and a name that keeps something can also be somebody others write to.'),
   }),
   author: () => ({
-    line: t('x.role.author', 'This name carries a public post and nothing else NextKey uses.'),
+    line: t('x.role.author', 'This name carries a Community post and nothing else NextKey uses.'),
     note: '',
   }),
   empty: () => ({
-    line: t('x.role.empty', 'This name carries none of NextKey’s records. It exists, and as far as this page can tell it has never been used here.'),
-    note: t('x.role.emptynote', 'That is not a failure: most names on this deployment have nothing to do with us.'),
+    line: t('x.role.empty', 'This name carries none of NextKey’s records. It exists, and as far as NextKey can tell it has never been used here.'),
+    note: t('x.role.emptynote', 'That is not a failure: most names on ENS have nothing to do with us.'),
   }),
 }
 
@@ -245,14 +245,14 @@ const recordLines = (r, role) => {
     const id = idOf(r.pubkey)
     if (id) {
       rows.push(line(t('t.id.label', 'NextKey ID'), `<span class="mono nkid">${esc(id)}</span>`,
-        t('x.nkid', 'The published key, in the form a person can read out and compare. Derived from it and nothing else — no record holds this, and every name that publishes a key has one.')))
+        t('x.nkid', 'The published key, in the form humans can read out and compare. Derived from it and nothing else — no record holds this, and every name that publishes a key has one.')))
     }
   }
 
   if (role === 'recipient' || role === 'both' || r.pubkey) {
     rows.push(line(RECORD_PUBKEY, r.pubkey ? yes(P) : no(A),
       r.pubkey
-        ? t('x.pubkey.yes', 'The key everything sealed to this name is wrapped to. Publishing it is the whole of the opt-in.')
+        ? t('x.pubkey.yes', 'The key everything sealed to this name is wrapped to.')
         : t('x.pubkey.no', 'Nothing can be sealed to this name yet — there is no key to wrap to.')))
   }
 
@@ -269,18 +269,18 @@ const recordLines = (r, role) => {
       r.secret ? yes(`${P} · ${r.secret.length} ${t('x.chars', 'characters')}`) : no(A),
       r.secret
         ? t('x.secret.yes', 'The ciphertext, public by design. Reading it teaches nothing: it is AES-256-GCM under a key that is not on the chain. Nor does its length — the secret is padded to a fixed block before sealing, so a passphrase and a short message come out the same size. A very long secret still lands in a higher block, so the length is coarse rather than absent.')
-        : t('x.secret.no', 'No ciphertext here — the name carries the addressing but not the payload.')))
+        : t('x.secret.no', 'No secret here — the name carries the addressing but not the payload.')))
   }
 
   rows.push(line(RECORD_POST, r.post ? yes(P) : no(A),
     r.post
-      ? t('x.post.yes', 'A public post, in the clear — the one record here meant to be read.')
+      ? t('x.post.yes', 'A Community post, the one record here meant to be read.')
       : t('x.post.no', 'Nothing published on this name.')))
 
   rows.push(line(t('x.grants', 'grants'),
     no(role === 'recipient'
       ? t('x.grants.elsewhere', 'not on this name')
-      : t('x.grants.unknown', 'not countable from here')),
+      : t('x.grants.unknown', 'not countable')),
     role === 'recipient'
       ? t('x.grants.elsewherenote', 'Grants to this name are records on whichever names hold the secrets. Look one of those up to see them — and note that even there, nothing says they are this name’s.')
       : t('x.grants.note', 'Grant records are named after a derived tag, so this page cannot ask for them by name. An indexer over the resolver’s events could count them; nothing could say whose they are.')))
@@ -291,7 +291,7 @@ const recordLines = (r, role) => {
 const lookup = async (name) => {
   const v = $('verdict')
   try {
-    say(v, 'busy', `<p>${t('x.reading', 'Reading it from Sepolia…')}</p>`)
+    say(v, 'busy', `<p>${t('x.reading', 'Reading it from the blockchain…')}</p>`)
     $('records').hidden = true
     show($('step-check'), false)
     show($('step-log'), false)
@@ -307,16 +307,16 @@ const lookup = async (name) => {
     if (unreachable) {
       current = null
       return say(v, 'bad', `
-        <p>${t('x.unreachable', 'Could not reach the chain just now.')}</p>
-        <p class="note">${t('x.unreachablenote', 'This says nothing about the name — the request to the Sepolia node did not come back. Try again in a moment.')}</p>
+        <p>${t('x.unreachable', 'Could not reach the blockchain just now.')}</p>
+        <p class="note">${t('x.unreachablenote', 'This says nothing about the name — the request to the blockchain node did not come back. Try again in a moment.')}</p>
         <p class="note mono">${esc(plain(unreachable))}</p>`,
         { name, error: 'unreachable' })
     }
     if (!resolver || /^0x0+$/i.test(resolver)) {
       current = null
       return say(v, 'bad', `
-        <p>${t('x.noresolver', 'That name has no resolver on this deployment.')}</p>
-        <p class="note">${t('x.noresolvernote', 'Either it is not registered here, or nothing has been attached to it yet. A name you hold on production ENS will not do — this is the hackathon deployment, and it is a separate world.')}</p>`,
+        <p>${t('x.noresolver', 'That name has no resolver on ENS.')}</p>
+        <p class="note">${t('x.noresolvernote', 'Either it is not registered here, or nothing has been attached to it yet.')}</p>`,
         { name, resolver: null })
     }
 
@@ -337,7 +337,7 @@ const lookup = async (name) => {
 
     say($('records'), '', `
       <dl>${recordLines(r, role)}</dl>
-      ${r.post ? `<p class="reclabel">${t('x.thepost', 'the post')}</p><pre class="mono">${esc(clip(r.post, 600))}</pre>` : ''}`)
+      ${r.post ? `<p class="reclabel">${t('x.thepost', 'Community post')}</p><pre class="mono">${esc(clip(r.post, 600))}</pre>` : ''}`)
 
     // Only a name that holds a secret has an address worth attacking. On a
     // recipient there is nothing here to attribute: her grants live elsewhere.
@@ -346,7 +346,7 @@ const lookup = async (name) => {
     $('log-out').hidden = true
   } catch (e) {
     current = null
-    say(v, 'bad', `<p>${t('x.fail', 'Could not read that from the chain.')}</p>
+    say(v, 'bad', `<p>${t('x.fail', 'Could not read that from the blockchain.')}</p>
                    <p class="note mono">${esc(plain(e))}</p>`)
   }
 }
@@ -362,7 +362,7 @@ $('check').addEventListener('click', async () => {
   const out = $('check-out')
   const who = $('who').value.trim().toLowerCase()
   if (!current) return
-  if (!who) return say(out, 'bad', `<p>${t('x.check.needname', 'Name somebody to look for.')}</p>`)
+  if (!who) return say(out, 'bad', `<p>${t('x.check.needname', 'Name search.')}</p>`)
 
   try {
     say(out, 'busy', `<p>${t('x.check.reading', 'Reading their published key…')}</p>`)
@@ -420,19 +420,19 @@ $('check').addEventListener('click', async () => {
  */
 const meaning = (key, value) => {
   const gone = !value
-  if (key === RECORD_EPH) return t('x.m.eph', 'set up where grants on this name are addressed')
+  if (key === RECORD_EPH) return t('x.m.eph', 'set up grants settings')
   if (key === RECORD_EPH_SEALED) return t('x.m.sealed', 'wrapped that key to the owner, so a recipient can be added later without a signature')
   if (key === RECORD_SECRET) return gone
-    ? t('x.m.secretgone', 'removed the ciphertext')
+    ? t('x.m.secretgone', 'removed the secret')
     : t('x.m.secret', 'sealed a text')
   if (key === RECORD_PUBKEY) return t('x.m.pubkey', 'created a NextKey ID')
   if (key === RECORD_POST) return gone
     ? t('x.m.postgone', 'took its post down')
-    : t('x.m.post', 'published a post, in the clear')
+    : t('x.m.post', 'published a Community post')
   if (key.startsWith('nextkey.g2.')) return gone
-    ? t('x.m.revoked', 'took a grant back — the wrapped key is gone, the ciphertext is not')
+    ? t('x.m.revoked', 'took a grant back — the wrapped key is gone, the secret is not')
     : t('x.m.granted', 'gave access')
-  if (key.startsWith('nextkey.a2.')) return t('x.m.ack', 'a recipient acknowledged reading it')
+  if (key.startsWith('nextkey.a2.')) return t('x.m.ack', 'the recipient acknowledged reading it')
   if (key.startsWith('nextkey.grant.')) return gone
     ? t('x.m.v1revoked', 'took back a v1 grant')
     : t('x.m.v1granted', 'granted access under v1 — this address is a hash of the recipient’s public key, so it names them')
@@ -488,11 +488,11 @@ $('history').addEventListener('click', async () => {
   const out = $('log-out')
   if (!current?.resolver) return
   try {
-    say(out, 'busy', `<p>${t('x.log.reading', 'Reading the resolver’s events…')}</p>`)
+    say(out, 'busy', `<p>${t('x.log.reading', 'Reading the requested name’s events…')}</p>`)
     const head = await reader.getBlockNumber()
     const width = await widthFor(current.resolver, head)
     if (!width) return say(out, 'bad', `
-      <p>${t('x.log.norange', 'The node refused every block range this page asked for.')}</p>
+      <p>${t('x.log.norange', 'The node refused every block range NextKey asked for.')}</p>
       <p class="note">${t('x.log.norangenote', 'That is a limit of the public endpoint, not of the name. The records above came back fine; only the history needs log queries, and this one will not serve them right now.')}</p>`,
       { name: current.name, error: 'ranges-refused' })
 
@@ -504,7 +504,7 @@ $('history').addEventListener('click', async () => {
       return say(out, created.refused ? 'bad' : '', `
         <p>${created.refused
           ? t('x.log.refused', 'The node stopped answering partway through.')
-          : t('x.log.notinrange', 'No record-creation event in the stretch this page could search.')}</p>
+          : t('x.log.notinrange', 'No record-creation event in the stretch NextKey could search.')}</p>
         <p class="note">${t('x.log.scanned', 'Searched back')} ${esc(String(created.scanned))} ${t('x.log.blocksfrom', 'blocks from the current head, in steps of')} ${esc(String(width))}.</p>
         <p class="note">${created.refused
           ? t('x.log.refusednote', 'This says nothing about the name. The records above are read directly and are unaffected.')
@@ -887,15 +887,15 @@ const feedRender = () => {
         <span class="mono break">${esc(w.key)}</span>${w.tx
           ? ` · ${t('x.log.block', 'block')} ${esc(String(w.block))}${feed.when.has(String(w.block)) ? ` · ${esc(feed.when.get(String(w.block)))} UTC` : ''} ·
         <a href="https://sepolia.etherscan.io/tx/${esc(w.tx)}" target="_blank" rel="noopener noreferrer">${t('x.log.tx', 'transaction')}</a>`
-          : ` · ${esc(t('x.feed.readnow', 'read off the name just now'))}`}
+          : ` · ${esc(t('x.feed.readnow', 'read off the name'))}`}
       </p>
       ${w.value ? `<pre class="mono">${esc(clip(w.value, 220))}</pre>` : ''}
     </div>`).join('')}
-    ${feed.filter === 'name' && !feed.recordId ? `<p class="note">${t('x.f.readonly', 'This name has no creation event a public node will serve, so there is no record id and no exact question to ask about its writes. What stands above is what the name carries now, read one record at a time.')}</p>` : ''}
-    ${anyRead ? `<p class="note">${t('x.feed.readnote', 'The entries without a transaction were read off their names rather than found as events: a record can exist on this deployment without a write event a public node will serve, and a list that only asked for events would leave those out and look complete.')}</p>` : ''}
+    ${feed.filter === 'name' && !feed.recordId ? `<p class="note">${t('x.f.readonly', 'This name has no creation event a public node will serve. What stands above is what the name carries now, read one record at a time.')}</p>` : ''}
+    ${anyRead ? `<p class="note">${t('x.feed.readnote', 'The entries without a transaction were read off their names rather than found as events.')}</p>` : ''}
     ${all.length > FEED_SHOW ? `<p class="note">${t('x.feed.showing', 'showing the newest')} ${FEED_SHOW} ${t('x.feed.of', 'of')} ${all.length}.</p>` : ''}
-    ${feed.filter === 'granted' || feed.filter === 'revoked' ? `<p class="note">${t('x.feed.partial', 'A grant’s record name is derived, so the node cannot select these — they were picked out of the range above by hand. This is therefore what is in that range, not what exists.')}</p>` : ''}
-    ${active().deep && feed.filter !== 'all' ? `<p class="note">${t('x.feed.exact', 'This filter is asked of the node directly, so it reaches back as far as the search went and misses nothing inside it.')}</p>` : ''}
+    ${feed.filter === 'granted' || feed.filter === 'revoked' ? `<p class="note">${t('x.feed.partial', 'A grant’s record name is derived, so the node cannot select these.')}</p>` : ''}
+    ${active().deep && feed.filter !== 'all' ? `<p class="note">${t('x.feed.exact', 'This filter is asked of the node directly, so it reaches back as far as the search went.')}</p>` : ''}
 `,
     { feed: all.length, read: feed.read.length, resolvers: feed.addresses, scanned: String(feed.scanned) })
 }
@@ -933,7 +933,7 @@ const feedFill = async () => {
   feed.filling = true
   const out = $('feed-out')
   try {
-    say(out, 'busy', `<p>${t('x.feed.reading', 'Reading everything NextKey has written…')}</p>`)
+    say(out, 'busy', `<p>${t('x.feed.reading', 'Reading NextKey…')}</p>`)
 
     // The exact pass, where the events cannot answer: the post filter reads the
     // names it can spell, and the name filter reads the one name it was given.
@@ -944,7 +944,7 @@ const feedFill = async () => {
       feed.read = await readRecords(READ_NAMES, POST_KEYS, (done, total, hits) => {
         if (!mineStill()) return
         if (hits) feedRender()
-        else say(out, 'busy', `<p>${t('x.feed.reading', 'Reading everything NextKey has written…')}
+        else say(out, 'busy', `<p>${t('x.feed.reading', 'Reading NextKey…')}
           <span class="mono">${done}/${total}</span></p>`)
       })
     } else if (feed.filter === 'name' && feed.name) {
@@ -961,7 +961,7 @@ const feedFill = async () => {
       const probe = await feedWidth(head)
       feed.width = probe.width
       if (!probe.width) return say(out, 'bad', `
-        <p>${t('x.log.norange', 'The node refused every block range this page asked for.')}</p>
+        <p>${t('x.log.norange', 'The node refused every block range NextKey asked for.')}</p>
         <p class="note mono">${esc(plain(probe.error))}</p>
         <p class="note">${t('x.feed.norangenote', 'That is a limit of the public endpoint, not a statement about NextKey. Nothing here is broken and nothing is missing — this one node will not serve log queries at the moment. Press Refresh in a minute.')}</p>
         <p class="note">${t('x.feed.where', 'On')} ${feedWhere()}.</p>`,
@@ -1019,13 +1019,13 @@ const feedFill = async () => {
       <p>${feed.refused
         ? t('x.log.refused', 'The node stopped answering partway through.')
         : (feed.filter === 'all'
-            ? t('x.feed.none', 'Nothing yet in the stretch this page could search.')
-            : t('x.feed.nonehere', 'Nothing of this kind in the stretch this page could search.'))}</p>
+            ? t('x.feed.none', 'Nothing yet')
+            : t('x.feed.nonehere', 'Nothing of this kind'))}</p>
       ${feed.refused ? `<p class="note mono">${esc(plain(feed.refused))}</p>
-      <p class="note">${t('x.feed.refusednote', 'So this is not a quiet chain — it is a request that came back empty-handed. A public endpoint will refuse a range that matches too much, and the fix is to press Refresh, which starts again from the current head.')}</p>` : ''}
+      <p class="note">${t('x.feed.refusednote', 'So this is not a quiet blockchain — it is a request that came back empty-handed. A public endpoint will refuse a range that matches too much, and the fix is to press Refresh.')}</p>` : ''}
       <p class="note">${t('x.log.scanned', 'Searched back')} ${esc(String(feed.scanned))} ${t('x.log.blocksfrom', 'blocks from the current head, in steps of')} ${esc(String(width))}.</p>
       <p class="note">${t('x.feed.where', 'On')} ${feedWhere()}.</p>
-      <p class="note">${t('x.feed.nonenote', 'If NextKey has written somewhere else on this deployment, this is where to say so: look a name up above, then press Refresh, and the resolver that name actually uses is watched too.')}</p>`,
+      <p class="note">${t('x.feed.nonenote', 'If NextKey has written somewhere else, this is where to say so: look a name up above, then press Refresh.')}</p>`,
       { feed: 0, scanned: String(feed.scanned), resolvers: feed.addresses })
 
     feed.cache.set(feedKey(), { items: feed.items, head: feed.head, addresses: feed.addresses })
@@ -1109,14 +1109,14 @@ const feedFindName = async (name) => {
   let resolver = null
   try { resolver = await reader.getEnsResolver({ name }) } catch { /* reported below */ }
   if (!resolver || /^0x0+$/i.test(resolver)) return say(out, 'bad', `
-    <p>${t('x.noresolver', 'That name has no resolver on this deployment.')}</p>
-    <p class="note">${t('x.noresolvernote', 'Either it is not registered here, or nothing has been attached to it yet. A name you hold on production ENS will not do — this is the hackathon deployment, and it is a separate world.')}</p>`,
+    <p>${t('x.noresolver', 'That name has no resolver on ENS.')}</p>
+    <p class="note">${t('x.noresolvernote', 'Either it is not registered here, or nothing has been attached to it yet.')}</p>`,
     { filter: 'name', name, resolver: null })
 
   const head = await reader.getBlockNumber({ cacheTime: 0 })
   const width = await widthFor(resolver, head)
   if (!width) return say(out, 'bad', `
-    <p>${t('x.log.norange', 'The node refused every block range this page asked for.')}</p>
+    <p>${t('x.log.norange', 'The node refused every block range NextKey asked for.')}</p>
     <p class="note">${t('x.feed.norangenote', 'That is a limit of the public endpoint, not a statement about NextKey. Nothing here is broken and nothing is missing — this one node will not serve log queries at the moment. Press Refresh in a minute.')}</p>`,
     { filter: 'name', name, error: 'ranges-refused' })
 
@@ -1154,7 +1154,7 @@ const feedSelect = async (which, name) => {
     $('feed-name').value = wanted
     if (!wanted) {
       feed.items = []
-      return say($('feed-out'), '', `<p>${t('x.feed.needname', 'Type a name to see only its writes.')}</p>`)
+      return say($('feed-out'), '', `<p>${t('x.feed.needname', 'Type a name to see only its events.')}</p>`)
     }
     // An address is a fair thing to paste into a box that asks about a name:
     // it is what a wallet shows, what an explorer link carries, and what a
@@ -1172,7 +1172,7 @@ const feedSelect = async (which, name) => {
         feed.items = []
         feed.read = []
         return say($('feed-out'), '', `
-          <p>${t('x.f.noid', 'No name this page knows publishes that NextKey ID.')}</p>
+          <p>${t('x.f.noid', 'No name NextKey knows publishes that NextKey ID.')}</p>
           <p class="note">${t('x.f.noidnote', 'An ID is a hash over a published key, so it cannot be turned back into one. What this page can do is recognise it — derive the ID of every name it can spell and compare — and the names it can spell are the ones written into its source. An ID on a name from anywhere else is not wrong, it is simply not recognisable from here.')}</p>`,
           { filter: 'name', nextkeyId: wanted, name: null })
       }
@@ -1195,7 +1195,7 @@ const feedSelect = async (which, name) => {
         return say($('feed-out'), '', `
           <p>${t('x.f.noreverse', 'Neither ENS nor the NextKey registrar knows a name for that address.')}</p>
           <p class="note">${t('x.f.noreversenote', 'A name points at an address, and an address points back only when its holder has set a primary name. A lent name has neither: no reverse record and no address record either — measured, not assumed — because it carries one thing only, the key your signature derives. So an address cannot find it and your wallet can, in one signature.')}</p>
-      <p class="note"><a href="./id">${t('x.f.toid', 'Find your name with your wallet, on the ID tab')}</a></p>`,
+      <p class="note"><a href="./id">${t('x.f.toid', 'Find your name with your wallet')}</a></p>`,
           { filter: 'name', address: wanted, name: null })
       }
       asName = primary.toLowerCase()

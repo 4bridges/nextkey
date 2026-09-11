@@ -144,7 +144,7 @@ check('the window is what the page opens with',
   (await page.locator('#name, #look, #try').count()) === 0)
 check('a grant is described as a grant', /gave access/.test(text))
 check('an emptied record reads as a withdrawal', /took a grant back/.test(text))
-check('the ephemeral key is named for what it does', /where grants on this name are addressed/.test(text))
+check('the ephemeral key is named for what it does', /set up grants settings/.test(text))
 check('a record that is not ours is left out', !/ens\.something\.else/.test(text))
 check('the record name is shown in full', /nextkey\.g2\.251c755ded0bd0ebc999282cba38ce78/.test(text))
 check('the block is named', /11661869/.test(text))
@@ -174,8 +174,8 @@ head = 11661903n
 await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')))
 await page.waitForFunction(() => /Hello world/.test(document.getElementById('feed-out').textContent), null, { timeout: 10_000 })
 const after = await page.textContent('#feed-out')
-check('a new write arrives on its own', /published a post, in the clear/.test(after))
-check('and lands at the top', (await page.locator('#feed-out .ev').first().textContent()).includes('published a post'))
+check('a new write arrives on its own', /published a Community post/.test(after))
+check('and lands at the top', (await page.locator('#feed-out .ev').first().textContent()).includes('published a Community post'))
 check('marked as an arrival', await freshMark)
 check('and nothing that was already there is lost', /gave access/.test(after))
 
@@ -221,7 +221,7 @@ await page.waitForFunction(() => {
 }, null, { timeout: 20_000 })
 const denied = await page.textContent('#feed-out')
 check('a refused query is reported as a refusal', /stopped answering|Der Knoten|refused/i.test(denied))
-check('and not as an empty chain', !/Nothing yet in the stretch/.test(denied))
+check('and not as an empty chain', !/Nothing yet</.test(denied) && !/Nothing yet\./.test(denied))
 // Whatever the node said, in its own words rather than ours — viem normalises
 // the wording, so the test asserts that a reason is shown, not which one.
 const reason = (await page.locator('#feed-out .mono').first().textContent()).trim()
@@ -246,7 +246,7 @@ await page.waitForFunction(() => {
   return el && el.querySelectorAll('.ev').length > 0 && !/…$/.test(el.textContent.trim())
 }, null, { timeout: 15_000 })
 const posts = await page.textContent('#feed-out')
-check('a post filter shows the post', /published a post, in the clear/.test(posts))
+check('a post filter shows the post', /published a Community post/.test(posts))
 check('and nothing else', !/gave access/.test(posts))
 check('it was the node that selected them, and the page says so',
   /asked of the node directly/.test(posts))
@@ -257,7 +257,7 @@ await page.click('#feed-chips button[data-f="granted"]')
 await page.waitForFunction(() => /gave access/.test(document.getElementById('feed-out').textContent),
   null, { timeout: 15_000 })
 const grants = await page.textContent('#feed-out')
-check('a grant filter keeps only grants that were given', !/published a post/.test(grants))
+check('a grant filter keeps only grants that were given', !/published a Community post/.test(grants))
 check('and a withdrawal is not one of them', !/took a grant back/.test(grants))
 check('and it admits it could not ask the node', /cannot select these|by hand/.test(grants))
 
@@ -267,7 +267,7 @@ await page.click('#feed-chips button[data-f="name"]')
 // this message a moment later. Reading the element after the wait therefore
 // failed on some runs and passed on others, which is worse than either.
 const askedForName = await page.waitForFunction(
-  () => /Type a name to see only its writes/.test(document.getElementById('feed-out').textContent),
+  () => /Type a name to see only its events/.test(document.getElementById('feed-out').textContent),
   null, { timeout: 15_000 }).then(() => true).catch(() => false)
 check('the name filter asks for a name first', askedForName)
 // A failed check that will not say what it saw instead is the error class this

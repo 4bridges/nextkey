@@ -570,8 +570,74 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 })()
 </script>
 
+<script>
+/* Swipe sideways to change tab.
+ *
+ * On a phone the tab bar is eight symbols in a row across the top, and moving
+ * between them means aiming at a 20-pixel target with a thumb. A horizontal
+ * swipe is what a reader already expects to do between pages of a set, so it
+ * does the same thing here: left goes to the next tab, right to the previous
+ * one, in the order the bar itself lists them. The bar is the source of that
+ * order — no second list to keep in step with it.
+ *
+ * What it deliberately will not do:
+ *   · nothing is preventDefault-ed, so ordinary scrolling is untouched;
+ *   · a gesture that starts inside a box that scrolls sideways itself (a code
+ *     block, a wide table) belongs to that box, not to the page;
+ *   · a gesture that starts in a field belongs to the caret and the selection;
+ *   · it asks for a real swipe — 70 pixels, mostly horizontal, under a second —
+ *     so a slow drag or a diagonal scroll never changes the page under you;
+ *   · it stops at both ends rather than wrapping, because arriving back at the
+ *     first tab from the last one reads as a bug.
+ */
+(function () {
+  var bar = document.querySelector('.barnav')
+  if (!bar) return
+  var tidy = function (p) { return p.replace(/\/index\.html$/, '/').replace(/\.html$/, '').replace(/(.)\/$/, '$1') }
+  var tabs = Array.prototype.filter.call(bar.querySelectorAll('a'), function (a) {
+    return tidy(a.pathname) !== '/'
+  })
+  var here = -1
+  for (var i = 0; i < tabs.length; i++) if (tidy(tabs[i].pathname) === tidy(location.pathname)) here = i
+  if (here < 0) return
 
-<script src="/i18n.js?v=6a733cda"></script>
+  var scrollsSideways = function (el) {
+    for (; el && el !== document.body; el = el.parentElement) {
+      if (el.scrollWidth > el.clientWidth + 4) {
+        var how = getComputedStyle(el).overflowX
+        if (how === 'auto' || how === 'scroll') return true
+      }
+    }
+    return false
+  }
+
+  var x0 = 0, y0 = 0, t0 = 0, live = false
+  addEventListener('touchstart', function (e) {
+    live = false
+    if (e.touches.length !== 1) return
+    var el = e.target
+    if (el.closest && el.closest('input, textarea, select, [contenteditable]')) return
+    if (scrollsSideways(el)) return
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = Date.now(); live = true
+  }, { passive: true })
+
+  addEventListener('touchend', function (e) {
+    if (!live) return
+    live = false
+    var t = e.changedTouches && e.changedTouches[0]
+    if (!t) return
+    var dx = t.clientX - x0, dy = t.clientY - y0
+    if (Date.now() - t0 > 800) return
+    if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 2) return
+    var to = tabs[here + (dx < 0 ? 1 : -1)]
+    if (!to) return
+    location.href = to.href + location.search
+  }, { passive: true })
+})()
+</script>
+
+
+<script src="/i18n.js?v=fb94a0da"></script>
 <script>
 /**
  * The same overlay as the other two pages, same storage keys, so a language or
