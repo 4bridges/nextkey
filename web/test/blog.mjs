@@ -174,6 +174,20 @@ check('and lands at the top',
 check('the window has no controls to fiddle with',
   (await page.locator('#load, #blog-pause').count()) === 0)
 
+// The search used to stand open above the posts, asking a question nobody
+// arrived with. It is a symbol now, and what it opens belongs to the same
+// frame as the posts — not a second box stacked on top of them.
+check('the search is a symbol until it is asked for',
+  (await page.locator('#filter-toggle').count()) === 1 &&
+  await page.locator('#filter-row').isHidden())
+await page.click('#filter-toggle')
+check('and one press makes it the first line of the frame',
+  await page.locator('#filter-row').isVisible() &&
+  (await page.evaluate(() => document.querySelector('#posts-frame').firstElementChild?.id)) === 'filter-row')
+check('and it says so for a screen reader too',
+  (await page.getAttribute('#filter-toggle', 'aria-expanded')) === 'true')
+await page.click('#filter-toggle')
+
 // ── The page's own shape ──
 check('the heading is the one asked for', /Community Posts/.test(await page.textContent('h1')))
 check('the window is not a numbered step any more',

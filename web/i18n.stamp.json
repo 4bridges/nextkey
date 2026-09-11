@@ -14,7 +14,7 @@
   "hero.lead": "fa784c3584d5",
   "hero.cta2": "e51bc886bb82",
   "hero.cta3": "76ea029d77ed",
-  "dia.a": "308aee49db38",
+  "dia.a": "0281548c80ff",
   "dia.seal": "87e30b1a9918",
   "dia.seals": "cec8390adef1",
   "dia.cond": "51cc22b13f16",
@@ -203,6 +203,7 @@
   "sb.cost.h": "931827bb774f",
   "sb.cost.p1": "4fa8e93417c9",
   "sb.cost.p2": "575618eefb5c",
+  "b.filter.open": "4ae2b33364bc",
   "b.write.title": "aa4e9c1087d9",
   "b.own.ph": "1b1a8ef965b7",
   "b.title.ph": "aa4e9c1087d9",
@@ -498,7 +499,6 @@
   "b.nonenote": "6285c7be2634",
   "b.noname": "9f74e68f2fe0",
   "x.log.tx": "ce922519a3c3",
-  "b.claimeddate": "9ae5dcc8541d",
   "x.feed.showing": "736ed4fbd985",
   "x.feed.of": "28391d3bc64e",
   "x.log.norange": "9e3a6af3b143",
@@ -638,6 +638,7 @@
   "v.thanksnote": "b8e60c746541",
   "v.failed": "5a75a5c17813",
   "v.count": "7fa58476fc53",
+  "v.partial": "739dff00be94",
   "v.reading": "76cffe5f68dd",
   "v.norangenote": "8d5e5f8780d8"
 }

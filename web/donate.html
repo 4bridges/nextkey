@@ -10,6 +10,10 @@
 <meta name="theme-color" content="#9a5218">
 <title>NextKey — donate</title>
 <meta name="description" content="Support NextKey after the hackathon. The ENS name, the address, a QR code, and a live view of the donations that arrived.">
+<!-- The address this page is served at. Every tab answers to two spellings —
+     /demo/<tab> and <tab>.html, which 301s to it — and without this line a
+     search engine has to guess which of them is the page. -->
+<link rel="canonical" href="https://nextkey.li/demo/donate">
 <meta name="robots" content="noindex">
 <script>
 (function(){try{var t=localStorage.getItem('nextkey.theme')
@@ -547,7 +551,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     </p>
 </footer>
 
-<script src="/i18n.js?v=c7589a9f"></script>
+<script src="/i18n.js?v=09f790d5"></script>
 <script>
 /**
  * The same overlay as the other two pages, same storage keys, so a language or
@@ -703,6 +707,6 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   label()
 })()
 </script>
-<script type="module" src="/donate.js?v=0d508719"></script>
+<script type="module" src="/donate.js?v=c6a5ec30"></script>
 </body>
 </html>

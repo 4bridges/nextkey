@@ -274,7 +274,7 @@ $('send').addEventListener('click', async () => {
 
 // ─── What has arrived ──────────────────────────────────────────────────────
 
-const state = { width: null, head: null, gifts: [], when: new Map(), filling: false, gen: 0 }
+const state = { width: null, head: null, gifts: [], when: new Map(), filling: false, gen: 0, refused: 0 }
 
 const amount = (v, decimals) => {
   const s = formatUnits(v, decimals)
@@ -333,6 +333,7 @@ const render = () => {
   const shown = state.gifts.slice(0, SHOW)
   say($('gifts'), 'ok', `
     <p class="count"><strong>${state.gifts.length}</strong> ${t('v.count', 'stablecoin donations')}</p>
+    ${state.refused ? `<p class="note">${t('v.partial', 'Some of the range was refused by the node, so this is what is in the part it served, not necessarily everything. The balances above are read directly and are unaffected.')}</p>` : ''}
     ${shown.map((g) => `
       <div class="ev">
         <p style="margin:0 0 .2rem"><strong>${esc(amount(g.value, g.decimals))} ${esc(g.symbol)}</strong></p>
@@ -343,7 +344,7 @@ const render = () => {
         </p>
       </div>`).join('')}
 `,
-    { gifts: state.gifts.length })
+    { gifts: state.gifts.length, refused: state.refused })
 }
 
 const stamps = async () => {
@@ -391,6 +392,7 @@ const load = async () => {
     }
 
     state.gifts = []
+    state.refused = 0
     let to = head
     let scanned = 0n
     for (let i = 0; i < WINDOWS && to > 0n; i++) {
@@ -399,7 +401,13 @@ const load = async () => {
       try {
         state.gifts.push(...await giftsIn(from, to))
         scanned += to - from + 1n
-      } catch { /* one window we do not learn from */ }
+      } catch {
+        // A window the node would not serve. Counted rather than swallowed:
+        // this public endpoint refuses ranges it considers archive requests,
+        // and a page that drops those silently prints the same "0 donations"
+        // whether nothing arrived or nobody was allowed to look.
+        state.refused++
+      }
       if (from === 0n) break
       to = from - 1n
     }

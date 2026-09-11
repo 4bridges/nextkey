@@ -133,7 +133,8 @@ const plain = (e) => {
 }
 
 const REQUIRED_ELEMENTS = [
-  'posts', 'blog-live', 'filter-name', 'filter-go', 'filter-all', 'title', 'body', 'write-state',
+  'posts', 'blog-live', 'filter-name', 'filter-go', 'filter-all', 'filter-toggle', 'filter-row',
+  'title', 'body', 'write-state',
   'edit-connect', 'edit-wallet', 'edit-name', 'edit-load', 'edit-list',
   'edit-form', 'edit-title', 'edit-body', 'edit-save', 'edit-empty', 'edit-out',
   'lane-lent', 'post-lent', 'lent-out',
@@ -384,7 +385,24 @@ const merged = () => {
   }
   const reads = blog.read.filter((p) => !byName.has(`${p.name}|${p.key}`))
   reads.sort((a, b) => String(b.at ?? '').localeCompare(String(a.at ?? '')))
-  return [...reads, ...blog.items]
+
+  // Newest first, across both sources — and without inventing a date for
+  // either. The events are already in block order, newest first; a read post
+  // carries only the day it claims for itself. So the reads are merged into
+  // that order by day, and a read is placed above the first event that is
+  // older than it. An event whose block has not been timestamped yet has no
+  // day to compare against, so nothing is placed above it on a guess; the
+  // timestamps land a moment later and the list settles itself.
+  const dayOf = (p) => blog.when.get(String(p.block)) ?? null
+  const out = []
+  let i = 0
+  for (const p of blog.items) {
+    const day = dayOf(p)
+    while (i < reads.length && day && String(reads[i].at ?? '').slice(0, 10) > day) out.push(reads[i++])
+    out.push(p)
+  }
+  while (i < reads.length) out.push(reads[i++])
+  return out
 }
 
 /**
@@ -426,6 +444,9 @@ const filterTo = async (typed) => {
   const out = $('posts')
   const wanted = typed.trim().toLowerCase()
   show($('filter-all'), !!wanted)
+  // A filter that is on must be visible: a list showing one name with the box
+  // that says so folded away is a page that looks broken.
+  if (wanted) filterOpen(true)
   if (!wanted) { blog.only = ''; return render() }
 
   let name = wanted
@@ -466,6 +487,14 @@ const filterTo = async (typed) => {
   }
   render()
 }
+
+const filterOpen = (on) => {
+  show($('filter-row'), on)
+  $('filter-toggle').setAttribute('aria-expanded', on ? 'true' : 'false')
+  if (on) $('filter-name').focus()
+}
+$('filter-toggle').addEventListener('click', () =>
+  filterOpen($('filter-row').hidden))
 
 $('filter-go').addEventListener('click', () => filterTo($('filter-name').value))
 $('filter-all').addEventListener('click', () => { $('filter-name').value = ''; filterTo('') })
@@ -512,11 +541,6 @@ const render = () => {
 
   const now = Date.now()
   const shown = all.slice(0, FEED_SHOW)
-  // A post read off its name carries no transaction, because this page never
-  // saw the write — only the record it left. Saying that under the list is the
-  // honest version; printing a date and a link that stand for nothing would be
-  // the other kind.
-  const claimed = shown.some((p) => !p.tx)
   say(out, 'ok', `
     ${shown.map((p) => {
       const who = p.name ?? blog.found.get(p.record) ?? null
@@ -538,7 +562,6 @@ const render = () => {
         </p>
       </article>`
     }).join('')}
-    ${claimed ? `<p class="note">${t('b.claimeddate', 'A post read straight off its name is shown with the record it sits in and the date it claims for itself. A post this page saw being written carries its block and its transaction instead — that date is the chain’s, not the author’s.')}</p>` : ''}
     ${all.length > FEED_SHOW ? `<p class="note">${t('x.feed.showing', 'showing the newest')} ${FEED_SHOW} ${t('x.feed.of', 'of')} ${all.length}.</p>` : ''}`,
     { posts: all.length })
 }
