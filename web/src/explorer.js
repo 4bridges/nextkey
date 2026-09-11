@@ -878,8 +878,10 @@ const feedRender = () => {
           ? `<a class="mono" href="${esc(ensLink(who))}" target="_blank" rel="noopener noreferrer">${esc(who)}</a> `
           : ''}${esc(meaning(w.key, w.value))}</p>` })()}
       ${w.key === RECORD_PUBKEY && idOf(w.value)
-        ? `<p class="note" style="margin:0 0 .2rem">${t('t.id.label', 'NextKey ID')}
-             <span class="mono nkid">${esc(idOf(w.value))}</span></p>`
+        // No label: the line above already says a NextKey ID was created, and
+        // repeating the words in front of the value read as two labels with an
+        // ID stuck to the end of them.
+        ? `<p class="note" style="margin:0 0 .2rem"><span class="mono nkid">${esc(idOf(w.value))}</span></p>`
         : ''}
       <p class="note" style="margin:0">
         <span class="mono break">${esc(w.key)}</span>${w.tx

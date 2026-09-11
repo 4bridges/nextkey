@@ -556,6 +556,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 </main>
 
 <footer class="wrap">
+  <p data-i18n="t.foot">Prototype · ENSv2 beta on Sepolia testnet · not audited.</p>
     <p class="footnav">
       <a class="foothome" href="/" data-i18n-title="nav.home" title="Home"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.75 20v-5.5h4.5V20"/></svg><span class="vh" data-i18n="nav.home">Home</span></a>
       <a href="./id" data-i18n-title="nav.id" title="ID"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="10.8" r="2.1"/><path d="M5.9 16.3c.45-1.5 1.65-2.3 3.1-2.3s2.65.8 3.1 2.3"/><path d="M14.8 9.8h4.2M14.8 13.4h4.2"/></svg><span class="vh" data-i18n="nav.id">ID</span></a>
@@ -569,8 +570,28 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
       <a href="/privacy" data-i18n-title="foot.privacy" title="Privacy"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2 19 6v5.3c0 4.2-2.9 7.3-7 9.1-4.1-1.8-7-4.9-7-9.1V6z"/><path d="m9.1 12.1 2.2 2.2 3.9-4"/></svg><span class="vh" data-i18n="foot.privacy">Privacy</span></a>
     </p>
 </footer>
+<script>
+/* The tab you are on is not a destination.
+   A row of symbols that includes the page already open offers a journey to
+   where the reader is standing — the house on the landing page, its own
+   symbol on a tab. The link is removed rather than hidden, so it is gone for
+   a screen reader too, and it is done here rather than in the markup because
+   one file (send.html) answers at two addresses and only knows which at
+   runtime. The imprint and the privacy notice do it in their own markup
+   already; this changes nothing for them. */
+(function () {
+  var tidy = function (p) { return p.replace(/\/index\.html$/, '/').replace(/\.html$/, '').replace(/(.)\/$/, '$1') }
+  var here = tidy(location.pathname)
+  var row = document.querySelector('footer .footnav')
+  if (!row) return
+  Array.prototype.forEach.call(row.querySelectorAll('a'), function (a) {
+    if (tidy(a.pathname) === here) a.remove()
+  })
+})()
+</script>
 
-<script src="/i18n.js?v=09f790d5"></script>
+
+<script src="/i18n.js?v=6a733cda"></script>
 <script>
 /**
  * The same overlay as the other two pages, same storage keys, so a language or

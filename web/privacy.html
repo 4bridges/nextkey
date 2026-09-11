@@ -383,8 +383,28 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
       <a href="/imprint" data-i18n-title="foot.imprint" title="Imprint"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3.2" width="14" height="17.6" rx="2.2"/><path d="M8.6 8.2h6.8M8.6 12h6.8M8.6 15.8h4.2"/></svg><span class="vh" data-i18n="foot.imprint">Imprint</span></a>
     </p>
 </footer>
+<script>
+/* The tab you are on is not a destination.
+   A row of symbols that includes the page already open offers a journey to
+   where the reader is standing — the house on the landing page, its own
+   symbol on a tab. The link is removed rather than hidden, so it is gone for
+   a screen reader too, and it is done here rather than in the markup because
+   one file (send.html) answers at two addresses and only knows which at
+   runtime. The imprint and the privacy notice do it in their own markup
+   already; this changes nothing for them. */
+(function () {
+  var tidy = function (p) { return p.replace(/\/index\.html$/, '/').replace(/\.html$/, '').replace(/(.)\/$/, '$1') }
+  var here = tidy(location.pathname)
+  var row = document.querySelector('footer .footnav')
+  if (!row) return
+  Array.prototype.forEach.call(row.querySelectorAll('a'), function (a) {
+    if (tidy(a.pathname) === here) a.remove()
+  })
+})()
+</script>
 
-<script src="/i18n.js?v=09f790d5"></script>
+
+<script src="/i18n.js?v=6a733cda"></script>
 <script>
 /**
  * Same overlay as the landing page, same storage keys, so a language or theme

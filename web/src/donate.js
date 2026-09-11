@@ -274,7 +274,7 @@ $('send').addEventListener('click', async () => {
 
 // ─── What has arrived ──────────────────────────────────────────────────────
 
-const state = { width: null, head: null, gifts: [], when: new Map(), filling: false, gen: 0, refused: 0 }
+const state = { width: null, head: null, gifts: [], when: new Map(), filling: false, gen: 0, refused: 0, scanned: 0n }
 
 const amount = (v, decimals) => {
   const s = formatUnits(v, decimals)
@@ -333,7 +333,7 @@ const render = () => {
   const shown = state.gifts.slice(0, SHOW)
   say($('gifts'), 'ok', `
     <p class="count"><strong>${state.gifts.length}</strong> ${t('v.count', 'stablecoin donations')}</p>
-    ${state.refused ? `<p class="note">${t('v.partial', 'Some of the range was refused by the node, so this is what is in the part it served, not necessarily everything. The balances above are read directly and are unaffected.')}</p>` : ''}
+    ${state.refused ? `<p class="note">${t('v.partial', 'This public node answers log queries only for the most recent blocks, so the figure above covers the last')} ${esc(String(state.scanned))} ${t('v.partial2', 'blocks rather than all time. The balances are read directly and are unaffected by it.')}</p>` : ''}
     ${shown.map((g) => `
       <div class="ev">
         <p style="margin:0 0 .2rem"><strong>${esc(amount(g.value, g.decimals))} ${esc(g.symbol)}</strong></p>
@@ -344,7 +344,7 @@ const render = () => {
         </p>
       </div>`).join('')}
 `,
-    { gifts: state.gifts.length, refused: state.refused })
+    { gifts: state.gifts.length, refused: state.refused, scanned: String(state.scanned) })
 }
 
 const stamps = async () => {
@@ -393,6 +393,7 @@ const load = async () => {
 
     state.gifts = []
     state.refused = 0
+    state.scanned = 0n
     let to = head
     let scanned = 0n
     for (let i = 0; i < WINDOWS && to > 0n; i++) {
@@ -402,15 +403,20 @@ const load = async () => {
         state.gifts.push(...await giftsIn(from, to))
         scanned += to - from + 1n
       } catch {
-        // A window the node would not serve. Counted rather than swallowed:
-        // this public endpoint refuses ranges it considers archive requests,
-        // and a page that drops those silently prints the same "0 donations"
-        // whether nothing arrived or nobody was allowed to look.
+        // The wall, and it is a wall of age rather than of width. Measured
+        // against this endpoint: an 800-block window is served at the head and
+        // refused a few thousand blocks back, with "archive requests require a
+        // personal token". Narrower windows do not reach further, they only
+        // ask more often — so the loop stops at the first refusal instead of
+        // spending five more requests learning the same thing, and the page
+        // says what the stretch it did get covers.
         state.refused++
+        break
       }
       if (from === 0n) break
       to = from - 1n
     }
+    state.scanned = scanned
     state.gifts.sort((a, b) => (a.block === b.block ? b.index - a.index : (a.block > b.block ? -1 : 1)))
     state.head = head
     render()

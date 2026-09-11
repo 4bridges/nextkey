@@ -310,6 +310,18 @@ check('and none of them is cut off at 320px',
 check('and the bar reaches the same edge as the controls above it',
   Math.abs(bar.lastRight - bar.langRight) <= 2)
 
+// A row of destinations that includes the page already open offers a journey
+// to where the reader is standing. The link is removed, not dimmed, so it is
+// gone for a screen reader too.
+check('the footer does not offer the page you are on',
+  (await page.locator('footer .footnav a[href="./blog"]').count()) === 0 &&
+  (await page.locator('footer .footnav a[href="./explorer"]').count()) === 1)
+// Every tab that writes to a chain says which chain, and that nobody audited
+// it — on the tab itself, where somebody about to press a button is looking.
+check('and the tab says what it is running on, and what it is not',
+  /Sepolia testnet/i.test(await page.textContent('footer')) &&
+  /not audited/i.test(await page.textContent('footer')))
+
 check('and the page raised no errors at all', errors.length === 0)
 if (errors.length) console.log(errors)
 
