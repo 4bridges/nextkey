@@ -163,9 +163,14 @@ vite.config.ts.timestamp-*
 /HANDOVER.md
 /private/
 
-# Working material: production notes, brand guidance, and the renders made for
-# the submission form. Not source, not part of the build.
+# Working material: production notes, brand guidance, the renders made for the
+# submission form, and the test plan I work from. Not source, not part of the
+# build. The test plan in particular is a worksheet — open findings, things to
+# try, notes to myself — and a reader arriving at a submission should meet what
+# exists rather than my list of what to poke at next. What came out of it that
+# is worth keeping is in docs/decisions.md, where it is written for them.
 /docs/video-script.md
+/docs/TESTPLAN-own-name.md
 /web/brand/README.md
 /web/brand/ethglobal/
 

@@ -1593,12 +1593,18 @@ that a panel enters its `bad` state. Not one of them asks whether a link is
 reachability are different questions, and this file has now recorded three times
 that a checker cannot report what it does not ask.
 
-The four remaining findings are open, in `docs/TESTPLAN-own-name.md` under
-*Open findings*, with what was observed rather than what was suspected. The
-plan itself was rewritten at the same time: it still pointed at `demo.html` and
-`explorer.html`, and it still put both receive lanes on the playground, where
-they have not been since the tabs were split this morning. A test plan that
-describes last week's site fails in the worst available way — it passes.
+The four remaining findings are open, recorded with what was observed rather
+than what was suspected. The plan itself was rewritten at the same time: it
+still pointed at `demo.html` and `explorer.html`, and it still put both receive
+lanes on the playground, where they have not been since the tabs were split
+this morning. A test plan that describes last week's site fails in the worst
+available way — it passes.
+
+*(The plan is a worksheet and left the repository on 11 September, along with
+the shooting script and the brand material; the entries above are what it
+produced that a reader needs. The reference to it here is kept as it was
+written, minus the path, because a link into a file nobody can open is worse
+than a sentence that stands on its own.)*
 
 ---
 
@@ -1640,81 +1646,3 @@ The file uses `%{DOCUMENT_ROOT}/$1.html -f` in both places — and the tabs
 resolve on Cyon, so the site is not in a subdirectory there. Changing a working
 condition two days before a deadline to satisfy a warning about a host we do not
 have would be the wrong trade. The README now says both things instead of one.
-
----
-
-## 2026-09-11 — A record with no event, and two pages that were reading the wrong thing
-
-**The blog showed no posts while a post was sitting on chain.** `hero01.nextkey.eth`
-carries `nextkey.post`, its resolver is the pool resolver both reading pages watch,
-and the page said *nothing yet*. So did the explorer, and so did the name filter for
-`anna.nextkey.eth` — a name whose records the command line reads without complaint.
-
-**The cause is one sentence and it invalidates a design decision made three days ago:
-on this deployment a record can exist without a findable write event.** Measured, not
-assumed: 1.5 million blocks in fifty-thousand-block windows, no refusals, every
-window answered — and for `hero01` there is neither a `TextUpdated` for the post nor a
-creation event for the name, while `hero02`, `hero72` and `hero150` produce creation
-events matching the documented shape exactly (checked against a hand-written
-keccak-256, because trusting the library that builds the filter to also verify the
-filter proves nothing). Whether the writes predate the resolver the names now use, or
-were made through a path that emitted nothing, the consequence is the same.
-
-**Everything built on "read the events" was therefore blind in a way that looks like
-an empty chain.** Three symptoms, one cause: the blog showed no posts, the explorer's
-live window missed them, and the per-name filter found nothing at all, because it
-needs a record id and took it from the creation event — no event, no filter, no
-history. The pages were not broken. They were answering a different question
-confidently.
-
-**Both pages now read the records directly and keep the log sweep for what only it can
-give.** A direct `text()` read is the exact call that returns the post, so the page
-asks it: 205 names, ten at a time, progress shown. The sweep stays, because it is the
-only way to find a name nobody wrote into the source and the only place a block number
-and a transaction hash come from. So each row says which it is — a read row carries
-*read just now* instead of a block, and says so in a note rather than inventing
-provenance it does not have.
-
-**Rejected: making the read the whole answer.** It can only see names the source can
-spell, which is the allow-list this project already argued its way out of. Rejected
-too: keeping the sweep as the whole answer, which is what shipped and is what this
-entry is about. The honest shape is both, each labelled.
-
-**The live window says who, before it says what.** `hero167.nextkey.eth gave access`
-rather than `gave access — hero167.nextkey.eth`: a list of events whose subject
-arrives last reads as a list of verbs. The name comes from the creation event where
-there is one, and where there is none the line stands without a name rather than
-borrowing the nearest — the same rule the blog has enforced since it stopped reading
-an allow-list. A `nextkey.pubkey` row also shows the NextKey ID derived from the key
-it just read, which is the one value a person can compare against what their own page
-shows them.
-
-**An address in a name box is answered by the registrar, not only by ENS.** Searching
-for `0x4dc65DF7…Ae9b` found nothing, and the reason was not a bug: a lent name has no
-reverse record and no `addr` record either — measured on `hero143`, `hero01` and
-`anna`, all `0x0000…0000`. `NextKeyNames.claim()` writes exactly one record,
-`nextkey.pubkey`, and nothing else, so an `addr` sweep would have found nothing on any
-name this site hands out.
-
-The registrar answers it instead, and for free: *one name per address* is a rule it
-enforces, so it keeps `mapping(address => string) public nameOf` and the getter is
-public. Address → name is now one `eth_call` — exact, no sweep, no guessing — for
-every name claimed through *or take a name that is yours*. ENS is still asked first,
-because it answers for the whole namespace and the registrar only for its own. Where
-both come back empty the page says so in those words, and points at the ID tab, where
-one signature finds the name the address cannot.
-
-**Rejected: adding an `addr` record to the registrar.** It would make the sweep work
-for names claimed *after* a redeploy and do nothing for the ones already out there,
-in exchange for a contract change, a redeploy and a second write per claim, two days
-before the deadline. The mapping that already exists is exact today.
-
-**The check for it asserts the second question, not the happy path.** The mocked node
-answers `0x` for every `eth_call` except the registrar's, so ENS has nothing to say;
-a page that asked only ENS leaves the address in the box and fails. Two checks — and
-`feed.mjs` ends the day at 43, because three assertions went with the folded panel the
-explorer lost in the same round: the block range it searched, the resolvers it read, and
-the sentence saying the list can report a grant and not who received it. Those three are
-a deletion the page was asked for, not a claim that stopped being true; the range and the
-resolvers are still named wherever the window comes back empty or refused, which is where
-the confusion they guard against actually happens.
