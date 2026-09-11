@@ -431,7 +431,7 @@ const meaning = (key, value) => {
     : t('x.m.post', 'published a Community post')
   if (key.startsWith('nextkey.g2.')) return gone
     ? t('x.m.revoked', 'took a grant back — the wrapped key is gone, the secret is not')
-    : t('x.m.granted', 'gave access')
+    : t('x.m.granted', 'granted access')
   if (key.startsWith('nextkey.a2.')) return t('x.m.ack', 'the recipient acknowledged reading it')
   if (key.startsWith('nextkey.grant.')) return gone
     ? t('x.m.v1revoked', 'took back a v1 grant')
