@@ -223,6 +223,12 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   /* What is finished stops inviting a second press. */
   .step.done > p,.step.done .row,.step.done textarea,.step.done input{opacity:.55}
   .step.done .out{opacity:1}
+  /* The same, for the one panel that is a fold rather than a step. `own-name-box`
+     is a <details> on this page and a <section class="step"> on the Message tab,
+     and send.js adds `done` to whichever it finds — so the rule has to exist
+     under both shapes or claiming a name leaves the form looking pressable. */
+  details.more.done > p,details.more.done .row,details.more.done input{opacity:.55}
+  details.more.done .out{opacity:1}
 
   /* ── Anything a reader may skip ── */
   details.more{border:1px solid var(--line);border-radius:9px;background:var(--surface);
@@ -394,8 +400,6 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
     signature, with nothing generated, nothing stored and no gas to pay.
   </p>
 
-  <p class="provenance" data-i18n="hero.prov">Prototype · ENSv2 on Sepolia testnet · Built at ETHGlobal ETHOnline 2026</p>
-
   <noscript>
     <div class="fallback">
       <p data-i18n-html="t.id.nojs"><strong>This page does its work in JavaScript, which is switched off.</strong>
@@ -415,8 +419,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   <section class="step" style="padding-left:0">
     <h2 data-i18n="t.id.wallet.h">Start with the wallet you already have</h2>
     <p data-i18n="t.id.wallet.p">Nothing is created here. Your NextKey ID is derived from a signature, so the
-      same wallet gives you the same ID on any machine, for ever — and losing this browser, this page and
-      this name costs you nothing.</p>
+      same wallet gives you the same ID on any machine, for ever.</p>
     <div class="row">
       <button class="act ghost" id="connect" type="button"
               data-i18n="t.s6.connect.btn">Connect a wallet</button>
@@ -426,17 +429,16 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 
   <!-- Being receivable ──────────────────────────────────────────────────────
        This is the question this whole tab exists for: not "who am I sending to"
-       but "how does anybody send anything to me". It used to sit above step 1
-       of the playground, where it was answering a question nobody on that page
-       was asking yet. -->
+       but "how does anybody send anything to me". The heading and the paragraph
+       that used to stand here said what the lead above already says, three
+       inches lower down and at more length, so the button carries it alone: the
+       page has one obvious thing to press, and the reasoning is in the two
+       folded panels at the foot. The same words are still on the Message tab,
+       where the block does need to introduce itself. -->
+
   <section class="step" id="be-receivable-box" style="padding-left:0">
-    <h2 data-i18n="t.recv.h">Can anyone send you a secret?</h2>
-    <p data-i18n="t.recv.p">Only if your ENS name publishes a key — that record is the whole of the opt-in, and
-      there is no registration with NextKey. If you have no key yet, one signature is enough: nothing is
-      generated and nothing is stored, the key comes out of your wallet and comes back out of it on any
-      machine. We lend you a name and pay for the record.</p>
     <div class="row">
-      <button class="act" id="be-receivable" type="button" data-i18n="t.s2.recv.btn">Make me receivable</button>
+      <button class="act" id="be-receivable" type="button" data-i18n="t.id.recv.btn">Get your NextKey ID</button>
       <span class="note" id="recv-state"></span>
     </div>
     <div class="out" id="id-out" hidden></div>
@@ -448,9 +450,14 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
        one costs a transaction the visitor pays and gives them something that is
        theirs afterwards. Offering only the second would turn away everybody
        without testnet ether, and offering only the first would mean nobody ever
-       owns anything. -->
-  <section class="step" id="own-name-box" style="padding-left:0">
-    <h2 data-i18n="t.own.h">Or take a name that is yours</h2>
+       owns anything.
+
+       Folded away, because it is the second choice and it asks for testnet
+       ether: a visitor who has none should meet one button, not a form they
+       cannot use. The summary still says what is inside, so nobody who wants a
+       name of their own has to guess that this is where it is. -->
+  <details class="more" id="own-name-box">
+    <summary data-i18n="t.own.h">Or take a name that is yours</summary>
     <p data-i18n-html="t.own.p">The same key, on a name nobody can take back. A contract hands out one
       name per address under <span class="mono">nextkey.eth</span> and publishes your key on it in the same
       transaction — you pay for that transaction, and afterwards the name belongs to your address, not to us.
@@ -463,10 +470,10 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
       <button class="act ghost" id="claim-name" type="button" data-i18n="t.own.btn">Claim this name</button>
       <span class="note" id="own-state"></span>
     </div>
-    <p class="note" data-i18n="t.own.cost">This one needs Sepolia ether in your wallet, because you are the one
-      signing it. If you have none, the lent name above asks for nothing.</p>
+    <p class="note" data-i18n="t.id.own.cost">This one needs Sepolia ether in your wallet, because you are the
+      one signing it.</p>
     <div class="out" id="claim-out" hidden></div>
-  </section>
+  </details>
 
   <!-- What the ID is, for whoever wants to check rather than trust ────────── -->
   <details class="more">
@@ -511,7 +518,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   </p>
 </footer>
 
-<script src="/i18n.js?v=99f19ead"></script>
+<script src="/i18n.js?v=8191fd23"></script>
 <script>
 /**
  * The same overlay as the other two pages, same storage keys, so a language or
