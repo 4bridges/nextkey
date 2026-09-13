@@ -11,7 +11,7 @@ ETHGlobal permits AI tools to assist development but not to create the entire pr
 | Decisions taken during the build, dated | [`docs/decisions.md`](./docs/decisions.md) |
 | The kickoff boundary, in machine-checkable form | `git log` |
 
-`ai/PROMPT_LOG.md` is honest about its own gaps: seven of its forty-three entries
+`ai/PROMPT_LOG.md` is honest about its own gaps: seven of its forty-two entries
 carry no quoted prompt, because the prompt was not kept at the time, and they are
 marked *(prompt not captured)* rather than filled in from memory. Their result
 lines come from `docs/decisions.md`, which is dated and was written as the work
