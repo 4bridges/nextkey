@@ -125,3 +125,42 @@ PS> cre workflow simulate my-workflow
 # The caveat from the first run is unchanged and worth repeating: the guardian
 # approvals in fixtures/release-request.json are fabricated stand-ins. The
 # request they surround is real and on chain; the people are not.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Third run, 13 September 2026 — after the demo recording
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# The agent filed a fresh proposal while the demo video was being shot
+# (requestId 0x5a73eb1c7f75eaf1), which replaced the record the run above was
+# bound to. `release.mjs check` refused on camera, which is the property the
+# video demonstrates. This run judges the request that is on chain now.
+
+PS> node --env-file=.env scripts/agent.mjs fixture 2 60 2
+PS> cre workflow simulate my-workflow
+
+✓ Workflow compiled
+  Binary hash: 7be2a5d4a51de312c2ce8bc8cc9a8892b20fc424ac6d81ac8262d0266bc27419
+  Config hash: d953d5cbcc7da1259941b9fec9dbf0fed2ef5cd91bb17aab86890ecbe5b025cc
+
+2026-09-13T11:39:56Z [SIMULATION] Simulator Initialized
+2026-09-13T11:39:56Z [SIMULATION] Running trigger trigger=cron-trigger@1.0.0
+
+  Trigger requested TEE Execution: AWS Nitro in us-west-2.
+
+2026-09-13T11:40:00Z [USER LOG] Decision for 0x5a73eb1c7f75eaf1: RELEASE (quorum_and_delay_satisfied)
+2026-09-13T11:40:00Z [USER LOG] Bound to on-chain request 0xfa98fd2ff3ba74481a55f14400d6d6a74f1cf5837860cffc5cde107ed2c2fa0c
+
+✓ Workflow Simulation Result:
+"RELEASE — quorum_and_delay_satisfied (request 0x5a73eb1c7f75eaf1, bound to 0xfa98fd2f…, secret in enclave: true)"
+
+2026-09-13T11:40:00Z [SIMULATION] Execution finished signal received
+
+# Binary and config hashes are unchanged across all three runs: same workflow,
+# same configuration, three different requests. Only the request and the hash
+# the verdict is bound to have moved.
+#
+#      node --env-file=.env scripts/agent.mjs show
+#
+# prints 0xfa98fd2ff3ba74481a55f14400d6d6a74f1cf5837860cffc5cde107ed2c2fa0c,
+# which is what this verdict carries and what web/src/app.js compares against
+# on the live page.

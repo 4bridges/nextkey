@@ -54,6 +54,10 @@ correct answer came from putting the question to the deployment rather than to
 the model, and both times the wrong answer had arrived with no less confidence
 than the right one.
 
+**The last day, and the video.** The shooting script for the demo video was drafted with the assistant and reworked twice: once to change the shooting format, and once because the first cut served one sponsor well and the other two badly — Chainlink's strongest evidence, a verdict being *refused* because the request underneath it had changed, was not in it at all, and Ledger was not in it. The author decided the balance; the assistant restructured the script and prepared the two takes command by command. Rehearsing the Ledger take produced a better beat than the one that had been written: the script said to let the confirmation time out, and the device instead answers a deliberate rejection with a sentence in plain words, which is a decision on camera rather than an absence of one.
+
+Preparing the Chainlink take also produced two defects in `scripts/release.mjs`, and both are the kind worth recording. The first was introduced by the assistant hours earlier: appending a second workflow run to `evidence/cre-decision.log` made the file carry two verdicts, and the parser used `String.match` without `/g`, so it kept reading the first one. The check would have compared the live request against a verdict from a week earlier and refused — correct arithmetic, entirely the wrong reason, and it would have failed on camera. The second was the author's machine answering: a successful run ended with a libuv assertion, because `process.exit()` tears the process down while the RPC socket is still closing. The same bug had already cost this project two commands in `nextkey.mjs`; it was still present here, in four places, and only a real run on Windows surfaced it.
+
 **Verification.** Every factual claim in the submission — contract addresses, SDK behaviour, sponsor qualification requirements — was checked against primary sources: the sponsor documentation, the prize pages, and answers given by sponsor teams in the event Discord.
 
 ## What is not AI-generated

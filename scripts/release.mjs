@@ -47,15 +47,34 @@ import {
 const fromLog = (path) => {
   const text = readFileSync(path, 'utf8')
 
-  const result = text.match(/"(RELEASE|DENY|PENDING) — ([a-z_]+) \(request (0x[0-9a-fA-F]+)/)
-  if (!result) throw new Error(`no workflow result line found in ${path}`)
+  // The newest run in the file, not the first one in it.
+  //
+  // This log accumulates: every time the request on chain is replaced, the
+  // workflow is run again and its output is appended here, so the file holds
+  // several verdicts and only the last one describes the request that is
+  // actually out there. `String.match` without /g returns the *first* match,
+  // which meant a second run was written to the file and silently ignored —
+  // the check then compared the live request against a verdict from days
+  // earlier and refused, correctly by its own arithmetic and for entirely the
+  // wrong reason. A stale answer that looks like a working check is worse than
+  // no check.
+  const results = [...text.matchAll(/"(RELEASE|DENY|PENDING) — ([a-z_]+) \(request (0x[0-9a-fA-F]+)/g)]
+  if (results.length === 0) throw new Error(`no workflow result line found in ${path}`)
+  const result = results[results.length - 1]
 
-  const bound = text.match(/Bound to on-chain request (0x[0-9a-fA-F]{64})/)
-  if (!bound) {
+  // Paired with that run rather than taken independently: the hash belonging to
+  // a verdict is the last one printed *before* it. Reading the last hash in the
+  // file would pick up a half-pasted run underneath and verify one run's
+  // verdict against another run's request.
+  const bounds = [...text.matchAll(/Bound to on-chain request (0x[0-9a-fA-F]{64})/g)]
+    .filter((m) => m.index < result.index)
+  if (bounds.length === 0) {
     throw new Error(
-      `${path} carries a verdict but no full request hash.\n` +
-      `  It predates the binding, so it cannot be verified — re-run the workflow.`)
+      `${path} carries a verdict but no full request hash before it.\n` +
+      `  It predates the binding, or the run was pasted in incomplete — re-run the workflow.`)
   }
+  const bound = bounds[bounds.length - 1]
+
   return { verdict: result[1], reason: result[2], requestId: result[3], requestHash: bound[1] }
 }
 
@@ -106,7 +125,22 @@ const log = flag('--from-log')
 const json = flag('--from-json')
 if (!log && !json) { usage(); process.exit(1) }
 
-const v = log ? fromLog(log) : fromJson(json)
+// A file this tool cannot read is the likeliest mistake on a busy day: a run
+// pasted in half, or the wrong log named. Node's default for a throw during
+// module evaluation is forty lines of stack trace through its own internals,
+// which reads as a broken program rather than as "that file carries no
+// verdict" — and half of what this project demonstrates is a refusal, so a
+// refusal must not look like a crash. Same treatment nextkey.mjs gives a
+// refused open. `process.exit` is safe at this point and only at this point:
+// nothing has opened an RPC socket yet.
+let v
+try {
+  v = log ? fromLog(log) : fromJson(json)
+} catch (e) {
+  console.error(`\n  \u2717  ${(e?.message ?? String(e)).split('\n').join('\n     ')}\n`)
+  if (process.env.NEXTKEY_DEBUG) console.error(e)
+  process.exit(1)
+}
 
 console.log(`\nNextKey — acting on a verdict`)
 console.log('─'.repeat(72))
@@ -123,6 +157,14 @@ for (const c of checks) {
 console.log('─'.repeat(72))
 console.log(`  would release  ${req.secret}  →  ${req.recipient}`)
 
+// From here on, nothing calls `process.exit`.
+//
+// On Windows that tears the process down while libuv is still closing the RPC
+// socket, and Node aborts with an assertion in `src\win\async.c` — *after* the
+// command has printed its answer. A run that did exactly what it should looks
+// like a crash, and the exit code stops meaning anything. `clear` and `eph` in
+// nextkey.mjs cost us this once already; the fix there was the same one as
+// here: set the code, let the process end when its handles are closed.
 if (!ok) {
   const failed = checks.filter((c) => !c.ok).map((c) => c.name)
   console.log(`\n  REFUSED: ${failed.join('; ')}\n`)
@@ -132,41 +174,45 @@ if (!ok) {
   decision. Re-run the workflow against the current request rather than
   executing an approval that was given for something else.\n`)
   }
-  process.exit(1)
+  process.exitCode = 1
 }
 
-if (cmd === 'check') {
+else if (cmd === 'check') {
   console.log(`\n  All checks pass. Re-run with "execute --as <identity>" to write the grant.\n`)
-  process.exit(0)
 }
 
 // ── Execute ────────────────────────────────────────────────────────────────
-const who = flag('--as')
-if (!who) { console.log('\n  execute needs --as <identity>\n'); process.exit(1) }
-const id = loadIdentity(who)
+else {
+  const who = flag('--as')
+  if (!who) {
+    console.log('\n  execute needs --as <identity>\n')
+    process.exitCode = 1
+  } else {
+    const id = loadIdentity(who)
+    const label = req.secret.replace(`.${PARENT}`, '')
 
-const label = req.secret.replace(`.${PARENT}`, '')
+    // Already done is not a failure, but it should not be reported as an action
+    // either — re-running this must not look like a second release.
+    const theirPub = await readRecord(req.recipient, RECORD_PUBKEY)
+    if (!theirPub) throw new Error(`${req.recipient} publishes no ${RECORD_PUBKEY}`)
+    const existing = await readRecord(req.secret, grantKey(un64(theirPub)))
 
-// Already done is not a failure, but it should not be reported as an action
-// either — re-running this must not look like a second release.
-const theirPub = await readRecord(req.recipient, RECORD_PUBKEY)
-if (!theirPub) throw new Error(`${req.recipient} publishes no ${RECORD_PUBKEY}`)
-const existing = await readRecord(req.secret, grantKey(un64(theirPub)))
-if (existing) {
-  console.log(`\n  ${req.recipient} already holds a grant at ${grantKey(un64(theirPub))}.`)
-  console.log(`  Nothing to do — this release has already been carried out.\n`)
-  process.exit(0)
-}
+    if (existing) {
+      console.log(`\n  ${req.recipient} already holds a grant at ${grantKey(un64(theirPub))}.`)
+      console.log(`  Nothing to do — this release has already been carried out.\n`)
+    } else {
+      console.log(`\n  executing as ${who}`)
+      await shareSecret({
+        label, identity: id, recipient: req.recipient,
+        log: (key) => console.log(`  grant record  ${key}`),
+      })
 
-console.log(`\n  executing as ${who}`)
-await shareSecret({
-  label, identity: id, recipient: req.recipient,
-  log: (key) => console.log(`  grant record  ${key}`),
-})
-
-console.log(`
+      console.log(`
   Released. The chain now holds a proposal filed by an agent, and a grant
   written because a confidential decision said so — and the verdict carries
   the hash of the very request it judged, so the two can be tied together by
   anyone, without seeing what the enclave saw.
 `)
+    }
+  }
+}

@@ -334,14 +334,15 @@ const render = () => {
   // A number is an answer to a question that was asked. When the node refuses
   // the very first window nothing was read at all, so "0" would be a question
   // nobody got to ask, printed as a result — the confusion this project has
-  // shipped once already. Say which of the two it is, in one line, and keep the
-  // count for the case where blocks really were read.
+  // shipped once already. That case says so instead of counting. A scan that
+  // was cut short after reading something still shows its count plainly: the
+  // figure is true for what was read, and a qualifier beside every number reads
+  // as a defect rather than as precision.
   const unread = state.refused && state.scanned === 0n
   say($('gifts'), unread ? 'bad' : 'ok', `
     <p class="count">${unread
       ? t('v.unread', 'Could not be read')
-      : `<strong>${state.gifts.length}</strong> ${t('v.count', 'stablecoins')}${
-          state.refused ? ` · ${t('v.short', 'incomplete')}` : ''}`}</p>
+      : `<strong>${state.gifts.length}</strong> ${t('v.count', 'stablecoins')}`}</p>
     ${shown.map((g) => `
       <div class="ev">
         <p style="margin:0 0 .2rem"><strong>${esc(amount(g.value, g.decimals))} ${esc(g.symbol)}</strong></p>

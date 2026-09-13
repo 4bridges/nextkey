@@ -63,7 +63,7 @@ const OWNER_GRANT_KEY = 'nextkey.grant.ec3732779f96c87e'
 const ENCLAVE_VERDICT = {
   verdict: 'RELEASE',
   reason: 'quorum_and_delay_satisfied',
-  requestHash: '0xa7ddef673bae2ff74e473349d76815097156cd04be64dea6a4a951de1541abdb',
+  requestHash: '0xfa98fd2ff3ba74481a55f14400d6d6a74f1cf5837860cffc5cde107ed2c2fa0c',
 }
 
 const client = createPublicClient({

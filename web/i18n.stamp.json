@@ -261,7 +261,7 @@
   "v.send.p": "0b05293b13a6",
   "v.disconnect": "acfc5be785a9",
   "v.send.btn": "c91ee0f2799d",
-  "v.live.h": "5f3360fbda69",
+  "v.live.h": "c31c9f5e50d7",
   "l.eyebrow": "4787eaf7c938",
   "l.i.h1": "d198ed30d09b",
   "l.i.lead": "c7c3cbfbf159",
@@ -638,7 +638,6 @@
   "v.failed": "5a75a5c17813",
   "v.unread": "51a02791dcb6",
   "v.count": "8cad848f94ed",
-  "v.short": "85554bb9dd4b",
   "v.reading": "76cffe5f68dd",
   "v.norangenote": "8d5e5f8780d8"
 }

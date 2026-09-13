@@ -306,6 +306,12 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   .out{border:1px solid var(--line);border-radius:9px;background:var(--surface);
     padding:1rem 1.2rem;margin:1rem 0 0;min-width:0}
   .out[hidden]{display:none}
+  /* The two figure boxes are as wide as what is in them. A bordered box that
+     runs the full column for the sake of "0,001 ETH" reads as a panel with
+     something missing out of it — the eye looks for the rest and finds empty
+     paper. They still stop at the column on a narrow screen, and they widen by
+     themselves once the donation list underneath has something in it. */
+  #balances, #gifts{width:max-content;max-width:100%}
   .out.ok{border-color:var(--ok)}
   .out.bad{border-color:var(--bad)}
   .out.busy{border-style:dashed}
@@ -525,7 +531,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   </section>
 
   <section class="step" style="padding-left:0">
-    <h2 data-i18n="v.live.h">Donations</h2>
+    <h2 data-i18n="v.live.h">Donation overview</h2>
     <!-- No paragraph and no Refresh button: it reads itself every twenty
          seconds, the live mark says so, and the two figures below say what they
          are without a sentence in front of them. -->
@@ -639,7 +645,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 </script>
 
 
-<script src="/i18n.js?v=2c76ed49"></script>
+<script src="/i18n.js?v=116a074e"></script>
 <script>
 /**
  * The same overlay as the other two pages, same storage keys, so a language or
@@ -795,6 +801,6 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   label()
 })()
 </script>
-<script type="module" src="/donate.js?v=d8193328"></script>
+<script type="module" src="/donate.js?v=2bac868d"></script>
 </body>
 </html>

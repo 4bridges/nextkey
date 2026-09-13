@@ -303,3 +303,68 @@ adding them up.
 
 **Result:** `git rm --cached`, an entry in `.gitignore` beside the shooting script and the brand material, and the dangling reference in `docs/decisions.md` rewritten so it no longer points at a file a reader cannot open.
 **Changed afterwards:** nothing.
+
+---
+
+## 12–13 September — the video, and the last passes over the site
+
+### 2026-09-12 · Claude · the shooting script, and a camera in the frame
+
+> es geht um das video, dieses würde ich heute drehen. bitte überarbeite nochmal das video skript und sag mir, welche freeware ich benutzen kann, um das video aufzunehmen, ich möchte im Bild sein und dann über den bildschirm führen.
+
+**Result:** the script reworked for a webcam inset running the whole length, the opening take moved from a phone screen recording to a desktop browser at phone width, and a recording kit named — OBS Studio for the capture, Shotcut for the cut, both free and without a watermark or a length limit.
+**Changed afterwards:** the author chose the format from the options offered (inset throughout rather than a full-screen opener, browser rather than phone).
+
+### 2026-09-12 · Claude · one sponsor served, two shortchanged
+
+> ist das für den chainlink preis "best confidential workflow" genug oder sollte das video nicht stärker auf die drei partner eingehen, auch ledger kommt mir aktuell noch zu kurz
+
+**Result:** the honest answer was no. Chainlink's strongest evidence — `release.mjs` refusing a verdict whose request had been replaced underneath it — was not in the script, and Ledger appeared nowhere at all. Restructured from seven takes to nine, so each partner has an unbroken block: ENS in takes 1, 3, 5 and 6; Chainlink in take 7, built around the refusal before the release; Ledger in take 8, with the device in frame.
+**Changed afterwards:** the author decided the two things that shaped it — that the audit disclaimer could leave the footer, and that the video would run to 3:50 rather than 3:30 to make room.
+
+### 2026-09-12 · Claude Code · a header that was too tall, diagnosed twice as too wide
+
+> zum anderen ist die Kopfzeile zu breit
+>
+> die kopfzeile ist noch nicht ok, Sie ist noch zu breit von der höhe und weiter sind die symbole nicht verteilt, wie in der fusszeile
+
+**Result:** `header{padding:3rem 0 2rem}` on `poc.html`, `imprint.html` and `privacy.html` was written for a page-title block those pages no longer have — the only `<header>` in each document is the sticky bar, so the rule added 80px of dead height around a row of 34px controls. Removed; the bar is 57px, the same as on the other seven pages.
+**Changed afterwards:** the assistant read "breit" as width and changed `justify-content` twice — first to group the icons, which was the wrong fix for the wrong problem, then back to `space-between` when the author said they should be spread like the footer's row. Only the third pass measured the element instead of guessing at it, and the padding was visible immediately.
+
+### 2026-09-12 · Claude Code · one footer line on every tab
+
+> jetzt noch die Fusszeile für PoC, ID, Passphrase, Explorer und Blog anpassen auf einheitlich: "Prototyp · ENSv2-Beta im Sepolia-Testnetz"
+
+**Result:** the PoC's own footer key removed, all six tabs on the shared one, shortened in English and in nine languages.
+**Changed afterwards:** the assistant argued once for keeping "· nicht auditiert", and the author decided against it. A check in `web/test/blog.mjs` asserted that every tab writing to a chain says both which chain and that nobody audited it; half of it no longer held, so it was narrowed to the half that does, with a comment naming what was given up and where the disclaimer still lives.
+
+### 2026-09-12 · Claude Code · a zero that was never asked
+
+> ein weiterer punkt bei spenden, dort muss der markierte textblock raus
+>
+> "0 Stablecoins · unvollständig" sieht schlecht aus. wenn es keine sind, einfach "0 Stablecoins"
+
+**Result:** the paragraph explaining a partial scan is gone. In its place the count line distinguishes two states: blocks were read and the figure stands, or the node refused the very first window and the line says *Konnte nicht gelesen werden* instead of printing a zero.
+**Changed afterwards:** the author rejected the qualifier the assistant had put beside the figure. The distinction between a refused scan and an empty one stayed, because the screenshot that started it read "die letzten 0 Blöcke" — nothing had been read at all, and a zero there is a question nobody got to ask, printed as a result.
+
+### 2026-09-13 · Claude Code · the Ledger take
+
+> ich will den ledger take jetzt machen, wie gehe ich genau vor? … es gibt 6 konten auf meinem ledger, wir nehmen für den dreh account 3
+
+**Result:** the identity file was checked before anything was filmed — `bob` is on `44'/60'/2'/0/0`, which is Ledger Live's Account 3, so the take would not discover a wrong wallet on camera. Three commands: list the accounts, open and reject, open and confirm.
+**Changed afterwards:** the script had said to let the confirmation lapse. The rehearsal showed the device answers a deliberate rejection with a full sentence — *"The device declined. If you pressed reject, that is the system working."* — so the take shows a decision instead of a timeout.
+
+### 2026-09-13 · Claude Code · preparing the Chainlink take, and two defects in the way
+
+> ok, jetzt kommt der chainlink take, gib mir ebenfalls eine schritt für schritt anleitung, dass der take gut wird
+
+**Result:** the take sequenced around the enclave's own timing — revoke, propose, refuse on camera; then fixture, push, and a wait for the raw GitHub URL the enclave fetches from; then execute and open. Two bugs found before the camera ran. `fromLog` read the first workflow run in `evidence/cre-decision.log` rather than the last, so a log with two verdicts verified against the older one; it now takes the newest result and the hash printed before it, so two runs cannot be crossed. And every exit after the chain read used `process.exit()`, which on Windows aborts with a libuv assertion after the output — a successful run that looks like a crash. Both fixed and verified against the live chain before filming.
+**Changed afterwards:** the first of those two was the assistant's own doing, from appending a second run to the log earlier the same day without checking how the file is read. The second only appeared because the author ran the check on his own machine rather than trusting that it would work.
+
+### 2026-09-13 · Claude Code · a file that reported itself written and was not
+
+> [from the run output] page.waitForFunction: Timeout 15000ms exceeded … donate.mjs:121
+
+**Result:** a test edit reported as written had not reached the disk; the failing line number gave it away, because the patched file would have moved that call four lines down. Re-applied and read back from the machine before saying it was done.
+**Changed afterwards:** every later edit to a test file in this session was read back after writing rather than trusted to the success message.
+
