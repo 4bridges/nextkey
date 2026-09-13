@@ -118,10 +118,14 @@ check('the ETH balance is shown as a number a person reads', /2\.5\s*ETH/.test(b
 check('a stablecoin balance is shown with its symbol', /137\.42\s*USDC/.test(bals.replace(/\s+/g, ' ')))
 check('and a token with nothing in it is not listed', !/USDT|DAI/.test(bals))
 
-await page.waitForFunction(() => /donations|Spenden/.test(document.getElementById('gifts')?.textContent ?? ''),
+// Waited for the count line itself, not for a word in it. This used to look for
+// "donations|Spenden", which tied the wait to one label in two languages — the
+// label changed to "stablecoins" and the suite hung for fifteen seconds before
+// failing somewhere else entirely. The element is the state; the wording is not.
+await page.waitForFunction(() => !!document.querySelector('#gifts .count'),
   null, { timeout: 15_000 })
 const gifts = await page.textContent('#gifts')
-check('the donations are counted', /2\s*stablecoin donations/.test(gifts.replace(/\s+/g, ' ')))
+check('the donations are counted', /2\s*stablecoin/.test(gifts.replace(/\s+/g, ' ')))
 check('each one shows its amount', /12\.5 USDC/.test(gifts) && /40 USDC/.test(gifts))
 check('newest first', gifts.indexOf('12.5 USDC') < gifts.indexOf('40 USDC'))
 check('with the day it arrived', /\d{4}-\d{2}-\d{2}/.test(gifts))
