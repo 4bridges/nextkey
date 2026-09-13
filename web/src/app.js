@@ -53,11 +53,17 @@ const RECORD_EPH = 'nextkey.eph'
 const OWNER_GRANT_KEY = 'nextkey.grant.ec3732779f96c87e'
 
 /** What the enclave returned in evidence/cre-decision.log. The page recomputes
- *  the hash from the live record and compares — that comparison is the point. */
+ *  the hash from the live record and compares — that comparison is the point.
+ *
+ *  This constant has to be re-read from the enclave whenever the agent files a
+ *  new proposal: the request record changes, its hash changes with it, and the
+ *  comparison then fails — correctly, and visibly, which is the mechanism doing
+ *  its job rather than a stale page. Re-run `agent.mjs fixture`, push it,
+ *  `cre workflow simulate my-workflow`, and copy the hash it binds itself to. */
 const ENCLAVE_VERDICT = {
   verdict: 'RELEASE',
   reason: 'quorum_and_delay_satisfied',
-  requestHash: '0x7b2a1ed622c22c8eebf5b591a25c5bfcf2d1896ce61d1d05efdf53f13b8ce0f3',
+  requestHash: '0xa7ddef673bae2ff74e473349d76815097156cd04be64dea6a4a951de1541abdb',
 }
 
 const client = createPublicClient({

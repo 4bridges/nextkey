@@ -316,11 +316,14 @@ check('and the bar reaches the same edge as the controls above it',
 check('the footer does not offer the page you are on',
   (await page.locator('footer .footnav a[href="./blog"]').count()) === 0 &&
   (await page.locator('footer .footnav a[href="./explorer"]').count()) === 1)
-// Every tab that writes to a chain says which chain, and that nobody audited
-// it — on the tab itself, where somebody about to press a button is looking.
-check('and the tab says what it is running on, and what it is not',
-  /Sepolia testnet/i.test(await page.textContent('footer')) &&
-  /not audited/i.test(await page.textContent('footer')))
+// Every tab that writes to a chain says which chain — on the tab itself, where
+// somebody about to press a button is looking. The footer used to carry "not
+// audited" beside it and no longer does; that sentence now lives in the imprint,
+// which every footer links to, and in the README. Worth knowing which half of
+// this check was given up on purpose: the network is still named here, and if
+// the imprint ever stops saying "unaudited", nothing on the tabs will.
+check('and the tab says what it is running on',
+  /Sepolia testnet/i.test(await page.textContent('footer')))
 
 // ── A thumb between tabs ────────────────────────────────────────────────────
 // On a phone the bar is eight symbols across the top; a swipe is the gesture a

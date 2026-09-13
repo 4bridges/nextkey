@@ -1,5 +1,7 @@
 # NextKey — the confidential release decision, bound to the chain.
-# Chainlink CRE Confidential Workflow, AWS Nitro us-west-2. Recorded 2026-09-06.
+# Chainlink CRE Confidential Workflow, AWS Nitro us-west-2. Recorded 2026-09-06,
+# re-run 2026-09-13 against a newer request — that second run is at the end of
+# this file, and its hash is the one the site compares against today.
 #
 # What this run demonstrates, in one sentence: a verdict about a request that
 # an autonomous agent filed on chain, decided over data that never left the
@@ -74,3 +76,52 @@ PS> cre workflow simulate my-workflow
 # fabricated stand-ins. Guardians are not built yet. The request they surround
 # is real and on chain; the people are not, and the fixture says so in its
 # first field.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Re-run, 13 September 2026 — the request changed, so the verdict was renewed
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Why there is a second run at all: the agent filed a new proposal
+# (requestId 0xdb00d3a9680e1412), which replaced the record above on chain. The
+# hash therefore changed, and the 6 September verdict stopped applying to what
+# is stored — which the site said, in red, without being told to. That is the
+# binding working. An approval cannot follow a request it was not given.
+#
+# The fix is not to edit the comparison. It is to run the decision again over
+# the request that is actually there.
+
+PS> node --env-file=.env scripts/agent.mjs fixture 2 60 2
+PS> cre workflow simulate my-workflow
+
+✓ Workflow compiled
+  Binary hash: 7be2a5d4a51de312c2ce8bc8cc9a8892b20fc424ac6d81ac8262d0266bc27419
+  Config hash: d953d5cbcc7da1259941b9fec9dbf0fed2ef5cd91bb17aab86890ecbe5b025cc
+
+2026-09-13T06:10:49Z [SIMULATION] Simulator Initialized
+2026-09-13T06:10:49Z [SIMULATION] Running trigger trigger=cron-trigger@1.0.0
+
+  Trigger requested TEE Execution: AWS Nitro in us-west-2.
+
+2026-09-13T06:11:00Z [USER LOG] Decision for 0xdb00d3a9680e1412: RELEASE (quorum_and_delay_satisfied)
+2026-09-13T06:11:00Z [USER LOG] Bound to on-chain request 0xa7ddef673bae2ff74e473349d76815097156cd04be64dea6a4a951de1541abdb
+
+✓ Workflow Simulation Result:
+"RELEASE — quorum_and_delay_satisfied (request 0xdb00d3a9680e1412, bound to 0xa7ddef67…, secret in enclave: true)"
+
+2026-09-13T06:11:00Z [SIMULATION] Execution finished signal received
+
+# The binary and config hashes are identical to the 6 September run: same
+# workflow, same configuration, different input. Only the request and the hash
+# it is bound to have moved.
+#
+# Check it the same way as above:
+#
+#      node --env-file=.env scripts/agent.mjs show
+#
+# prints 0xa7ddef673bae2ff74e473349d76815097156cd04be64dea6a4a951de1541abdb,
+# which is the value the verdict carries and the value
+# web/src/app.js compares against on the live page.
+#
+# The caveat from the first run is unchanged and worth repeating: the guardian
+# approvals in fixtures/release-request.json are fabricated stand-ins. The
+# request they surround is real and on chain; the people are not.

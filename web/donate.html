@@ -379,11 +379,13 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   .barnav a svg{width:1.2rem;height:1.2rem;display:block}
   /* And it wraps now. The clipping above was not a width that was chosen badly;
      it was a row with nowhere to go. A second line is always available. */
-  /* Spread, not stacked at one end. The bar's right edge is set by the language
-     button on the row above, so the symbols run the whole width up to it and
-     the eye gets the same margin on both sides. `space-between` does that with
-     the gap as a floor rather than a fixed step, so the spacing follows the
-     window instead of the count. */
+  /* Spread, not stacked at one end, and the same spread as the footer's row of
+     the same symbols — the two rows bracket the page and a reader compares them
+     whether or not they mean to. The bar's right edge is set by the language
+     button, so the symbols run the whole width up to it and the eye gets the
+     same margin on both sides. `space-between` does that with the gap as a
+     floor rather than a fixed step, so the spacing follows the window instead
+     of the count. */
   .barnav{flex-wrap:wrap;row-gap:.35rem}
   .foothome{display:inline-flex;align-items:center;vertical-align:middle}
   .foothome svg{width:1.05rem;height:1.05rem}
@@ -637,7 +639,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 </script>
 
 
-<script src="/i18n.js?v=22950d76"></script>
+<script src="/i18n.js?v=69529743"></script>
 <script>
 /**
  * The same overlay as the other two pages, same storage keys, so a language or

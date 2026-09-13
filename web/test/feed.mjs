@@ -144,7 +144,12 @@ check('the window is what the page opens with',
   (await page.locator('#name, #look, #try').count()) === 0)
 check('a grant is described as a grant', /granted access/.test(text))
 check('an emptied record reads as a withdrawal', /took a grant back/.test(text))
-check('the ephemeral key is named for what it does', /set up grants settings/.test(text))
+// The wording this asserts is the page's, and the page changed under it:
+// `x.m.eph` has read "set up a grant" since the explorer was last touched,
+// in English and in all nine translations, while this regex still looked for
+// an older phrasing. The intent is unchanged — the eph record is described by
+// what it does, not by its record name — so only the string moved.
+check('the ephemeral key is named for what it does', /set up a grant/.test(text))
 check('a record that is not ours is left out', !/ens\.something\.else/.test(text))
 check('the record name is shown in full', /nextkey\.g2\.251c755ded0bd0ebc999282cba38ce78/.test(text))
 check('the block is named', /11661869/.test(text))

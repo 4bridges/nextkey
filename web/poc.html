@@ -102,7 +102,12 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   .mono,pre,code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace}
   a{color:var(--accent)}
   .wrap{max-width:62rem;margin:0 auto;padding:0 1.5rem}
-  header{padding:3rem 0 2rem;border-bottom:1px solid var(--line)}
+  /* No `header{padding:3rem 0 2rem}` here. It was written for a page-title
+     block that these pages do not have — the only <header> in the document is
+     the sticky bar — so all it did was add 80px of dead height above and below
+     a row of 34px controls, and the bar looked twice the height of the same
+     bar on every other page. The bar sets its own padding in `.bar .barin`
+     and draws its own bottom border. */
   .eyebrow{font-size:.9rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:640;margin:0 0 .9rem}
   h1{font-size:clamp(1.5rem,5.2vw,2.4rem);font-weight:640;letter-spacing:-.015em;margin:0 0 .7rem;max-width:24ch;text-wrap:balance}
   .lead{color:var(--muted);max-width:42rem;margin:0 0 1rem;font-size:1.05rem;text-wrap:pretty}
@@ -186,11 +191,13 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   .barnav a svg{width:1.2rem;height:1.2rem;display:block}
   /* And it wraps now. The clipping above was not a width that was chosen badly;
      it was a row with nowhere to go. A second line is always available. */
-  /* Spread, not stacked at one end. The bar's right edge is set by the language
-     button on the row above, so the symbols run the whole width up to it and
-     the eye gets the same margin on both sides. `space-between` does that with
-     the gap as a floor rather than a fixed step, so the spacing follows the
-     window instead of the count. */
+  /* Spread, not stacked at one end, and the same spread as the footer's row of
+     the same symbols — the two rows bracket the page and a reader compares them
+     whether or not they mean to. The bar's right edge is set by the language
+     button, so the symbols run the whole width up to it and the eye gets the
+     same margin on both sides. `space-between` does that with the gap as a
+     floor rather than a fixed step, so the spacing follows the window instead
+     of the count. */
   .barnav{flex-wrap:wrap;row-gap:.35rem}
   .foothome{display:inline-flex;align-items:center;vertical-align:middle}
   .foothome svg{width:1.05rem;height:1.05rem}
@@ -356,8 +363,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 </main>
 
 <footer class="wrap">
-  <p data-i18n="d.foot">Prototype · ENSv2 beta on Sepolia testnet · not audited. The seed phrase behind this
-     ciphertext was generated for the demonstration and guards nothing.</p>
+  <p data-i18n="t.foot">Prototype · ENSv2 beta on Sepolia testnet</p>
     <p class="footnav">
       <a class="foothome" href="/" data-i18n-title="nav.home" title="Home"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.75 20v-5.5h4.5V20"/></svg><span class="vh" data-i18n="nav.home">Home</span></a>
       <a href="./id" data-i18n-title="nav.id" title="ID"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="10.8" r="2.1"/><path d="M5.9 16.3c.45-1.5 1.65-2.3 3.1-2.3s2.65.8 3.1 2.3"/><path d="M14.8 9.8h4.2M14.8 13.4h4.2"/></svg><span class="vh" data-i18n="nav.id">ID</span></a>
@@ -392,7 +398,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 </script>
 
 
-<script src="/i18n.js?v=22950d76"></script>
+<script src="/i18n.js?v=69529743"></script>
 <script>
 /**
  * Same overlay as the landing page, same storage keys, so a language or theme
@@ -547,6 +553,6 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   label()
 })()
 </script>
-<script type="module" src="/app.js?v=a90eed94"></script>
+<script type="module" src="/app.js?v=486e35c9"></script>
 </body>
 </html>

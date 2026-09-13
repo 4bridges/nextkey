@@ -365,11 +365,13 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
   .barnav a svg{width:1.2rem;height:1.2rem;display:block}
   /* And it wraps now. The clipping above was not a width that was chosen badly;
      it was a row with nowhere to go. A second line is always available. */
-  /* Spread, not stacked at one end. The bar's right edge is set by the language
-     button on the row above, so the symbols run the whole width up to it and
-     the eye gets the same margin on both sides. `space-between` does that with
-     the gap as a floor rather than a fixed step, so the spacing follows the
-     window instead of the count. */
+  /* Spread, not stacked at one end, and the same spread as the footer's row of
+     the same symbols — the two rows bracket the page and a reader compares them
+     whether or not they mean to. The bar's right edge is set by the language
+     button, so the symbols run the whole width up to it and the eye gets the
+     same margin on both sides. `space-between` does that with the gap as a
+     floor rather than a fixed step, so the spacing follows the window instead
+     of the count. */
   .barnav{flex-wrap:wrap;row-gap:.35rem}
   .foothome{display:inline-flex;align-items:center;vertical-align:middle}
   .foothome svg{width:1.05rem;height:1.05rem}
@@ -550,7 +552,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 </main>
 
 <footer class="wrap">
-  <p data-i18n="t.foot">Prototype · ENSv2 beta on Sepolia testnet · not audited.</p>
+  <p data-i18n="t.foot">Prototype · ENSv2 beta on Sepolia testnet</p>
     <p class="footnav">
       <a class="foothome" href="/" data-i18n-title="nav.home" title="Home"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M9.75 20v-5.5h4.5V20"/></svg><span class="vh" data-i18n="nav.home">Home</span></a>
       <a href="./id" data-i18n-title="nav.id" title="ID"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="10.8" r="2.1"/><path d="M5.9 16.3c.45-1.5 1.65-2.3 3.1-2.3s2.65.8 3.1 2.3"/><path d="M14.8 9.8h4.2M14.8 13.4h4.2"/></svg><span class="vh" data-i18n="nav.id">ID</span></a>
@@ -651,7 +653,7 @@ if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)
 </script>
 
 
-<script src="/i18n.js?v=22950d76"></script>
+<script src="/i18n.js?v=69529743"></script>
 <script>
 /**
  * The same overlay as the other two pages, same storage keys, so a language or
