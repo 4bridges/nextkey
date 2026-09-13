@@ -11,6 +11,16 @@ ETHGlobal permits AI tools to assist development but not to create the entire pr
 | Decisions taken during the build, dated | [`docs/decisions.md`](./docs/decisions.md) |
 | The kickoff boundary, in machine-checkable form | `git log` |
 
+`ai/PROMPT_LOG.md` is honest about its own gaps: seven of its forty-three entries
+carry no quoted prompt, because the prompt was not kept at the time, and they are
+marked *(prompt not captured)* rather than filled in from memory. Their result
+lines come from `docs/decisions.md`, which is dated and was written as the work
+happened. Fourteen entries carried that marker until 13 September, when seven
+prompts were recovered from the transcripts of the sessions that produced them;
+the entries say where a prompt came out of a compacted summary rather than a raw
+log, and where a passage was dropped rather than quoted short. A log with visible
+holes can be checked; one with no holes cannot.
+
 ## Tools used
 
 | Tool | Used for |
@@ -20,13 +30,6 @@ ETHGlobal permits AI tools to assist development but not to create the entire pr
 
 No editor-integrated completion was used — there is no Copilot, Cursor or
 Codeium in this project.
-
-Commit messages carry no assistant markers. An earlier version of this file said
-they carried a `Co-Authored-By` trailer; that was true for a handful of commits,
-the practice was stopped, and the trailers were removed. Saying so is cheaper
-than leaving a sentence here that `git log` contradicts. The disclosure lives in
-this file and in `ai/PROMPT_LOG.md` — one place that is maintained, rather than a
-convention applied unevenly across a history and then abandoned halfway.
 
 ## How it was used
 
@@ -57,6 +60,38 @@ than the right one.
 **The last day, and the video.** The shooting script for the demo video was drafted with the assistant and reworked twice: once to change the shooting format, and once because the first cut served one sponsor well and the other two badly — Chainlink's strongest evidence, a verdict being *refused* because the request underneath it had changed, was not in it at all, and Ledger was not in it. The author decided the balance; the assistant restructured the script and prepared the two takes command by command. Rehearsing the Ledger take produced a better beat than the one that had been written: the script said to let the confirmation time out, and the device instead answers a deliberate rejection with a sentence in plain words, which is a decision on camera rather than an absence of one.
 
 Preparing the Chainlink take also produced two defects in `scripts/release.mjs`, and both are the kind worth recording. The first was introduced by the assistant hours earlier: appending a second workflow run to `evidence/cre-decision.log` made the file carry two verdicts, and the parser used `String.match` without `/g`, so it kept reading the first one. The check would have compared the live request against a verdict from a week earlier and refused — correct arithmetic, entirely the wrong reason, and it would have failed on camera. The second was the author's machine answering: a successful run ended with a libuv assertion, because `process.exit()` tears the process down while the RPC socket is still closing. The same bug had already cost this project two commands in `nextkey.mjs`; it was still present here, in four places, and only a real run on Windows surfaced it.
+
+**The last four days.** The same division held through the end. The assistant
+drafted the registrar contract, the identity-key derivation, the imprint and
+privacy notice in ten languages, the NextKey ID and the move of every page under
+`/demo/<tab>`; the author decided each of them, ran them against the chain and
+committed them. Three corrections in that stretch are worth naming because the
+assistant was confidently wrong in the same direction each time. It read *"die
+Kopfzeile ist zu breit"* as width and changed `justify-content` twice before
+measuring the element and finding 80px of padding written for a page-title block
+that no longer existed. It proposed an `addr`-record sweep for the explorer's
+address search, which would have found nothing, when the registrar's own
+`mapping(address => string)` was already the answer. And asked to take the
+compiled bundles out of the repository, it argued against doing so three days
+before the deadline; the author overruled it, and `npm run verify:stamps` turned
+out to answer the objection better than keeping them would have.
+
+That last shape — the assistant recommending against, the author deciding anyway —
+recurs often enough to be worth stating as a pattern rather than as three
+anecdotes. In one session on 10 September it happened three times: the 63 unused
+translation keys were deleted over the objection that tidying two days before
+submission is the wrong order of work; the direct address was rebuilt in all ten
+languages rather than in German alone; and when that rebuild came back at 161 keys
+against an estimate of 44, it was carried through rather than abandoned. The
+assistant's advice is in `ai/PROMPT_LOG.md` next to the decision that went the
+other way, which is the only form in which such advice is checkable.
+
+The licence changed from MIT to AGPL-3.0-or-later on 9 September after the
+assistant read the ETHGlobal rules and the sponsor prize pages: ENS requires the
+code to be open source and on a public platform, so a private repository was
+never available, and the choice was which open-source licence rather than whether
+to have one. What the licence cannot do is stated in the README rather than
+implied.
 
 **Verification.** Every factual claim in the submission — contract addresses, SDK behaviour, sponsor qualification requirements — was checked against primary sources: the sponsor documentation, the prize pages, and answers given by sponsor teams in the event Discord.
 
